@@ -1,0 +1,1642 @@
+{
+  "users":[
+    {
+      "_id": "67ecafce6583726081062deb",
+      "name": "theo karld",
+      "email": "foodplus9ja@gmail.com",
+      "password": "$2a$10$FsvkfnJT9535JRccD11oJuU6A18LMA078CTwWNrBiOjM6XA1dNMM2",
+      "role": "facilitator",
+      "profilePicture": "",
+      "bio": "",
+      "enrolledCourses": [],
+      "createdCourses": [
+        "67ed077ba460159ae05c2f78",
+        "67ed75fea384f6e060b643a8"
+      ],
+      "createdAt": "2025-04-02T03:32:30.420Z",
+      "studentsEnrolled": [
+        {
+          "studentId": "67ed702a3a0df529f797cd0a",
+          "courseId": "67ed75fea384f6e060b643a8",
+          "enrollmentId": "67fad88ae7d22b9f4913df63",
+          "enrolledAt": "2025-04-12T21:18:02.901Z",
+          "progress": 0,
+          "lastAccessedAt": "2025-04-12T21:18:02.901Z"
+        },
+        {
+          "studentId": "67ed702a3a0df529f797cd0a",
+          "courseId": "67ed077ba460159ae05c2f78",
+          "enrollmentId": "67fab2862c1a04c9da6d11c4",
+          "enrolledAt": {
+            "ls": "4/12/2025, 6:35:50 PM",
+            "is": "2025-04-12T18:35:50.336Z",
+            "f": "Sat Apr 12 2025 18:35:50 GMT",
+            "y": 2025,
+            "m": 3,
+            "d": 12,
+            "dy": 6,
+            "h": 18,
+            "mn": 35,
+            "s": 50,
+            "ms": 336,
+            "t": "18:35:50",
+            "key": 1744482950336
+          },
+          "progress": 0,
+          "lastAccessedAt": {
+            "ls": "4/12/2025, 6:35:50 PM",
+            "is": "2025-04-12T18:35:50.336Z",
+            "f": "Sat Apr 12 2025 18:35:50 GMT",
+            "y": 2025,
+            "m": 3,
+            "d": 12,
+            "dy": 6,
+            "h": 18,
+            "mn": 35,
+            "s": 50,
+            "ms": 336,
+            "t": "18:35:50",
+            "key": 1744482950336
+          }
+        },
+        {
+          "studentId": "67ed702a3a0df529f797cd0a",
+          "courseId": "67ed75fea384f6e060b643a8",
+          "enrollmentId": "67fad88ae7d22b9f4913df63",
+          "enrolledAt": "2025-04-12T21:18:02.480Z",
+          "progress": 0,
+          "lastAccessedAt": "2025-04-12T21:18:02.481Z"
+        },
+        {
+          "studentId": "67fb8b0c16f96b7efbe7ccb0",
+          "courseId": "67ed077ba460159ae05c2f78",
+          "enrollmentId": "67fb8c6b16f96b7efbe7ccb1",
+          "enrolledAt": "2025-04-13T10:05:31.850Z",
+          "progress": 0,
+          "lastAccessedAt": "2025-04-13T10:05:31.850Z"
+        },
+        {
+          "studentId": "67fb8b0c16f96b7efbe7ccb0",
+          "courseId": "67ed077ba460159ae05c2f78",
+          "enrollmentId": "67fb8c6b16f96b7efbe7ccb1",
+          "enrolledAt": "2025-04-13T10:05:31.433Z",
+          "progress": 0,
+          "lastAccessedAt": "2025-04-13T10:05:31.433Z"
+        }
+      ]
+    },
+    {
+      "_id": "67ed048ca460159ae05c2f77",
+      "name": "Shaka Zulu",
+      "email": "d.enyi@yahoo.com",
+      "password": "$2a$10$RmbhVO3daeUSfwGK5CESUun7oCoKn/ecXTys1YZUucPLL1W2Q1BqW",
+      "role": "facilitator",
+      "profilePicture": "",
+      "bio": "",
+      "enrolledCourses": [],
+      "createdCourses": [
+        "67ed2eddeefa119fd8fc30b6",
+        "67f447cfcec2a55096062b9b",
+        "67edf3d1808f2e881517158d",
+        "67edf88b808f2e881517158e",
+        "67edfa68808f2e881517158f",
+        "67edfc90808f2e8815171590",
+        "67ee04a026597afaf8eaea0d",
+        "67ee05e726597afaf8eaea0e"
+      ],
+      "createdAt": "2025-04-02T09:34:04.947Z",
+      "studentsEnrolled": [
+        {
+          "studentId": "67fb8b0c16f96b7efbe7ccb0",
+          "courseId": "67fdb870069623d29e147c3d",
+          "enrollmentId": "67fdd73d4670d29c586dced7",
+          "enrolledAt": "2025-04-15T03:49:17.858Z",
+          "progress": 0,
+          "lastAccessedAt": "2025-04-15T03:49:17.858Z"
+        }
+      ]
+    },
+    {
+      "_id": "67ed2fa0eefa119fd8fc30b7",
+      "name": "David Ogaba Enyi",
+      "email": "bbcreator91@gmail.com",
+      "password": "$2a$10$In09Uazi93lM0wRjbzpLWuB8QTZLFHN6l0kXGVlBnYY3rHuocmDfC",
+      "role": "student",
+      "profilePicture": "",
+      "bio": "",
+      "enrolledCourses": [],
+      "createdCourses": [],
+      "createdAt": "2025-04-02T12:37:52.765Z"
+    },
+    {
+      "_id": "67ed702a3a0df529f797cd0a",
+      "name": "dashe karld",
+      "email": "dashekarld@gmail.com",
+      "password": "$2a$10$A8Xue0d60mZeqvsowHBSGur9iXoKh48wEdyziyTYHjAgBWNvb3XqW",
+      "role": "student",
+      "profilePicture": "",
+      "bio": "",
+      "enrolledCourses": [],
+      "createdCourses": [],
+      "createdAt": "2025-04-02T17:13:14.468Z",
+      "notificationsEnabled": true,
+      "pushSubscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/cXvOx4o4iOU:APA91bH2UEoQNZQjoLB6GalwtitJUiaKGXSbeBXi8FR-xgM6G-HbUHcFnSylxG5t6_63pzg4A0ixy120k9aUhsY041A9im7bCK9-PE9y0pPQqKQdN8PPLm4G1_UZZqlFc_rxNDz5hmLc",
+        "expirationTime": null,
+        "keys": {
+          "p256dh": "BDoWSF30ruThyFP5I308sWILSY0Yk8bbw2MTEQkbh2d6gMAkMCoI3LRT7OICzD5CzmlbDbg9Nwg8ue0Artc_ffs",
+          "auth": "KDHBA46gWYFtaxsd74Nmlw"
+        }
+      },
+      "subscribedCourses": [
+        "67edf3d1808f2e881517158d"
+      ]
+    },
+    {
+      "_id": "67fb8b0c16f96b7efbe7ccb0",
+      "name": "karldworld",
+      "email": "karldworldc9@gmail.com",
+      "password": "$2a$10$mlf4rz2CT1dGmc6vYHYY7ufMgGkNUywdSblbw8coKZE56mrKAT2qG",
+      "role": "student",
+      "profilePicture": "",
+      "bio": "",
+      "enrolledCourses": [
+        "67fdb870069623d29e147c3d"
+      ],
+      "createdCourses": [],
+      "createdAt": "2025-04-13T09:59:40.968Z"
+    }
+  ],
+"courses":[
+    {
+      "_id": "67ed077ba460159ae05c2f78",
+      "title": "Virtual Reality In Tourism",
+      "category": "AI Talent & Education",
+      "shortDescription": "Virtual Reality technology in Tourism ",
+      "fullDescription": "Virtual Reality in Tourism",
+      "level": "intermediate",
+      "duration": "5",
+      "prerequisites": [
+        "a basic knowledge on VR"
+      ],
+      "learningOutcomes": [
+        "advance VR knowledge"
+      ],
+      "thumbnail": "",
+      "modules": [
+        {
+          "title": "Virtual Reality in Tourism module 1",
+          "description": "Virtual Reality in Tourism",
+          "content": [
+            {
+              "type": "video",
+              "title": "Virtual Reality in Tourism",
+              "url": "http://test.vid",
+              "description": "Virtual Reality in Tourism"
+            }
+          ],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ecafce6583726081062deb",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743587194986",
+      "createdAt": {
+        "ls": "4/2/2025, 9:46:34 AM",
+        "is": "2025-04-02T09:46:34.985Z",
+        "f": "Wed Apr 02 2025 09:46:34 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 9,
+        "mn": 46,
+        "s": 34,
+        "ms": 986,
+        "t": "09:46:34",
+        "key": 1743587194986
+      },
+      "updatedAt": {
+        "ls": "4/2/2025, 9:46:34 AM",
+        "is": "2025-04-02T09:46:34.985Z",
+        "f": "Wed Apr 02 2025 09:46:34 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 9,
+        "mn": 46,
+        "s": 34,
+        "ms": 986,
+        "t": "09:46:34",
+        "key": 1743587194986
+      },
+      "enrolledStudents": [
+        "67ed702a3a0df529f797cd0a",
+        "67fb8b0c16f96b7efbe7ccb0"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67ed2eddeefa119fd8fc30b6",
+      "title": "Vibe Coding 101",
+      "category": "AI Talent & Education",
+      "shortDescription": "Learn How to build production ready apps with the aid of generative A.I and Large Language models",
+      "fullDescription": "Course Goal: Equip learners with the practical skills and conceptual understanding to effectively use AI-assisted Vibe Coding tools to build software prototypes and small applications, while fostering essential software development best practices and critical thinking about AI's role in coding.\n\nLMS Integration & Best Practices :\n\nModular Structure: Content broken into logical modules with clear weekly goals.\nClear Learning Objectives: Each module and lesson starts with specific, measurable objectives.\nMixed Media: Utilize video lectures (demos, explanations), text readings (summaries, concepts, links), code snippets, screencasts, and potentially interactive simulations (if platform allows).\n\nHands-On Practice: Frequent coding exercises, quizzes (knowledge checks), and progressively larger assignments.\nCapstone Project: A significant project to synthesize learning.\n\nFacilitator Guidance: Specific notes for facilitators on guiding discussions, common pitfalls, and adapting content.\nCommunity Forum: Essential for Q&A, peer support, and discussion prompts initiated by the facilitator.\n\nAssessment: Mix of automated quizzes, peer-reviewed assignments (optional but good for scale), and facilitator-graded project milestones/final submission.\n\nSupplemental Resources: Curated links to official documentation, relevant articles, community resources, and further learning paths.\n\nAccessibility: Provide transcripts for videos, use clear language, consider offline access strategies if relevant to the target audience's connectivity.",
+      "level": "intermediate",
+      "duration": "1",
+      "prerequisites": [
+        "Critical Thinking",
+        "Problem Solving ",
+        "Willingness to learn"
+      ],
+      "learningOutcomes": [
+        "Compare and select appropriate Vibe Coding tools based on needs and resources.",
+        "Install or access chosen tools (Windsurf, Cursor, Replit, VS Code + Extension).",
+        "Set up a basic project environment locally or online."
+      ],
+      "thumbnail": "",
+      "modules": [
+        {
+          "title": "Tools & Setup (Week 1)",
+          "description": "Learning Objectives:\nCompare and select appropriate Vibe Coding tools based on needs and resources.\nInstall or access chosen tools (Windsurf, Cursor, Replit, VS Code + Extension).\nSet up a basic project environment locally or online.\nLesson 1.1: Exploring the Toolbox\nVideo: Demo walkthrough of key tools: Windsurf/Cursor (IDE-like), Replit (Online), VS Code + AI Extension (Integration), AI Canvases (Claude/ChatGPT - for quick tests). Pros/Cons discussion (Offline vs Online, Cost, Features).\nReading: Comparison chart of tools, links to download/access pages. Focus on free tiers/options.\nActivity: Tool Selection Guide (simple questionnaire helping learners choose).\nLesson 1.2: Installation & Setup\nVideo/Screencast: Guided installation for one primary tool (e.g., Windsurf or VS Code + Extension). Separate brief guide for Replit signup.\nReading: Step-by-step text guides with screenshots. Basic terminal commands if needed (checking Python/Node versions).\nActivity: Setup Check - Learners post a screenshot or confirmation of their setup in the forum.\nLesson 1.3: Your First Interaction\nVideo: Simple \"Hello World\" equivalent using the chosen tool's AI chat/write feature. Understanding the basic interface.\nActivity: Guided exercise - Generate a simple HTML page or Python script using an AI prompt.\nQuiz: Tool features, setup steps.\nFacilitator Note: Address setup issues proactively in forums. Highlight Replit as a strong option for lower-spec machines or inconsistent internet.",
+          "content": [
+            {
+              "type": "video",
+              "title": "Vibe coding",
+              "url": "https://www.youtube.com/watch?v=v7UcVPO4y3c",
+              "description": "LEARN HOW TO VIBE CODE "
+            },
+            {
+              "type": "document",
+              "title": "TEST",
+              "url": "https://docs.google.com/document/d/1vwSLy78i-7Yor_qIM9gIrRt8eSeSv-e2MqZjPr3dZaQ/edit?tab=t.0",
+              "description": ""
+            }
+          ],
+          "quiz": null
+        },
+        {
+          "title": "Planning & Prompting (Week 2)",
+          "description": "Learning Objectives:\nUnderstand the critical importance of planning before coding.\nUtilize AI assistance to generate project plans (PRD) and to-do lists.\nCraft clear, effective prompts for AI code generation.\nSelect appropriate programming languages/stacks for common project types.\nLesson 2.1: The Power of the Plan\nVideo: Why planning is more important in VC. Demo using Claude/Grok/ChatGPT to brainstorm and structure a simple app idea (e.g., a \"Naija Recipe Finder\"). Creating a PRD (Product Requirements Document) and a todo.md.\nReading: Template for a simple PRD, article on breaking down problems.\nActivity: Planning Exercise - Learners choose a simple app idea and use an AI to generate a basic PRD and to-do list. Submit for peer/facilitator feedback.\nLesson 2.2: Prompt Engineering for Coders\nVideo: Best practices for prompting AI for code: Be specific, provide context (existing code snippets, file structure), define desired output format, iterate on prompts. Show examples of good vs. bad prompts.\nReading: Prompting cheatsheet, examples specific to code generation.\nActivity: Prompt Practice - Given a scenario, write effective prompts.\nLesson 2.3: Choosing Your Language & Stack\nVideo: Why popular languages (JavaScript, Python) work well with AI. Common stacks (Python/Flask/Django backend + JS/HTML frontend, or full-stack JS with Node/React). How to tell the AI your chosen stack.\nReading: Overview of JS/Python strengths, GitHut 2.0 resource.\nQuiz: Planning process, prompting techniques, language choices.\nFacilitator Note: Emphasize iteration in planning and prompting. Review submitted plans for clarity and feasibility.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Build, Test, Commit (Week 3-4)",
+          "description": "Learning Objectives:\nExecute the iterative Vibe Coding workflow: Plan -> Prompt AI -> Build Feature -> Prompt AI for Tests -> Run Tests -> Debug -> Commit Code.\nUtilize version control (Git/GitHub) to save progress and manage changes effectively.\nUnderstand the necessity of testing AI-generated code.\nPerform basic debugging of AI-generated code using AI assistance and test results.\nLesson 3.1: Introducing the Workflow\nVideo: Detailed explanation and visualization of the Build -> Test -> Commit -> Repeat cycle. Emphasize building small features one at a time.\nLesson 3.2: Your First Feature Cycle (Guided)\nVideo/Screencast: Facilitator walks through building the first feature from the planning exercise app (e.g., basic HTML structure for Recipe Finder). Showing prompt, AI response, manual review.\nActivity: Learners follow along, building the first feature of their planned app.\nLesson 3.3: Version Control Essentials: Git & GitHub\nVideo: Deep dive into Git basics (init, add, commit, status, log). Setting up a GitHub repository and pushing code (remote add origin, push). Why this is crucial for VC (rollback!). Using AI to generate .gitignore.\nReading: Git cheatsheet, GitHub setup guide.\nActivity: Git Practice - Initialize Git, make commits for the first feature, create GitHub repo, push code. Submit GitHub link.\nLesson 3.4: Testing Your AI Buddy's Work\nVideo: Why test AI code? Demo asking the AI to write simple tests (e.g., Python unittest or basic JS checks) for the feature built. Running the tests, interpreting pass/fail.\nReading: Introduction to testing concepts (Unit tests).\nActivity: Generate and run tests for the first feature.\nLesson 3.5: Debugging with AI Assistance\nVideo: What to do when tests fail or code doesn't work. Feeding error messages back to the AI, asking for explanations, asking for fixes. Rolling back using Git if necessary (git revert or git reset - explain difference carefully).\nActivity: Introduce a deliberate small bug (or use a common AI error example) and have learners practice debugging with AI help.\nAssignment: Build the next 1-2 features of the planned app, following the full workflow (Build, Test, Commit with Git/GitHub). Submit GitHub link for review.\nQuiz: Git commands, testing purpose, workflow steps.\nFacilitator Note: This is the core practical module. Expect many questions. Encourage use of forums. Review GitHub repos for proper commit history and testing attempts. Emphasize that debugging is a key skill even with VC.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Rules, UI & Security Basics (Week 5)",
+          "description": "Learning Objectives:\nConfigure AI agent rules to enforce coding standards and workflows.\nIntegrate pre-built UI templates/libraries for better front-end design.\nImplement fundamental security and maintainability practices.\nUse AI for code refactoring and security audits.\nLesson 4.1: Guiding Your AI: Agent Rules\nVideo: Explaining \"Rules\" in tools like Windsurf/Cursor. Demo setting global vs. workspace rules (e.g., \"always use f-strings in Python,\" \"keep functions short,\" \"prefer existing patterns\"). Finding rule sets online (Awesome Cursor Rules repo).\nReading: Examples of useful rules.\nActivity: Configure 2-3 basic rules in their chosen tool.\nLesson 4.2: Making it Look Good: UI Templates\nVideo: Why AI struggles with complex UI. Demo finding a free Bootstrap/Tailwind template, downloading it, adding it to the project, and instructing the AI to use its components/styles for the front-end.\nReading: Links to free template resources.\nActivity: Integrate a simple UI template into their ongoing project.\nLesson 4.3: Secure & Maintainable Code Hygiene\nVideo: Critical security basics: NEVER commit API keys/secrets (use .gitignore, environment variables - simple explanation), basic input validation concept, rate limiting idea (awareness). Maintainability: Ask AI to add comments, refactor long functions, check for code duplication. Demo asking AI for a basic security audit/review.\nReading: Security best practices checklist (simplified), article on code maintainability. OWASP Top 10 awareness (very high level).\nActivity: Security/Maintainability Check - Run through a checklist for their project (e.g., check .gitignore, ask AI to refactor one function).\nQuiz: Rules purpose, UI integration steps, key security pitfalls.\nFacilitator Note: Balance detail with accessibility. Focus on awareness of security/maintainability, not deep expertise. Show how AI can help with these practices.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": " Vibe Your Vision (Week 6-7)",
+          "description": "Learning Objectives:\nIndependently apply the Vibe Coding workflow to build a complete small application from planning to basic deployment (optional).\nDemonstrate proficiency in using AI tools, Git, testing, and basic quality practices.\nTroubleshoot and iterate on an AI-assisted project.\nLesson 5.1: Project Kick-off & Scoping\nVideo: Introducing the capstone project. Learners choose from a list of ideas (e.g., Portfolio Website, Simple CRUD App, API Data Visualizer, Basic Game) or propose their own (subject to facilitator approval). Emphasize realistic scoping.\nReading: Project descriptions, grading rubric.\nActivity: Submit project proposal and initial plan (using AI assist) for facilitator feedback.\nLesson 5.2: Project Work & Milestones\n(No new lecture content - focus on application)\nActivity: Weeks dedicated to project work. Learners follow the Build-Test-Commit loop, using forums and potentially live Q&A sessions with the facilitator for support.\nMilestone 1 (End Week 6): Basic structure, core feature(s) working, Git history visible. Submit GitHub link.\nMilestone 2 (End Week 7): Most features implemented, tests included, basic UI/Security considered. Final GitHub link submission + optional short video demo/write-up.\nFacilitator Note: Provide active support during project weeks. Encourage peer feedback. Focus rubric on the process (planning, Git usage, testing attempts, iteration) as much as the final output. Offer optional guidance on simple deployment (Replit, Netlify, GitHub Pages).",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Ethics & Future Vibes (Week 8)",
+          "description": "Learning Objectives:\nDiscuss the evolving landscape of AI in software development and its potential impact.\nReflect on the ethical considerations of using AI for coding (bias, ownership, job displacement).\nIdentify pathways for continued learning in software development and AI.\nLesson 6.1: The Future of Code & Careers\nVideo: Discussing current trends (more capable AI models, agentic systems), how roles might shift (more focus on architecture, testing, prompt engineering, AI oversight). Vibe Coding as a skill amplifier.\nReading: Articles on the future of software engineering with AI.\nLesson 6.2: Ethical Considerations & Responsible Use\nVideo: Discussing potential bias in AI-generated code, data privacy implications, code ownership questions, plagiarism concerns, the importance of transparency.\nReading: Articles on AI ethics in tech.\nDiscussion Forum: \"How should developers use AI coding tools responsibly? What ethical guidelines are needed?\" (Facilitator leads).\nLesson 6.3: Your Next Steps\nVideo: Encouragement, highlighting skills learned. Suggesting next steps: dive deeper into specific languages (JS/Python), frameworks (React, Django), cloud platforms, traditional coding fundamentals, contributing to open source.\nReading: Curated list of resources for further learning (specific courses, docs, communities relevant to African tech scene).\nActivity: Personal Learning Plan - Learners outline 2-3 skills they want to develop next.\nCourse Wrap-up: Final remarks, course survey/feedback request.",
+          "content": [],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743597277476",
+      "createdAt": {
+        "ls": "4/2/2025, 12:34:37 PM",
+        "is": "2025-04-02T12:34:37.476Z",
+        "f": "Wed Apr 02 2025 12:34:37 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 12,
+        "mn": 34,
+        "s": 37,
+        "ms": 476,
+        "t": "12:34:37",
+        "key": 1743597277476
+      },
+      "updatedAt": {
+        "ls": "4/2/2025, 9:36:31 PM",
+        "is": "2025-04-02T21:36:31.842Z",
+        "f": "Wed Apr 02 2025 21:36:31 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 21,
+        "mn": 36,
+        "s": 31,
+        "ms": 842,
+        "t": "21:36:31",
+        "key": 1743629791842
+      },
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67ed75fea384f6e060b643a8",
+      "title": "Ddweff",
+      "category": "Innovation & Entrepreneurship",
+      "shortDescription": "defeferef",
+      "fullDescription": "svege fdbeh4terbvfhgjyrjgf fvwgfvfe",
+      "level": "intermediate",
+      "duration": "12",
+      "prerequisites": [
+        "davcervgerg"
+      ],
+      "learningOutcomes": [
+        "dbtebr fgheth"
+      ],
+      "thumbnail": "",
+      "modules": [
+        {
+          "title": "fvregt ehgehg",
+          "description": "fdbtr htht4vewf4 ghthb",
+          "content": [
+            {
+              "type": "video",
+              "title": "febtrbgtrb",
+              "url": "ferthy h4j sdfrhtyj",
+              "description": "dgdgheb tththb thy5j5"
+            }
+          ],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ecafce6583726081062deb",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743615486530",
+      "createdAt": {
+        "ls": "4/2/2025, 5:38:06 PM",
+        "is": "2025-04-02T17:38:06.530Z",
+        "f": "Wed Apr 02 2025 17:38:06 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 17,
+        "mn": 38,
+        "s": 6,
+        "ms": 530,
+        "t": "17:38:06",
+        "key": 1743615486530
+      },
+      "updatedAt": {
+        "ls": "4/2/2025, 5:38:06 PM",
+        "is": "2025-04-02T17:38:06.530Z",
+        "f": "Wed Apr 02 2025 17:38:06 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 17,
+        "mn": 38,
+        "s": 6,
+        "ms": 530,
+        "t": "17:38:06",
+        "key": 1743615486530
+      },
+      "enrolledStudents": [
+        "67ed702a3a0df529f797cd0a"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67edcf65b91a0f0285015891",
+      "title": "Qwddqw`",
+      "category": "AI Talent & Education",
+      "shortDescription": "cyucebeyu",
+      "fullDescription": "bxwuieibcwiucuiuc cbqiu",
+      "level": "intermediate",
+      "duration": "6",
+      "prerequisites": [
+        "ciwuciwub"
+      ],
+      "learningOutcomes": [
+        "nqxxuiciucwiu"
+      ],
+      "thumbnail": "",
+      "modules": [
+        {
+          "title": "cdhcbcbwhbeqjh",
+          "description": "d jh bdhb jqdheq",
+          "content": [
+            {
+              "type": "video",
+              "title": "sdcvvda",
+              "url": "cwvwwvds",
+              "description": "ewvsdvdd"
+            }
+          ],
+          "quiz": {
+            "title": "dccwvwv",
+            "description": "cdsvwfs",
+            "questions": [
+              {
+                "id": 1743645121808,
+                "type": "multiple-choice",
+                "text": "dwvc dfb",
+                "options": [
+                  {
+                    "text": "wvdsfvfssfv"
+                  },
+                  {
+                    "text": "svbfbfbvfs"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67edacfabeb06cb94f1aae49",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743638373569",
+      "createdAt": {
+        "ls": "4/2/2025, 11:59:33 PM",
+        "is": "2025-04-02T23:59:33.569Z",
+        "f": "Wed Apr 02 2025 23:59:33 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 2,
+        "dy": 3,
+        "h": 23,
+        "mn": 59,
+        "s": 33,
+        "ms": 569,
+        "t": "23:59:33",
+        "key": 1743638373569
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 1:52:18 AM",
+        "is": "2025-04-03T01:52:18.275Z",
+        "f": "Thu Apr 03 2025 01:52:18 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 1,
+        "mn": 52,
+        "s": 18,
+        "ms": 275,
+        "t": "01:52:18",
+        "key": 1743645138276
+      },
+      "enrolledStudents": [
+        "67fb8b0c16f96b7efbe7ccb0"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67edf3d1808f2e881517158d",
+      "title": "Digital Marketing for Tourism in Nigeria",
+      "category": "AI for Key Sectors",
+      "shortDescription": "Description: Learn basics of social media, SEO, and email marketing for tourism promotion, focusing on Plateau State.",
+      "fullDescription": "Module 1: Introduction to Digital Marketing Tools\n\nDescription: Learn basics of social media, SEO, and email marketing for tourism promotion, focusing on Plateau State.\n\nQuiz: 10 questions on identifying the right platform for tourism promotion.\nReading: NIHOTOUR report on digital marketing trends in Nigerian tourism (NIHOTOUR Training Programs).",
+      "level": "beginner",
+      "duration": "2",
+      "prerequisites": [
+        "Digital Marketing",
+        "Content Creation",
+        "Ad Management"
+      ],
+      "learningOutcomes": [
+        "Learn basics of social media, SEO, email marketing for Plateau State promotion.",
+        "NIHOTOUR report on digital marketing trends (NIHOTOUR Training Programs)"
+      ],
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuBO82VQYlqAYMgH8v3PRWzIZZ-DtiXV-HsA&s",
+      "modules": [
+        {
+          "title": "Introduction to Digital Marketing Tools",
+          "description": "How to Use Instagram for Tourism Marketing\" (search on YouTube)",
+          "content": [
+            {
+              "type": "document",
+              "title": "Compulsory reading",
+              "url": "https://docs.google.com/document/d/1vwSLy78i-7Yor_qIM9gIrRt8eSeSv-e2MqZjPr3dZaQ/edit?tab=t.0",
+              "description": "African Intelligence 101"
+            }
+          ],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743647697084",
+      "createdAt": {
+        "ls": "4/3/2025, 2:34:57 AM",
+        "is": "2025-04-03T02:34:57.084Z",
+        "f": "Thu Apr 03 2025 02:34:57 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 2,
+        "mn": 34,
+        "s": 57,
+        "ms": 84,
+        "t": "02:34:57",
+        "key": 1743647697084
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 3:22:42 AM",
+        "is": "2025-04-03T03:22:42.995Z",
+        "f": "Thu Apr 03 2025 03:22:42 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 22,
+        "s": 42,
+        "ms": 995,
+        "t": "03:22:42",
+        "key": 1743650562995
+      },
+      "enrolledStudents": [
+        "67ed702a3a0df529f797cd0a",
+        "67ecafce6583726081062deb"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67edf88b808f2e881517158e",
+      "title": "Tourism Content For Online Platforms",
+      "category": "Digital Infrastructure",
+      "shortDescription": "Develop engaging content like blogs and videos for Plateau’s heritage sites, using tools like Canva and CapCut.",
+      "fullDescription": "Description: Develop engaging content like blogs and videos for Plateau’s heritage sites, using tools like Canva and CapCut.\n\nQuiz: 10 questions on effective content strategies for tourism.\n\nReading: Academic paper on content marketing in hospitality (search ArXiv for relevant papers).\n\nVideo: YouTube tutorial on \"Creating Tourism Videos with CapCut\" (search on YouTube).",
+      "level": "intermediate",
+      "duration": "3",
+      "prerequisites": [
+        "Capcut",
+        "Canva",
+        "Premier Pro"
+      ],
+      "learningOutcomes": [
+        "Content marketing in hospitality",
+        "DBI course material on data analytics "
+      ],
+      "thumbnail": "data:image/jpeg;base64,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",
+      "modules": [
+        {
+          "title": "Analytics and ROI in Tourism Marketing",
+          "description": "YouTube tutorial on \"Google Analytics for Small Businesses\" (search on YouTube).",
+          "content": [
+            {
+              "type": "video",
+              "title": "Economics of greenhouse farming",
+              "url": "https://youtu.be/hV2Rj8PcigU?si=nYUhXABhXban8SdZ",
+              "description": "Learn from Samson Ogbole"
+            }
+          ],
+          "quiz": {
+            "title": "Pop Quiz 1",
+            "description": "Test your might",
+            "questions": [
+              {
+                "id": 1743648787709,
+                "type": "true-false",
+                "text": "Plateau is known as the home of peace and tranquility ",
+                "options": [],
+                "answer": "false"
+              },
+              {
+                "id": 1743648818614,
+                "type": "true-false",
+                "text": "Riyom Rock is found in Abuja ",
+                "options": [],
+                "answer": "false"
+              },
+              {
+                "id": 1743648833514,
+                "type": "multiple-choice",
+                "text": "Which of the following is  mined in Jos ",
+                "options": [
+                  {
+                    "text": "Uranium "
+                  },
+                  {
+                    "text": "Plutonium"
+                  },
+                  {
+                    "text": "Tin"
+                  },
+                  {
+                    "text": "Blue Diamond"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743648907043",
+      "createdAt": {
+        "ls": "4/3/2025, 2:55:07 AM",
+        "is": "2025-04-03T02:55:07.043Z",
+        "f": "Thu Apr 03 2025 02:55:07 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 2,
+        "mn": 55,
+        "s": 7,
+        "ms": 43,
+        "t": "02:55:07",
+        "key": 1743648907043
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 2:55:07 AM",
+        "is": "2025-04-03T02:55:07.043Z",
+        "f": "Thu Apr 03 2025 02:55:07 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 2,
+        "mn": 55,
+        "s": 7,
+        "ms": 43,
+        "t": "02:55:07",
+        "key": 1743648907043
+      },
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67edfa68808f2e881517158f",
+      "title": "Understanding Sustainable Tourism Principles",
+      "category": "Inclusivity & Digital Divide",
+      "shortDescription": "Explore global and local sustainability standards, focusing on eco-tourism in Plateau State.",
+      "fullDescription": "Quiz: 10 questions on sustainable tourism definitions and practices.\nReading: NIHOTOUR guidelines on sustainable tourism in Nigeria (NIHOTOUR Training Programs).",
+      "level": "beginner",
+      "duration": "1",
+      "prerequisites": [
+        "WAEC Certificate ",
+        "JAMB",
+        "NECO"
+      ],
+      "learningOutcomes": [
+        "Learn to preserve and promote Plateau’s cultural assets, engaging local communities in tourism.",
+        "Implement green practices in hotels and tours, reducing environmental impact in Plateau State."
+      ],
+      "thumbnail": "data:image/jpeg;base64,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",
+      "modules": [
+        {
+          "title": "Introduction to Hospitality Tech",
+          "description": "Explore booking systems, AI chatbots, and mobile apps for enhancing guest experiences in Plateau State.",
+          "content": [
+            {
+              "type": "document",
+              "title": "Hospitality tech roadmap",
+              "url": "https://docs.google.com/document/d/1vwSLy78i-7Yor_qIM9gIrRt8eSeSv-e2MqZjPr3dZaQ/edit?tab=t.0",
+              "description": "Quiz: 10 questions on identifying appropriate tech solutions.\nReading: DBI course on cloud infrastructure for businesses (DBI Course Offerings)."
+            }
+          ],
+          "quiz": {
+            "title": "Pop Quiz 2",
+            "description": "Answer all questions correctly to obtain certificate",
+            "questions": [
+              {
+                "id": 1743649291990,
+                "type": "multiple-choice",
+                "text": "What is the full meaning of DBI",
+                "options": [
+                  {
+                    "text": "Dog Barks Indigo"
+                  },
+                  {
+                    "text": "Daddy Backs Ice"
+                  },
+                  {
+                    "text": "Digital Bridge Institute"
+                  },
+                  {
+                    "text": "Digital Boys Industry"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743649384510",
+      "createdAt": {
+        "ls": "4/3/2025, 3:03:04 AM",
+        "is": "2025-04-03T03:03:04.510Z",
+        "f": "Thu Apr 03 2025 03:03:04 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 3,
+        "s": 4,
+        "ms": 510,
+        "t": "03:03:04",
+        "key": 1743649384510
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 3:19:18 AM",
+        "is": "2025-04-03T03:19:18.795Z",
+        "f": "Thu Apr 03 2025 03:19:18 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 19,
+        "s": 18,
+        "ms": 795,
+        "t": "03:19:18",
+        "key": 1743650358795
+      },
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67edfc90808f2e8815171590",
+      "title": "Implementing Digital Customer Service Solutions",
+      "category": "AI for Key Sectors",
+      "shortDescription": "Use CRM systems and chatbots to improve customer service, with case studies from Nigerian hotels.",
+      "fullDescription": "Quiz: 10 questions on CRM implementation challenges.\nReading: Academic paper on digital customer service in hospitality (search ArXiv for relevant papers).",
+      "level": "advanced",
+      "duration": "3",
+      "prerequisites": [
+        "Web developer",
+        "Virtual reality ",
+        "Data analysis"
+      ],
+      "learningOutcomes": [
+        "Use data analytics for pricing, inventory, and guest satisfaction, focusing on Plateau State’s hospitality data.",
+        "Mastery of DBI course material on data analytics for managers",
+        "AI in Hospitality Industry"
+      ],
+      "thumbnail": "data:image/jpeg;base64,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",
+      "modules": [
+        {
+          "title": "Data-Driven Decision Making in Hospitality",
+          "description": "Video: YouTube tutorial on \"Excel for Hospitality Data Analysis\" (search on YouTube).",
+          "content": [
+            {
+              "type": "video",
+              "title": "Top 40 Tourist Destinations in Nigeria",
+              "url": "https://www.youtube.com/watch?v=hKLo5CDYz54",
+              "description": "Integrates ICT into hospitality, such as AI chatbots and CRM systems, directly aligning with DBI’s cloud infrastructure and cybersecurity training."
+            }
+          ],
+          "quiz": {
+            "title": "",
+            "description": "",
+            "questions": [
+              {
+                "id": 1743649771310,
+                "type": "multiple-choice",
+                "text": "Who is the current Minister of Tourism In Nigeria",
+                "options": [
+                  {
+                    "text": "Bola Tinubu"
+                  },
+                  {
+                    "text": "Natasha Akpotie "
+                  },
+                  {
+                    "text": "Ben Murray Bruce"
+                  },
+                  {
+                    "text": "Lola-Ade John"
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1743649861077,
+                "type": "multiple-choice",
+                "text": "Who Is the current Director General of DBI ",
+                "options": [
+                  {
+                    "text": "David Dasser"
+                  },
+                  {
+                    "text": "David Enyi"
+                  },
+                  {
+                    "text": "David Cameron"
+                  },
+                  {
+                    "text": "Ehizele Ohiku"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        },
+        {
+          "title": "Sustainable Tourism Management",
+          "description": "Implement green practices in hotels, tours, reduce environmental impact.",
+          "content": [
+            {
+              "type": "document",
+              "title": "Course Roadmap 2025",
+              "url": "https://docs.google.com/document/d/1vwSLy78i-7Yor_qIM9gIrRt8eSeSv-e2MqZjPr3dZaQ/edit?tab=t.0",
+              "description": "Aligns with DBI’s digital skills emphasis, using tools like social media and analytics to promote Plateau State, fitting their e-content development and data analytics courses."
+            }
+          ],
+          "quiz": {
+            "title": "Pop Quiz 2",
+            "description": "Plateau Geography ",
+            "questions": [
+              {
+                "id": 1743650221636,
+                "type": "multiple-choice",
+                "text": "The capital of Plateau State is ?",
+                "options": [
+                  {
+                    "text": "Bokkos"
+                  },
+                  {
+                    "text": "Barkin Ladi"
+                  },
+                  {
+                    "text": "Kankwe"
+                  },
+                  {
+                    "text": "Jos"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743649936370",
+      "createdAt": {
+        "ls": "4/3/2025, 3:12:16 AM",
+        "is": "2025-04-03T03:12:16.370Z",
+        "f": "Thu Apr 03 2025 03:12:16 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 12,
+        "s": 16,
+        "ms": 370,
+        "t": "03:12:16",
+        "key": 1743649936370
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 3:17:56 AM",
+        "is": "2025-04-03T03:17:56.695Z",
+        "f": "Thu Apr 03 2025 03:17:56 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 17,
+        "s": 56,
+        "ms": 695,
+        "t": "03:17:56",
+        "key": 1743650276695
+      },
+      "enrolledStudents": [
+        "67ed702a3a0df529f797cd0a"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67ee04a026597afaf8eaea0d",
+      "title": "Vr Immersive Heritage Tours",
+      "category": "Innovation & Entrepreneurship",
+      "shortDescription": "VR Hospitality Staff Training Simulations",
+      "fullDescription": "Create virtual tours of Plateau’s cultural sites, solving accessibility for remote areas. Eye-catching: Gamified scavenger hunts to find hidden artifacts.",
+      "level": "advanced",
+      "duration": "4",
+      "prerequisites": [
+        "Occuls Headset",
+        "Meta account",
+        "Unity",
+        "Unreal Engine"
+      ],
+      "learningOutcomes": [
+        "Develop 360-degree ads for Plateau",
+        "Boosting tourist engagement.",
+        "Interactive hotspots for user exploration."
+      ],
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyeC9pCnCKKjIgBGhYUmtiNmc2Q_Uv3fk1Tw&s",
+      "modules": [
+        {
+          "title": "VR Marketing Campaigns for Tourist Attraction",
+          "description": "Addresses the problem of accessibility for remote or sensitive cultural sites in Plateau State, such as Jos Museum or Riyom Rock, by creating virtual tours.",
+          "content": [
+            {
+              "type": "video",
+              "title": "",
+              "url": "https://www.youtube.com/watch?v=hV2Rj8PcigU&t=307s",
+              "description": "Solves low tourist engagement by developing immersive 360-degree ads with interactive hotspots, allowing users to explore Plateau State’s attractions virtually, boosting interest and bookings."
+            }
+          ],
+          "quiz": {
+            "title": "Pop Quiz",
+            "description": "Answer True or False",
+            "questions": [
+              {
+                "id": 1743651944591,
+                "type": "true-false",
+                "text": "Current Governor Of Plateau State is Barr Caleb Muftwang",
+                "options": [true,false],
+                "answer": "true"
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743652000137",
+      "createdAt": {
+        "ls": "4/3/2025, 3:46:40 AM",
+        "is": "2025-04-03T03:46:40.136Z",
+        "f": "Thu Apr 03 2025 03:46:40 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 46,
+        "s": 40,
+        "ms": 137,
+        "t": "03:46:40",
+        "key": 1743652000137
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 3:46:40 AM",
+        "is": "2025-04-03T03:46:40.136Z",
+        "f": "Thu Apr 03 2025 03:46:40 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 46,
+        "s": 40,
+        "ms": 137,
+        "t": "03:46:40",
+        "key": 1743652000137
+      },
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67ee05e726597afaf8eaea0e",
+      "title": "Hospitality Staff Training Simulations",
+      "category": "AI Talent & Education",
+      "shortDescription": "Realistic avatars with branching outcomes.",
+      "fullDescription": "Practice hospitality skills in VR environments.<br>- Handle customer interactions effectively.<br>- Improve operational efficiency through simulations.",
+      "level": "intermediate",
+      "duration": "2",
+      "prerequisites": [
+        "Large Language Models",
+        "Generative A.I",
+        "Tourism Degree"
+      ],
+      "learningOutcomes": [
+        "TeachVR Platform for VR Lesson Creation",
+        "IdeaUsher Guide on Creating VR Apps for Tourism"
+      ],
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFfzixT02u-Ocd9bXgNRCEBABzWBBTB5W3Q&s",
+      "modules": [
+        {
+          "title": "Plateau State VR resources.",
+          "description": "with gamification and interactivity to align with modern educational trends and DBI’s digital skills emphasis",
+          "content": [],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1743652327050",
+      "createdAt": {
+        "ls": "4/3/2025, 3:52:07 AM",
+        "is": "2025-04-03T03:52:07.050Z",
+        "f": "Thu Apr 03 2025 03:52:07 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 52,
+        "s": 7,
+        "ms": 50,
+        "t": "03:52:07",
+        "key": 1743652327050
+      },
+      "updatedAt": {
+        "ls": "4/3/2025, 3:52:07 AM",
+        "is": "2025-04-03T03:52:07.050Z",
+        "f": "Thu Apr 03 2025 03:52:07 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 3,
+        "dy": 4,
+        "h": 3,
+        "mn": 52,
+        "s": 7,
+        "ms": 50,
+        "t": "03:52:07",
+        "key": 1743652327050
+      },
+      "enrolledStudents": [
+        "67ed702a3a0df529f797cd0a"
+      ],
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67f447cfcec2a55096062b9b",
+      "title": "Cybersecurity",
+      "category": "Digital Infrastructure",
+      "shortDescription": "An essential introduction to the world of cybersecurity, covering core concepts, common threats, defensive measures, operational security, and ethical considerations.",
+      "fullDescription": "This course provides a comprehensive overview of the fundamental principles and practices of cybersecurity. Students will learn about the core security concepts (Confidentiality, Integrity, Availability), identify common threats like malware and phishing, understand defensive technologies such as firewalls and encryption, and explore operational aspects like incident response and security policies. The course also delves into the critical ethical and legal considerations within the field. Ideal for individuals starting their cybersecurity journey, IT professionals seeking security knowledge, or anyone wanting to understand how to protect digital assets.",
+      "level": "intermediate",
+      "duration": "12",
+      "prerequisites": [
+        "Digital Skills "
+      ],
+      "learningOutcomes": [
+        "Define cybersecurity and its importance in the modern digital world",
+        "Explain the core goals of cybersecurity: Confidentiality, Integrity, and Availability (CIA Triad).",
+        "Identify key terminology (threat, vulnerability, risk, asset, countermeasure).",
+        "Recognize major historical cybersecurity events and their impact.",
+        "Understand the different types of threat actors and their motivations."
+      ],
+      "thumbnail": "data:image/jpeg;base64,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",
+      "modules": [
+        {
+          "title": "Introduction to Cybersecurity",
+          "description": "Learning Outcomes:\nDefine cybersecurity and its importance in the modern digital world.\nExplain the core goals of cybersecurity: Confidentiality, Integrity, and Availability (CIA Triad).\nIdentify key terminology (threat, vulnerability, risk, asset, countermeasure).\nRecognize major historical cybersecurity events and their impact.\nUnderstand the different types of threat actors and their motivations.\n\n\nTopics Covered:\nWhat is Cybersecurity? Why does it matter?\nThe CIA Triad: Confidentiality, Integrity, Availability\nKey Concepts: Assets, Threats, Vulnerabilities, Risk, Exploits, Controls\nBrief History of Cybersecurity Incidents\n\nThreat Actors: Hackers (White/Grey/Black Hat), Script Kiddies, Hacktivists, Insiders, Organized Crime, Nation-States\nAttack Vectors",
+          "content": [
+            {
+              "type": "video",
+              "title": "Introduction to Cybersecurity",
+              "url": "https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwi3n5Tm8caMAxVkkVAGHfXkEu0YABABGgJkZw&co=1&gclid=Cj0KCQjw782_BhDjARIsABTv_JCajx4MvyEj0GhDjHcU7Fh70BtshRvs45WrOKbm5qCop8QG5IPPJMwaAthXEALw_wcB&ohost=www.google.com&cid=CAESVeD2ruGEvXkm4rSLeO1oBmwM7sbEE2xa3KCNAxf2ybsAetFZgsEzVERA9-AImMQT3mrRaJcQnMFapqg4U5iFhCP5XxExaAvwMdIfWI-XcuJJx9b6TVE&sig=AOD64_2kaXCi6W168cXwytG_oCPEzzE4Uw&q&adurl&ved=2ahUKEwiLvpDm8caMAxUNWEEAHY5yJfYQ0Qx6BAgVEAE",
+              "description": "What is Cybersecurity?\" Explainer videos (Search YouTube/Coursera/Cybrary)\n"
+            }
+          ],
+          "quiz": {
+            "title": "Cyber Security 101",
+            "description": "Test your knowledge ",
+            "questions": [
+              {
+                "id": 1744062245002,
+                "type": "multiple-choice",
+                "text": "Which element of the CIA Triad ensures that data is accurate and trustworthy?",
+                "options": [
+                  {
+                    "text": "Intellectual Property "
+                  },
+                  {
+                    "text": "Integrity"
+                  },
+                  {
+                    "text": "Information act"
+                  },
+                  {
+                    "text": "Infographics"
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744062289221,
+                "type": "multiple-choice",
+                "text": "A flaw or weakness in a system is known as a",
+                "options": [
+                  {
+                    "text": " Vulnerability"
+                  },
+                  {
+                    "text": "SWOT analysis"
+                  },
+                  {
+                    "text": "Loose end"
+                  },
+                  {
+                    "text": "Bug"
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744062379939,
+                "type": "true-false",
+                "text": "Cybersecurity is only important for large corporations.",
+                "options": [],
+                "answer": "false"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Common Threats and Vulnerabilities",
+          "description": "Learning Outcomes:\nIdentify and describe common types of malware (viruses, worms, ransomware, spyware, trojans).\nExplain various social engineering techniques (phishing, spear phishing, vishing, baiting).\nDescribe common network-based attacks (DoS/DDoS, Man-in-the-Middle).\nRecognize basic web application vulnerabilities (e.g., SQL Injection, Cross-Site Scripting - overview).\nUnderstand physical security threats.",
+          "content": [
+            {
+              "type": "document",
+              "title": "Common Threats and Vulnerabilities",
+              "url": "https://www.researchgate.net/publication/338419380_Cyber_Security_Threats_and_Vulnerabilities_A_Systematic_Mapping_Study",
+              "description": "Topics Covered:\nPerimeter Security: Firewalls (Stateful, Stateless, NGFW, WAF)\nNetwork Monitoring: IDS vs. IPS\nEndpoint Security: Antivirus/Anti-malware, Endpoint Detection and Response (EDR - basic concept)\nNetwork Design: Segmentation, DMZs, VLANs, VPNs\nCryptography Basics: Symmetric vs. Asymmetric Encryption, Hashing, Digital Signatures, SSL/TLS\nAccess Control: Principle of Least Privilege, Authentication Methods (Passwords, MFA), Authorization\nPatch Management and Vulnerability Scanning"
+            },
+            {
+              "type": "video",
+              "title": "5 examples of cybersecurity vulnerabilities",
+              "url": "https://www.google.com/search?sca_esv=d64e95c3de455f90&rlz=1C5CHFA_enAE1046AE1046&sxsrf=AHTn8zoaKBcFNNhPQ0KGioPL1Fqeljm6Ig:1744062628418&q=Common+Threats+and+Vulnerabilities+cyber+security+pdf&udm=39&fbs=ABzOT_CWdhQLP1FcmU5B0fn3xuWpA-dk4wpBWOGsoR7DG5zJBr9f-W3h_R3HVJ-z4uJntm7S42ilFcJ4Lp_1EvpfsHF6mD9LSSQfgPWPNd38tgNjqozdpFnwjBaMkHV1m4deDfqf4ALfaoWEe_WiJ_wd4uGE2KinHOjdc2jBAIpGwTqQdY9ar6F80xk2zNNUM2PhdhYgHnRimlBQJSZjILKXdTVTUupzLA&sa=X&ved=2ahUKEwiiiLvL88aMAxViQUEAHYmAJ4wQs6gLegQIHRAB&biw=1440&bih=812&dpr=2#fpstate=ive&ip=1&vld=cid:d0d44944,vid:crRQ0ojbYz8,st:0",
+              "description": "\"How Firewalls Work\" (YouTube tech channels)\n\"Introduction to Cryptography\" (Cybrary, Coursera)\n\"Multi-Factor Authentication Explained\"\n  VPN Explainers"
+            }
+          ],
+          "quiz": {
+            "title": "",
+            "description": "",
+            "questions": [
+              {
+                "id": 1744062786830,
+                "type": "multiple-choice",
+                "text": "What is the primary function of a firewall?",
+                "options": [
+                  {
+                    "text": "To control network traffic based on rules"
+                  },
+                  {
+                    "text": "To block network traffic based on API calls"
+                  },
+                  {
+                    "text": "Function calling"
+                  },
+                  {
+                    "text": "Vector Database"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        },
+        {
+          "title": " Defensive Technologies and Practices",
+          "description": "Explain the function of firewalls and different types (Network, Host-based, WAF).\nDescribe the purpose of Intrusion Detection Systems (IDS) and Intrusion Prevention Systems (IPS).\nUnderstand the role of antivirus/anti-malware software.\nExplain the concept and importance of network segmentation (e.g., DMZ, VLANs).\nDescribe the basic principles of cryptography (encryption, hashing, digital signatures).\nRecognize the importance of patching and vulnerability management.",
+          "content": [
+            {
+              "type": "document",
+              "title": " Defensive Technologies and Practices",
+              "url": "https://www.simplilearn.com/tutorials/cyber-security-tutorial/what-is-firewall",
+              "description": "Perimeter Security: Firewalls (Stateful, Stateless, NGFW, WAF)\nNetwork Monitoring: IDS vs. IPS\nEndpoint Security: Antivirus/Anti-malware, Endpoint Detection and Response (EDR - basic concept)\nNetwork Design: Segmentation, DMZs, VLANs, VPNs\nCryptography Basics: Symmetric vs. Asymmetric Encryption, Hashing, Digital Signatures, SSL/TLS\nAccess Control: Principle of Least Privilege, Authentication Methods (Passwords, MFA), Authorization\nPatch Management and Vulnerability Scanning"
+            }
+          ],
+          "quiz": {
+            "title": "Cybersecurity 102",
+            "description": "Test your knowledge",
+            "questions": [
+              {
+                "id": 1744063003358,
+                "type": "multiple-choice",
+                "text": "Which system actively tries to block malicious traffic it detects",
+                "options": [
+                  {
+                    "text": "IDS"
+                  },
+                  {
+                    "text": "IPS"
+                  }
+                ],
+                "answer": ""
+              }
+            ]
+          }
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 0,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1744062414944",
+      "createdAt": {
+        "ls": "4/7/2025, 9:46:54 PM",
+        "is": "2025-04-07T21:46:54.944Z",
+        "f": "Mon Apr 07 2025 21:46:54 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 7,
+        "dy": 1,
+        "h": 21,
+        "mn": 46,
+        "s": 54,
+        "ms": 944,
+        "t": "21:46:54",
+        "key": 1744062414944
+      },
+      "updatedAt": {
+        "ls": "4/7/2025, 9:57:08 PM",
+        "is": "2025-04-07T21:57:08.184Z",
+        "f": "Mon Apr 07 2025 21:57:08 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 7,
+        "dy": 1,
+        "h": 21,
+        "mn": 57,
+        "s": 8,
+        "ms": 184,
+        "t": "21:57:08",
+        "key": 1744063028184
+      },
+      "facilitatorName": "Unknown"
+    },
+    {
+      "_id": "67fdb870069623d29e147c3d",
+      "title": "Ecogrow Nigeria: Mastering Sustainable Greenhouse Farming With Ai Insights",
+      "category": "Innovation & Entrepreneurship",
+      "shortDescription": "Learn Modern, Eco-Friendly Farming Techniques Tailored for Nigeria, Powered by Ecofarms Expertise and AI-Driven Learning.",
+      "fullDescription": "Expert Facilitation by Ecofarms: Insights, case studies, best practices, and Q&A sessions led by experienced professionals from Ecofarms.\n\nAI-Powered Learning Path (Conceptual):\nPersonalized Recommendations: AI suggests supplementary materials or focus areas based on quiz performance.\n\nData Insights: Demonstrations of how AI tools can analyze climate, soil, and market data for better decision-making (using simulated or real anonymized data examples from Ecofarms).\n\nAI Chatbot Support: A trained chatbot to answer common questions instantly (backed by Ecofarms' knowledge base).\n\nAccessibility: Clear language, video transcripts, downloadable resources for offline access, mobile-friendly design.\n\nStructured Learning: Modular approach with clear objectives, engaging content (videos, readings, simulations), practical assignments, and assessments.\n\no equip learners with the knowledge, practical skills, and business acumen to establish and manage a sustainable and profitable greenhouse farm in the Nigerian context, leveraging modern techniques and AI-driven insights facilitated by Ecofarms.\n\nTo equip learners with the knowledge, practical skills, and business acumen to establish and manage a sustainable and profitable greenhouse farm in the Nigerian context, leveraging modern techniques and AI-driven insights facilitated by Ecofarms.\n\nNigerian Context: Content specifically tailored to Nigerian climate zones, soil types, market conditions, regulations, and available resources.\n\nSustainability Focus: Emphasis on environmental stewardship, resource efficiency (water, energy, nutrients), and economic viability.",
+      "level": "intermediate",
+      "duration": "10",
+      "prerequisites": [
+        "Computer Literacy ",
+        "Interest in agriculture and sustainability.",
+        "Basic understanding of farming concepts."
+      ],
+      "learningOutcomes": [
+        "To equip learners with the knowledge, practical skills, and business acumen to establish and manage a sustainable and profitable greenhouse farm in the Nigerian context, leveraging modern techniques and AI-driven insights facilitated by Ecofarms.",
+        "Agribusiness practitioners ",
+        "A.I enhanced farming ",
+        "Implementation of sustainable farming practices"
+      ],
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUm4l2mRRnLVHlz0-ujEftBY2MQXtUMnYffQ&s",
+      "modules": [
+        {
+          "title": " Foundations of Greenhouse Farming (Week 1)",
+          "description": "Lesson 1.1: Understanding Controlled Environment Agriculture (CEA)\nLesson 1.2: Benefits of Greenhouse Farming vs. Open Field (Yield, Quality, Resource Efficiency)\nLesson 1.3: Key Environmental Factors to Control: Light, Temperature, Humidity, CO2\nLesson 1.4: The Nigerian Context: Climate Zones & Specific Considerations\n\nEcofarms Insight: Common misconceptions about greenhouse farming in Nigeria.\nActivity: Analyze climate data for your region in Nigeria.\nQuiz 1: Foundational Concepts.",
+          "content": [
+            {
+              "type": "document",
+              "title": " Understanding Controlled Environment Agriculture (CEA)",
+              "url": "https://ecofarmsandagroservices.com/why-soil-test-is-important-to-maximize-resources-and-yields/",
+              "description": " Understanding Controlled Environment Agriculture (CEA)"
+            }
+          ],
+          "quiz": {
+            "title": "Foundational Concepts.",
+            "description": "Answer all questions correctly to earn course certificate.",
+            "questions": [
+              {
+                "id": 1744680905602,
+                "type": "multiple-choice",
+                "text": "What is a primary advantage of greenhouse farming compared to open-field agriculture in Nigeria?",
+                "options": [
+                  {
+                    "id": 1,
+                    "text": " Lower initial investment cost.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 2,
+                    "text": " Requires significantly less farming knowledge.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 3,
+                    "text": " Allows for better control over pests, diseases, and climate factors.",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": 4,
+                    "text": "Uses more land area per unit of production.",
+                    "isCorrect": false
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744681011297,
+                "type": "true-false",
+                "text": "Controlled Environment Agriculture (CEA) refers only to growing crops without soil (hydroponics).",
+                "options": [],
+                "answer": "false"
+              },
+              {
+                "id": 1744681041150,
+                "type": "short-answer",
+                "text": "List two essential environmental factors that greenhouse farming allows growers to manage more effectively than open-field farming.",
+                "options": [],
+                "answer": "Any two of the following: Temperature, Humidity, Light (intensity/duration), CO2 levels, Protection from wind/heavy rain."
+              }
+            ]
+          }
+        },
+        {
+          "title": " Designing & Constructing Your Greenhouse (Week 2)",
+          "description": "Lesson 2.1: Site Selection Criteria (Sunlight, Water Access, Topography, Security)\nLesson 2.2: Types of Greenhouse Structures (Tunnel, A-Frame, Sawtooth) - Pros/Cons for Nigeria (Cost vs. Efficiency)\nLesson 2.3: Greenhouse Materials: Glazing (Polyethylene, Polycarbonate, Glass), Framing (Wood, Steel, PVC) - Local Sourcing Options.\nLesson 2.4: Essential Components: Ventilation, Shading, Doors, Foundation.\nLesson 2.5: Costing Your Greenhouse Construction in Nigeria.\n\nEcofarms Insight: Practical tips for building durable and cost-effective structures in Nigeria.\nAssignment 1: Develop a basic greenhouse design sketch and material list for a specific Nigerian climate zone.",
+          "content": [
+            {
+              "type": "video",
+              "title": " Practical tips for building durable and cost-effective structures in Nigeria.",
+              "url": "https://youtu.be/T4892Q5VxIE?si=ivYF1NBPEBdAOG75",
+              "description": "We are excited about this series everything you need to know to setup and thrive in greenhouse business."
+            }
+          ],
+          "quiz": {
+            "title": "Site Selection Criteria (Sunlight, Water Access, Topography, Security)",
+            "description": "Pass all questions to earn certification from ecofarms.",
+            "questions": [
+              {
+                "id": 1744681592384,
+                "type": "multiple-choice",
+                "text": "When selecting a site for a greenhouse in Nigeria, which factor is MOST critical for plant growth?",
+                "options": [
+                  {
+                    "id": 1,
+                    "text": " Proximity to the owner's residence.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 2,
+                    "text": " Availability of maximum daily sunlight exposure.",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": 3,
+                    "text": "Easy access for large trucks.resence of many large shade trees nearby.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 4,
+                    "text": "Easy access for large trucks.",
+                    "isCorrect": false
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744681690345,
+                "type": "multiple-choice",
+                "text": "For many small-scale farmers in Nigeria seeking a balance between cost and effectiveness, a common greenhouse structural choice might be",
+                "options": [
+                  {
+                    "id": 1,
+                    "text": " A high-tech glasshouse with full automation.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 2,
+                    "text": " A simple wooden or metal frame tunnel house covered with UV-treated polyethylene film.",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": 3,
+                    "text": "An open field with shade netting only.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 4,
+                    "text": " An underground bunker.",
+                    "isCorrect": false
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744681787132,
+                "type": "multiple-choice",
+                "text": "Which of these is an essential components needed for a basic functional greenhouse structure.",
+                "options": [
+                  {
+                    "id": 1,
+                    "text": "UV treated plastic",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": 2,
+                    "text": "soil",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 3,
+                    "text": "bags ",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 4,
+                    "text": "ridges",
+                    "isCorrect": false
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744681792937,
+                "type": "true-false",
+                "text": "Irish potatoes are otherwise known as capsicums",
+                "options": [],
+                "answer": "false"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Module 3: Sustainable Soil & Substrate Management",
+          "description": "Lesson 3.1: Soil vs. Soilless Culture (Hydroponics, Aquaponics, Coco Coir, etc.) - Suitability for Nigeria.\nLesson 3.2: Understanding Soil Health in a Greenhouse Context.\nLesson 3.3: Sustainable Soil Management: Composting, Organic Matter, Cover Cropping (if applicable).\nLesson 3.4: Choosing and Managing Soilless Substrates – Sterilization and Reuse.\nLesson 3.5: Nutrient Management Basics: Macro & Micronutrients.\nEcofarms Insight: Locally available substrate options and soil amendment techniques.\n\nActivity: Compare the costs and benefits of soil vs. soilless systems for a chosen crop.\nQuiz 2: Soil and Substrate Management.",
+          "content": [
+            {
+              "type": "document",
+              "title": "Soil vs. Soilless Culture ",
+              "url": "https://ecofarmsandagroservices.com/tips-every-farmer-should-know-on-achieving-a-disease-suppressive-soil/",
+              "description": "Understanding Soil Health in a Greenhouse Context."
+            }
+          ],
+          "quiz": {
+            "title": "Soil vs. Soilless Culture",
+            "description": "Which of the following is an example of a soilless growing medium commonly used in greenhouses",
+            "questions": [
+              {
+                "id": 1744682127917,
+                "type": "multiple-choice",
+                "text": "Which of the following is an example of a soilless growing medium commonly used in greenhouses ?",
+                "options": [
+                  {
+                    "id": 1,
+                    "text": "Topsoil from a nearby field.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 2,
+                    "text": " Coco coir (coconut husk fiber).",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": 3,
+                    "text": "Aged cow manure.",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": 4,
+                    "text": "Sandy loam.",
+                    "isCorrect": false
+                  }
+                ],
+                "answer": ""
+              },
+              {
+                "id": 1744682238216,
+                "type": "true-false",
+                "text": "Greenhouse Farming is the use of fish water to irrigate plants ?",
+                "options": [],
+                "answer": "false"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Crop Selection & Management (Week 4)",
+          "description": "Lesson 4.1: Selecting High-Value Crops Suitable for Nigerian Greenhouses (Tomatoes, Peppers, Cucumbers, Leafy Greens, Herbs).\nLesson 4.2: Understanding Market Demand in Nigeria.\nLesson 4.3: Seed Selection, Propagation & Transplanting Techniques.\nLesson 4.4: Crop Husbandry: Pruning, Trellising, Pollination.\nLesson 4.5: Crop Scheduling and Rotation Planning.\n\nEcofarms Insight: Profitable niche crops for the Nigerian market.\nActivity: Research market prices for 3 potential greenhouse crops in your local area.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": " Climate Control & Automation Technologies (Week 5)",
+          "description": "Lesson 5.1: Managing Temperature: Ventilation (Natural/Forced), Shading, Cooling Systems (Evaporative).\nLesson 5.2: Managing Humidity: Techniques and Importance.\nLesson 5.3: Light Management: Supplemental Lighting (if needed), Photoperiod Control.\nLesson 5.4: Introduction to Sensors and Monitoring Tools (Manual vs. Automated).\nLesson 5.5: Basic Automation Options for Small-Scale Greenhouses in Nigeria.\n\nAI Spotlight: How sensor data + AI can optimize climate control & predict potential issues (Demo/Simulation).\nEcofarms Insight: Cost-effective climate control strategies for different budgets.\nQuiz 3: Climate Control Principles.\n",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Sustainable Water Management & Irrigation (Week 6)",
+          "description": "Lesson 6.1: Water Sources and Quality Assessment in Nigeria.\nLesson 6.2: Water Conservation Strategies: Rainwater Harvesting, Water Recycling.\nLesson 6.3: Efficient Irrigation Systems: Drip Irrigation, Fertigation.\nLesson 6.4: Calculating Crop Water Requirements.\nLesson 6.5: Monitoring Water Usage and System Maintenance.\n\nEcofarms Insight: Setting up and maintaining drip irrigation with locally available parts.\nAssignment 2: Calculate the estimated daily water requirement for a small greenhouse plot.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Integrated Pest & Disease Management (IPM) (Week 7)",
+          "description": "Lesson 7.1: Principles of Sustainable IPM.\nLesson 7.2: Common Pests and Diseases in Nigerian Greenhouses.\nLesson 7.3: Prevention & Monitoring Strategies (Scouting, Sanitation, Resistant Varieties).\nLesson 7.4: Biological Control Methods.\nLesson 7.5: Cultural & Physical Controls.\nLesson 7.6: Judicious Use of Organic/Low-Impact Pesticides (Last Resort).\n\nAI Spotlight: Potential for AI in early pest/disease detection via image analysis (Conceptual overview).\nEcofarms Insight: Practical IPM schedules and interventions used at Ecofarms.\nQuiz 4: IPM Strategies.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Harvest, Post-Harvest & Market Linkages (Week 8)",
+          "description": "Lesson 8.1: Determining Harvest Readiness & Proper Harvesting Techniques.\nLesson 8.2: Post-Harvest Handling: Cleaning, Sorting, Grading.\nLesson 8.3: Packaging and Storage for Extended Shelf Life.\nLesson 8.4: Understanding Nigerian Food Safety Standards & Quality Requirements.\nLesson 8.5: Identifying Market Channels (Direct Sales, Retail, Wholesale, Hospitality).\n\nEcofarms Insight: Building relationships with buyers and navigating market logistics in Nigeria.\nActivity: Develop a simple post-harvest handling plan for a chosen crop.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "Economics, Business Planning & Record Keeping (Week 9)",
+          "description": "Lesson 9.1: Estimating Start-up and Operational Costs.\nLesson 9.2: Revenue Projections and Profitability Analysis.\nLesson 9.3: Developing a Simple Greenhouse Business Plan.\nLesson 9.4: Importance of Record Keeping (Yields, Inputs, Sales, Expenses).\nLesson 9.5: Accessing Finance: Loans, Grants, and Investment Opportunities in Nigeria.\nAI Spotlight: Using simple tools (or AI-powered projections) for financial forecasting.\nEcofarms Insight: Key financial metrics Ecofarms tracks for success.\nAssignment 3: Create a basic budget outline for a small greenhouse operation.",
+          "content": [],
+          "quiz": null
+        },
+        {
+          "title": "The Future: Scaling, AI & Continuous Improvement (Week 10)",
+          "description": "Lesson 10.1: Scaling Your Greenhouse Operation: Considerations and Steps.\nLesson 10.2: Deeper Dive into AI Applications: Predictive Analytics, Resource Optimization, Market Trend Analysis.\nLesson 10.3: Staying Updated: Continuous Learning and Innovation in CEA.\nLesson 10.4: Building a Network & Community of Practice in Nigeria.\nEcofarms Insight: Future trends Ecofarms is watching in Nigerian agriculture.\n\nFinal Project: Submit a comprehensive Sustainable Greenhouse Farming Plan (incorporating elements from all modules).\nCourse Evaluation Survey.",
+          "content": [],
+          "quiz": null
+        }
+      ],
+      "status": "published",
+      "facilitator": "67ed048ca460159ae05c2f77",
+      "enrolled": 1,
+      "rating": 0,
+      "students": [],
+      "reviews": [],
+      "key": "course-1744681072197",
+      "createdAt": {
+        "ls": "4/15/2025, 1:37:52 AM",
+        "is": "2025-04-15T01:37:52.197Z",
+        "f": "Tue Apr 15 2025 01:37:52 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 15,
+        "dy": 2,
+        "h": 1,
+        "mn": 37,
+        "s": 52,
+        "ms": 197,
+        "t": "01:37:52",
+        "key": 1744681072197
+      },
+      "updatedAt": {
+        "ls": "4/15/2025, 2:02:43 AM",
+        "is": "2025-04-15T02:02:43.663Z",
+        "f": "Tue Apr 15 2025 02:02:43 GMT",
+        "y": 2025,
+        "m": 3,
+        "d": 15,
+        "dy": 2,
+        "h": 2,
+        "mn": 2,
+        "s": 43,
+        "ms": 663,
+        "t": "02:02:43",
+        "key": 1744682563663
+      },
+      "enrolledStudents": [
+        "67fb8b0c16f96b7efbe7ccb0"
+      ]
+    }
+  ]
+}
