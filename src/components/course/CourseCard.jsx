@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -33,7 +32,7 @@ const CourseCard = ({ course, path = 'course' }) => {
       className="h-full"
     >
       <Link 
-        to={`/student/${path}/${course.key}`}
+        to={`/${path}/${course.key}`}
         className="block h-full"
       >
         <div className="relative h-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 border border-slate-200 dark:border-slate-700 flex flex-col">

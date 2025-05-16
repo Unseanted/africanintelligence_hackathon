@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
-import CourseGrid from '@/components/course/CourseGrid'; // Importing as default import
+import CourseGrid from '@/components/course/CourseGrid';
 import { useTourLMS } from '@/contexts/TourLMSContext';
-import { getLearnerCourses, getStudentLearningMaterials } from '@/api/courseService';
+import { getLearnerCourses } from '@/api/courseService';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
@@ -56,10 +55,15 @@ const StudentCourses = () => {
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const courses = await getLearnerCourses(token);
-        setEnrolledCourses(courses);
+        setEnrolledCourses(courses || []);
       } catch (error) {
         console.error("Error fetching enrolled courses:", error);
         toast({
@@ -72,9 +76,7 @@ const StudentCourses = () => {
       }
     };
 
-    if (token) {
-      fetchEnrolledCourses();
-    }
+    fetchEnrolledCourses();
   }, [token, toast]);
 
   return (
@@ -89,7 +91,11 @@ const StudentCourses = () => {
 
         <TabsContent value="explore" className="space-y-4">
           {CoursesHub && CoursesHub.length > 0 ? (
-            <CourseGrid />
+            <CourseGrid 
+              title="Available Courses"
+              emptyMessage="No courses available at the moment"
+              path="student/courses"
+            />
           ) : (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium">No courses available at the moment</h3>
@@ -106,7 +112,7 @@ const StudentCourses = () => {
           ) : enrolledCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrolledCourses.map((course) => (
-                <a href={`/student/courses/${course._id}`} key={course._id}>
+                <a href={`/student/courses/${course.key || course._id}`} key={course._id}>
                   <EnrolledCourseCard course={course} />
                 </a>
               ))}
@@ -115,6 +121,12 @@ const StudentCourses = () => {
             <div className="text-center py-12">
               <h3 className="text-lg font-medium">You haven't enrolled in any courses yet</h3>
               <p className="text-gray-600 mt-1">Explore our courses and start learning today!</p>
+              <button 
+                onClick={() => setActiveTab("explore")}
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Browse Courses
+              </button>
             </div>
           )}
         </TabsContent>

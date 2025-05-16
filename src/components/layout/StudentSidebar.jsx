@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -9,7 +8,8 @@ import {
   Shield, 
   Calendar,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,9 @@ const StudentSidebar = () => {
   const [eventsOpen, setEventsOpen] = useState(
     location.pathname.startsWith('/student/events')
   );
+  const [challengesOpen, setChallengesOpen] = useState(
+    location.pathname.startsWith('/student/challenges')
+  );
 
   useEffect(() => {
     setCoursesOpen(location.pathname.startsWith('/student/courses'));
@@ -50,6 +53,7 @@ const StudentSidebar = () => {
       location.pathname.includes('/account') || location.pathname.includes('/security')
     );
     setEventsOpen(location.pathname.startsWith('/student/events'));
+    setChallengesOpen(location.pathname.startsWith('/student/challenges'));
   }, [location.pathname]);
 
   return (
@@ -140,6 +144,46 @@ const StudentSidebar = () => {
             to="/student/forum" 
             isActive={location.pathname === '/student/forum'}
           />
+
+          <Collapsible open={challengesOpen} onOpenChange={setChallengesOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between mb-1">
+                <div className="flex items-center">
+                  <Trophy className="mr-2 h-4 w-4" />
+                  <span>Challenges</span>
+                </div>
+                {challengesOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <Link to="/student/challenges">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start mb-1 pl-8",
+                    location.pathname === '/student/challenges' ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                  )}
+                >
+                  All Challenges
+                </Button>
+              </Link>
+              <Link to="/student/challenges/my-teams">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start mb-1 pl-8",
+                    location.pathname === '/student/challenges/my-teams' ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                  )}
+                >
+                  My Teams
+                </Button>
+              </Link>
+            </CollapsibleContent>
+          </Collapsible>
 
           <Collapsible open={accountOpen} onOpenChange={setAccountOpen}>
             <CollapsibleTrigger asChild>
