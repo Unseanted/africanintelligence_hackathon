@@ -7,6 +7,7 @@ export interface Lesson {
   estimatedTime: number; // in minutes
   prerequisites: string[];
   tags: string[];
+  problems: Problem[];
 }
 
 export interface LessonContent {
@@ -17,27 +18,27 @@ export interface LessonContent {
 
 export interface Problem {
   id: string;
-  type: "multiple-choice" | "coding" | "text" | "matching";
   question: string;
-  options?: string[];
-  correctAnswer: string | string[];
-  explanation: string;
-  points: number;
+  solution: string;
+  hints: string[];
+  feedback: string;
 }
 
 export interface UserProgress {
   userId: string;
   lessonId: string;
-  completed: boolean;
+  completedProblems: string[];
+  currentProblemIndex: number;
   score: number;
   lastAttempted: Date;
-  attempts: Attempt[];
 }
 
-export interface Attempt {
+export interface LessonAttempt {
   id: string;
+  userId: string;
+  lessonId: string;
   timestamp: Date;
-  answers: Record<string, string | string[]>;
+  answers: Record<string, string>;
   score: number;
   feedback: string[];
 }

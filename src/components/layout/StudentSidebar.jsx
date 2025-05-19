@@ -9,7 +9,8 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
-  Trophy
+  Trophy,
+  Puzzle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,9 @@ const StudentSidebar = () => {
   const [challengesOpen, setChallengesOpen] = useState(
     location.pathname.startsWith('/student/challenges')
   );
+  const [lessonsOpen, setLessonsOpen] = useState(
+    location.pathname.startsWith('/student/lessons')
+  );
 
   useEffect(() => {
     setCoursesOpen(location.pathname.startsWith('/student/courses'));
@@ -54,6 +58,7 @@ const StudentSidebar = () => {
     );
     setEventsOpen(location.pathname.startsWith('/student/events'));
     setChallengesOpen(location.pathname.startsWith('/student/challenges'));
+    setLessonsOpen(location.pathname.startsWith('/student/lessons'));
   }, [location.pathname]);
 
   return (
@@ -93,6 +98,57 @@ const StudentSidebar = () => {
                   )}
                 >
                   All Courses
+                </Button>
+              </Link>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Collapsible open={lessonsOpen} onOpenChange={setLessonsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between mb-1">
+                <div className="flex items-center">
+                  <Puzzle className="mr-2 h-4 w-4" />
+                  <span>Interactive Lessons</span>
+                </div>
+                {lessonsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <Link to="/student/lessons">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start mb-1 pl-8",
+                    location.pathname === '/student/lessons' ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                  )}
+                >
+                  All Lessons
+                </Button>
+              </Link>
+              <Link to="/student/lessons/in-progress">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start mb-1 pl-8",
+                    location.pathname === '/student/lessons/in-progress' ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                  )}
+                >
+                  In Progress
+                </Button>
+              </Link>
+              <Link to="/student/lessons/completed">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start mb-1 pl-8",
+                    location.pathname === '/student/lessons/completed' ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                  )}
+                >
+                  Completed
                 </Button>
               </Link>
             </CollapsibleContent>
