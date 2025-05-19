@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MessageCircle, Users, TrendingUp } from 'lucide-react';
 import ForumCategories from '@/components/forum/ForumCategories';
 import ForumTopics from '@/components/forum/ForumTopics';
+import ForumGuidelinesModal from '@/components/forum/ForumGuidelinesModal';
 import { getCommunityForum, getForumCategories, togglePostLike } from '@/api/forumService';
 import { useTourLMS } from '@/contexts/TourLMSContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,7 @@ const Forum = () => {
   const [stats, setStats] = useState({ totalTopics: 0, totalPosts: 0, activeUsers: 0, onlineNow: 0 });
   const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState(null);
+  const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
 
   // Fetch forum data (categories, posts, and stats)
   useEffect(() => {
@@ -174,7 +176,10 @@ const Forum = () => {
                   This is a space for students and instructors to interact, ask questions, 
                   and share knowledge. Please remember to be respectful and supportive.
                 </p>
-                <Button size="sm">
+                <Button 
+                  size="sm"
+                  onClick={() => setIsGuidelinesOpen(true)}
+                >
                   Forum Guidelines
                 </Button>
               </div>
@@ -255,6 +260,10 @@ const Forum = () => {
           />
         </TabsContent>
       </Tabs>
+      <ForumGuidelinesModal
+        isOpen={isGuidelinesOpen}
+        onClose={() => setIsGuidelinesOpen(false)}
+      />
     </div>
   );
 };

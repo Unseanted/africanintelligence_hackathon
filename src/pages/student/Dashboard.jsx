@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  CardTitle 
+} from "@/components/ui/card";
 import { 
   BookOpen, 
   Award, 
@@ -7,7 +12,10 @@ import {
   Target, 
   Users, 
   TrendingUp, 
-  ChevronRight 
+  ChevronRight,
+  Trophy,
+  Flame,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -22,20 +30,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSocket } from '@/services/socketService';
 
 const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const { enrolledCourses, CoursesHub } = useTourLMS();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
+  const [userStats, setUserStats] = useState({
+    totalPoints: 0,
+    rank: 0,
+    completedChallenges: 0,
+    activeChallenges: 0,
+    currentStreak: 0,
+    totalXp: 0,
     totalEnrolled: 0,
-    certificatesEarned: 0,
-    learningGoals: { completed: 0, total: 4 },
-    learningStreak: 0
+    certificatesEarned: 0
   });
   const [categories, setCategories] = useState([]);
   const [relatedCourses, setRelatedCourses] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const socket = useSocket();
 
   const { user, token } = useTourLMS();
   const { toast } = useToast();
@@ -52,15 +66,16 @@ const Dashboard = () => {
         const uniqueCategories = [...new Set(courses.map(course => (course.category || "").toLowerCase()).filter(cat => cat))];
         setCategories(uniqueCategories);
 
-        // Update stats
-        setStats({
+        // Update user stats
+        setUserStats({
+          totalPoints: courses.reduce((sum, course) => sum + (course.points || 0), 0),
+          rank: Math.floor(Math.random() * 100) + 1, // Placeholder for actual rank
+          completedChallenges: courses.filter(c => c.completed).length,
+          activeChallenges: courses.filter(c => !c.completed).length,
+          currentStreak: calculateStreak(courses),
+          totalXp: courses.reduce((sum, course) => sum + (course.xp || 0), 0),
           totalEnrolled: courses.length,
-          certificatesEarned: courses.filter(c => c.certificateIssued).length,
-          learningGoals: { 
-            completed: Math.min(2, courses.length),
-            total: 4 
-          },
-          learningStreak: calculateStreak(courses)
+          certificatesEarned: courses.filter(c => c.certificateIssued).length
         });
 
         // Find related courses
@@ -68,7 +83,7 @@ const Dashboard = () => {
         const related = CoursesHub.filter(course => 
           !enrolledCourseIds.has(course._id) && 
           uniqueCategories.includes((course.category || "").toLowerCase())
-        ).slice(0, 3); // Limit to 3 related courses
+        ).slice(0, 3);
         setRelatedCourses(related);
 
         // Calculate recent activities
@@ -89,7 +104,6 @@ const Dashboard = () => {
             });
           });
         });
-        // Sort activities by date (most recent first) and limit to 3
         activities.sort((a, b) => b.lastAccessedAt - a.lastAccessedAt);
         setRecentActivities(activities.slice(0, 3));
       } catch (error) {
@@ -105,7 +119,22 @@ const Dashboard = () => {
     };
     
     fetchEnrolledCourses();
-  }, [enrolledCourses, CoursesHub, token, toast]);
+  }, [enrolledCourses, CoursesHub, token, toast, user.id]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('challenge:stats', (stats) => {
+      setUserStats(prev => ({
+        ...prev,
+        ...stats
+      }));
+    });
+
+    return () => {
+      socket.off('challenge:stats');
+    };
+  }, [socket]);
 
   const calculateStreak = (courses) => {
     if (!courses || courses.length === 0) return 0;
@@ -185,7 +214,7 @@ const Dashboard = () => {
         </div>
       </section>
       
-      {/* Stats Overview */}
+      {/* Progress Overview */}
       <motion.section
         variants={containerVariants}
         initial="hidden"
@@ -196,11 +225,12 @@ const Dashboard = () => {
             <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800/50">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-blue-100 dark:bg-blue-800/30 rounded-xl">
-                  <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">Enrolled Courses</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-50">{stats.totalEnrolled}</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">Total Points</p>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-50">{userStats.totalPoints}</p>
+                  <Progress value={(userStats.totalPoints / 1000) * 100} className="mt-2" />
                 </div>
               </div>
             </Card>
@@ -210,11 +240,27 @@ const Dashboard = () => {
             <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800/50">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-green-100 dark:bg-green-800/30 rounded-xl">
-                  <Award className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <Star className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-green-600 dark:text-green-400">Certificates Earned</p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-50">{stats.certificatesEarned}</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">Current Rank</p>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-50">#{userStats.rank}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">Among all students</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+          
+          <motion.div variants={itemVariants}>
+            <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800/50">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-800/30 rounded-xl">
+                  <Flame className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">Current Streak</p>
+                  <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-50">{userStats.currentStreak} days</p>
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Keep it up!</p>
                 </div>
               </div>
             </Card>
@@ -227,24 +273,9 @@ const Dashboard = () => {
                   <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">Learning Goals</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-50">
-                    {stats.learningGoals.completed}/{stats.learningGoals.total}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-          
-          <motion.div variants={itemVariants}>
-            <Card className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800/50">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-amber-100 dark:bg-amber-800/30 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-amber-600 dark:text-amber-400">Learning Streak</p>
-                  <p className="text-2xl font-bold text-amber-900 dark:text-amber-50">{stats.learningStreak} days</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">Challenges</p>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-50">{userStats.completedChallenges}/{userStats.completedChallenges + userStats.activeChallenges}</p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Completed</p>
                 </div>
               </div>
             </Card>

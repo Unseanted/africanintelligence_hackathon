@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,32 +13,80 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { clg } from '../../lib/basic';
 
-const CourseDiscussion = ({ courseId }) => {
+interface User {
+  _id: string;
+  name: string;
+  profilePicture?: string;
+  role: string;
+}
+
+interface Comment {
+  _id: string;
+  content: string;
+  author: User;
+  createdAt: string;
+}
+
+interface Post {
+  _id: string;
+  title: string;
+  content: string;
+  author: User;
+  createdAt: string;
+  likes: string[];
+  comments: Comment[];
+  course: string;
+  category: string;
+}
+
+interface CourseDiscussionProps {
+  courseId: string;
+}
+
+const CourseDiscussion: React.FC<CourseDiscussionProps> = ({ courseId }) => {
   const { user, token, socket } = useTourLMS();
   const { toast } = useToast();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [showNewPostForm, setShowNewPostForm] = useState(false);
-  const [comments, setComments] = useState({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const fetchPosts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const forumPosts = await getCourseForumPosts(courseId, token);
+      clg('course forum --- ', forumPosts);
+      setPosts(forumPosts || []);
+    } catch (error) {
+      console.error('Error fetching forum posts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load forum posts',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId, token, toast]);
 
   useEffect(() => {
     if (token && courseId) {
       fetchPosts();
     }
-  }, [token, courseId]);
+  }, [token, courseId, fetchPosts]);
 
   useEffect(() => {
     if (socket) {
       // Listen for new posts
-      socket.on(`forum:new-post:${courseId}`, (newPost) => {
+      socket.on(`forum:new-post:${courseId}`, (newPost: Post) => {
         setPosts(prev => [newPost, ...prev]);
       });
 
       // Listen for new comments
-      socket.on(`forum:new-comment`, (data) => {
+      socket.on(`forum:new-comment`, (data: { courseId: string; postId: string; comment: Comment }) => {
         if (data.courseId === courseId) {
           setPosts(prev => prev.map(post => {
             if (post._id === data.postId) {
@@ -54,7 +101,7 @@ const CourseDiscussion = ({ courseId }) => {
       });
 
       // Listen for post likes
-      socket.on(`forum:post-like`, (data) => {
+      socket.on(`forum:post-like`, (data: { courseId: string; postId: string; likes: string[] }) => {
         if (data.courseId === courseId) {
           setPosts(prev => prev.map(post => {
             if (post._id === data.postId) {
@@ -76,25 +123,7 @@ const CourseDiscussion = ({ courseId }) => {
     }
   }, [socket, courseId]);
 
-  const fetchPosts = async () => {
-    try {
-      setLoading(true);
-      const forumPosts = await getCourseForumPosts(courseId, token);
-      clg('course forum --- ',forumPosts)
-      setPosts(forumPosts || []);
-    } catch (error) {
-      console.error('Error fetching forum posts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load forum posts',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreatePost = async (e) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostTitle.trim() || !newPostContent.trim()) {
       toast({
@@ -139,7 +168,7 @@ const CourseDiscussion = ({ courseId }) => {
     }
   };
 
-  const handleAddComment = async (postId) => {
+  const handleAddComment = async (postId: string) => {
     const commentContent = comments[postId];
     if (!commentContent || !commentContent.trim()) {
       toast({
@@ -163,6 +192,7 @@ const CourseDiscussion = ({ courseId }) => {
               comments: [
                 ...(post.comments || []),
                 {
+                  _id: `temp-${Date.now()}`,
                   author: {
                     _id: user._id,
                     name: user.name,
@@ -170,7 +200,7 @@ const CourseDiscussion = ({ courseId }) => {
                     role: user.role
                   },
                   content: commentContent,
-                  createdAt: new Date()
+                  createdAt: new Date().toISOString()
                 }
               ]
             };
@@ -200,7 +230,7 @@ const CourseDiscussion = ({ courseId }) => {
     }
   };
 
-  const handleLikePost = async (postId) => {
+  const handleLikePost = async (postId: string) => {
     try {
       await toggleLikePost(postId, token);
       // The socket will update the UI
@@ -259,10 +289,10 @@ const CourseDiscussion = ({ courseId }) => {
             </div>
             <div>
               <Textarea
-                placeholder="What's on your mind?"
+                placeholder="Write your post..."
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
-                rows={4}
+                className="min-h-[100px]"
                 required
               />
             </div>
@@ -275,105 +305,78 @@ const CourseDiscussion = ({ courseId }) => {
         </Card>
       )}
 
-      {posts.length === 0 ? (
-        <Card className="p-6 text-center">
-          <MessageCircle className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-          <h3 className="text-lg font-medium">No discussions yet</h3>
-          <p className="text-gray-500 mb-4">Be the first to start a discussion about this course</p>
-          <Button onClick={() => setShowNewPostForm(true)}>Start Discussion</Button>
-        </Card>
-      ) : (
-        posts.map((post) => (
+      <div className="space-y-4">
+        {posts.map((post) => (
           <Card key={post._id} className="p-4">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarImage src={post.author?.profilePicture || ''} alt={post.author?.name || 'User'} />
-                  <AvatarFallback>
-                    <User className="h-5 w-5" />
-                  </AvatarFallback>
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={post.author.profilePicture} />
+                  <AvatarFallback>{post.author.name[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="flex items-center">
-                    <h4 className="font-semibold">{post.author?.name || 'Anonymous'}</h4>
-                    {post.author?.role === 'facilitator' && (
-                      <Badge variant="outline" className="ml-2 bg-red-100">Facilitator</Badge>
-                    )}
-                  </div>
+                  <h4 className="font-semibold">{post.title}</h4>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(post.createdAt), 'PPp')}
+                    Posted by {post.author.name} • {format(new Date(post.createdAt), 'MMM d, yyyy')}
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center gap-1"
+              </div>
+              <p className="text-gray-700">{post.content}</p>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleLikePost(post._id)}
+                  className={post.likes?.includes(user._id) ? 'text-red-500' : ''}
                 >
-                  <ThumbsUp className={`h-4 w-4 ${post.likes?.includes(user?._id) ? 'fill-current text-blue-500' : ''}`} />
-                  <span>{post.likes?.length || 0}</span>
+                  <ThumbsUp className="h-4 w-4 mr-1" />
+                  {post.likes?.length || 0}
                 </Button>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold text-lg">{post.title}</h3>
-                <p className="mt-1 text-gray-700">{post.content}</p>
-              </div>
-              
-              {/* Comments section */}
-              <div className="pl-4 border-l-2 border-gray-100 mt-4 space-y-3">
-                {post.comments && post.comments.length > 0 && (
-                  <h5 className="text-sm font-medium text-gray-500">
-                    {post.comments.length} {post.comments.length === 1 ? 'Comment' : 'Comments'}
-                  </h5>
-                )}
-                
-                {post.comments && post.comments.map((comment, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.author?.profilePicture || ''} alt={comment.author?.name || 'User'} />
-                      <AvatarFallback className="text-xs">
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <p className="text-sm font-medium">{comment.author?.name || 'Anonymous'}</p>
-                        {comment.author?.role === 'facilitator' && (
-                          <Badge variant="outline" className="ml-2 text-xs bg-red-100">Facilitator</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm">{comment.content}</p>
-                      <p className="text-xs text-gray-500">
-                        {format(new Date(comment.createdAt), 'PPp')}
-                      </p>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Write a comment..."
+                      value={comments[post._id] || ''}
+                      onChange={(e) => setComments({ ...comments, [post._id]: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddComment(post._id)}
+                      disabled={submitting}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
-                ))}
-                
-                {/* Add comment form */}
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    placeholder="Add a comment..."
-                    value={comments[post._id] || ''}
-                    onChange={(e) => setComments({...comments, [post._id]: e.target.value})}
-                    className="text-sm"
-                  />
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleAddComment(post._id)}
-                    disabled={submitting}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
+              {post.comments?.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  {post.comments.map((comment) => (
+                    <div key={comment._id} className="flex items-start gap-3 pl-4">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={comment.author.profilePicture} />
+                        <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{comment.author.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {format(new Date(comment.createdAt), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
 };
 
-export default CourseDiscussion;
+export default CourseDiscussion; 
