@@ -42,6 +42,8 @@ import EventDetail from "./pages/student/EventDetail";
 import ApiDocumentation from "./pages/admin/ApiDocumentation";
 import ApiDocumentationStudents from "./pages/student/ApiDocumentationStudents";
 import ApiDocumentationFac from "./pages/facilitator/ApiDocumentationFac";
+import LeaderboardPage from "./pages/student/LeaderboardPage";
+import BadgesPage from "./pages/student/BadgesPage";
 
 const App = () => {
   return (
@@ -101,6 +103,8 @@ const App = () => {
                 <Route path="apiDocs" element={<ApiDocumentationStudents />} />
                 <Route path="account" element={<UserAccount userType="student" />} />
                 <Route path="security" element={<Security />} />
+                <Route path="leaderboard" element={<LeaderboardPage />} />
+                <Route path="badges" element={<BadgesPage />} />
               </Route>
             </Routes>
             <Toaster />

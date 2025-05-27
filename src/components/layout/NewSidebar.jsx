@@ -11,6 +11,8 @@ import {
   Bell,
   Briefcase,
   Award,
+  Trophy,
+  Star,
   FileEdit,
   UserPlus,
   Cpu,
@@ -48,6 +50,8 @@ const studentLinks = [
   { to: "/student/forum", icon: MessageSquare, label: "Forum", color: "text-indigo-500" },
   { to: "/student/events", icon: Calendar, label: "Events", color: "text-indigo-500" },
   { to: '/student/apiDocs', icon: FileCode,label: 'API Documentation', color: "text-indigo-500" },
+  { to: "/student/leaderboard", icon: Trophy, label: "Leaderboard", color: "text-amber-500" },
+  { to: "/student/badges", icon: Star, label: "Badges", color: "text-yellow-500" },
     // { to: "/student/friends", icon: UserPlus, label: "Friends", color: "text-violet-500" },
   // { to: "/student/messages", icon: MessageSquare, label: "Messages", color: "text-emerald-500" },
   // { to: "/student/jobs", icon: Briefcase, label: "Job Board", color: "text-amber-500" },
@@ -85,8 +89,8 @@ const NewSidebar = ({ userType, isOpen, onClose, theme }) => {
             exit="hidden"
             className={`fixed inset-y-0 left-0 z-50 w-[280px] sm:w-[300px] overflow-hidden rounded-r-2xl shadow-2xl transition-all duration-300 ${
               theme === 'light'
-                ? 'bg-gradient-to-br from-white via-amber-100/50 to-slate-100 border-r border-gradient from-gold-300 to-amber-500'
-                : 'bg-gradient-to-br from-slate-900 via-amber-500/10 to-slate-800 border-r border-gradient from-gold-300 to-amber-500'
+                ? 'bg-gradient-to-br from-white via-amber-100/50 to-slate-100 border-r border-amber-300'
+                : 'bg-gradient-to-br from-slate-900 via-amber-500/10 to-slate-800 border-r border-amber-500'
             }`}
           >
             <div className="h-full flex flex-col overflow-y-auto">
