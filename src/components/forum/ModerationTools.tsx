@@ -65,7 +65,7 @@ const ModerationTools: React.FC<ModerationToolsProps> = ({ lessonId }) => {
     };
 
     fetchReportedContent();
-  }, [token, lessonId]);
+  }, [token, lessonId, toast]);
 
   const handleAction = async (contentId: string, action: 'approve' | 'remove' | 'dismiss') => {
     try {
