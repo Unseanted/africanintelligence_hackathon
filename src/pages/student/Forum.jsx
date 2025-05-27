@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
 import { Search, MessageCircle, Users, TrendingUp } from 'lucide-react';
 import ForumCategories from '@/components/forum/ForumCategories';
 import ForumTopics from '@/components/forum/ForumTopics';
