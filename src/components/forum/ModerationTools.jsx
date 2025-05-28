@@ -1,6 +1,6 @@
 // ModerationTools.jsx
 import React, { useState } from 'react';
-import { forumCategories } from './forumData';
+import { forumCategories } from '../../data/forumData';
 
 const ModerationTools = ({ thread, onModerate }) => {
   const [action, setAction] = useState('');
