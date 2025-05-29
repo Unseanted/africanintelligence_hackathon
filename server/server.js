@@ -14,6 +14,9 @@ const uploadRoutes = require("./routes/upload");
 const adminServices = require("./services/adminServices");
 const webpush = require("web-push");
 const { clg } = require("./routes/basics");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerOptions = require("./swagger");
 
 // Configure the environment
 require("dotenv").config();
@@ -39,6 +42,16 @@ if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
 } else {
   console.warn("Web Push not configured. Missing VAPID keys.");
 }
+
+// Initialize swagger-jsdoc -> returns validated swagger spec in json format
+const specs = swaggerJsdoc(swaggerOptions);
+
+// Serve Swagger UI at a specific endpoint
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(specs, { explorer: true })
+);
 
 // Connect to MongoDB
 const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/lms";
@@ -76,6 +89,7 @@ async function startServer() {
     // Start the server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error("Error starting server:", error);
