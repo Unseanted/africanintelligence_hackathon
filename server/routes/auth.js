@@ -874,14 +874,18 @@ router.post(
   [
     // Validation rules
     body("name").trim().notEmpty().withMessage("Full name is required"),
-    body("email").isEmail().withMessage("Invalid email address"),
+    body("email").optional().isEmail().withMessage("Invalid email address"),
     body("phone")
       .trim()
       .optional()
       .isMobilePhone()
       .withMessage("Invalid phone number"),
     body("bio").trim().optional(),
-    body("occupation").trim().notEmpty().withMessage("Occupation is required"),
+    body("occupation")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Occupation is required"),
     body("address").trim().optional(),
     body("specialization").trim().optional(),
     body("experience")
@@ -969,7 +973,7 @@ router.post(
       // Update user fields
       const updatedUser = {
         name,
-        email,
+        email: email || user.email,
         phone: phone || user.phone,
         bio: bio || user.bio,
         occupation: occupation || user.occupation,
