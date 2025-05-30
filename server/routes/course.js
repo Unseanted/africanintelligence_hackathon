@@ -4,6 +4,8 @@ let { ObjectId } = require("mongodb");
 let auth = require("../middleware/auth");
 let roleAuth = require("../middleware/roleAuth");
 let { datemap, clg } = require("./basics");
+const { body } = require("express-validator");
+const { v4: uuidv4 } = require("uuid");
 
 /**
  * @swagger
@@ -474,6 +476,9 @@ let { datemap, clg } = require("./basics");
  *               description:
  *                 type: string
  *                 example: "Learn the basics of web development"
+ *               status:
+ *                 type: string
+ *                 example: "published"
  *               modules:
  *                 type: array
  *                 items:
@@ -1087,7 +1092,7 @@ router.get("/:id/ratings", auth, async (req, res) => {
 
     // Get course with reviews
     let course = await db.collection("courses").findOne({
-      key: courseId,
+      courseId,
     });
 
     if (!course) {
@@ -1140,14 +1145,14 @@ router.get("/:id", async (req, res) => {
     let db = req.app.locals.db;
     let courseId = req.params.id;
 
-    let objectId;
-    try {
-      objectId = courseId;
-    } catch (error) {
-      return res.status(400).json({ message: "Invalid course ID format" });
-    }
+    // let objectId = courseId;
+    // try {
+    //   objectId = courseId;
+    // } catch (error) {
+    //   return res.status(400).json({ message: "Invalid course ID format" });
+    // }
 
-    let course = await db.collection("courses").findOne({ key: objectId });
+    let course = await db.collection("courses").findOne({ courseId });
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -1204,14 +1209,7 @@ router.get("/:id/full", auth, async (req, res) => {
     let db = req.app.locals.db;
     let courseId = req.params.id;
 
-    let objectId;
-    try {
-      objectId = courseId;
-    } catch (error) {
-      return res.status(400).json({ message: "Invalid course ID format" });
-    }
-
-    let course = await db.collection("courses").findOne({ key: objectId });
+    let course = await db.collection("courses").findOne({ courseId });
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -1265,6 +1263,7 @@ router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
 
     let courseData = {
       ...req.body,
+      courseId: uuidv4(),
       enrolledStudents: [],
       facilitator: req.user.userId,
       enrolled: 0,
@@ -1279,12 +1278,10 @@ router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
       .collection("courses")
       .findOne({ facilitator: req.user.userId, title: courseData.title });
     if (pluged)
-      return res
-        .status(500)
-        .json({
-          message:
-            "You Already have a Course with this title, please use a different title",
-        });
+      return res.status(500).json({
+        message:
+          "You Already have a Course with this title, please use a different title",
+      });
 
     let result = await db.collection("courses").insertOne(courseData);
 
@@ -1316,7 +1313,7 @@ router.put(
       let db = req.app.locals.db;
       let courseId = req.params.id;
 
-      let course = await db.collection("courses").findOne({ key: courseId });
+      let course = await db.collection("courses").findOne({ courseId });
 
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
@@ -1339,11 +1336,9 @@ router.put(
 
       await db
         .collection("courses")
-        .updateOne({ key: courseId }, { $set: updateData });
+        .updateOne({ courseId }, { $set: updateData });
       clg(`${courseId} was updated successfully...`);
-      let updatedCourse = await db
-        .collection("courses")
-        .findOne({ key: courseId });
+      let updatedCourse = await db.collection("courses").findOne({ courseId });
 
       res.json(updatedCourse);
     } catch (error) {
@@ -1363,14 +1358,7 @@ router.delete(
       let db = req.app.locals.db;
       let courseId = req.params.id;
 
-      let objectId;
-      try {
-        objectId = courseId;
-      } catch (error) {
-        return res.status(400).json({ message: "Invalid course ID format" });
-      }
-
-      let course = await db.collection("courses").findOne({ key: objectId });
+      let course = await db.collection("courses").findOne(courseId);
 
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
@@ -1385,7 +1373,7 @@ router.delete(
           .json({ message: "Not authorized to delete this course" });
       }
 
-      await db.collection("courses").deleteOne({ key: objectId });
+      await db.collection("courses").deleteOne(courseId);
 
       await db
         .collection("users")
@@ -1403,13 +1391,13 @@ router.delete(
 );
 
 // Enroll in a course
-router.post("/:id/enroll", auth, roleAuth(["learner"]), async (req, res) => {
+router.post("/:id/enroll", auth, roleAuth(["student"]), async (req, res) => {
   try {
     let db = req.app.locals.db;
-    let courseKey = req.params.id;
+    let courseId = req.params.id;
     let learnerId = req.user.userId;
 
-    let course = await db.collection("courses").findOne({ key: courseKey });
+    let course = await db.collection("courses").findOne({ courseId });
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
@@ -1454,7 +1442,7 @@ router.post("/:id/enroll", auth, roleAuth(["learner"]), async (req, res) => {
 
     await db
       .collection("courses")
-      .updateOne({ key: courseId }, { $inc: { enrolled: 1 } });
+      .updateOne({ courseId }, { $inc: { enrolled: 1 } });
 
     let insertedEnrollment = await db.collection("enrollments").findOne({
       _id: result.insertedId,
@@ -1587,9 +1575,7 @@ router.post(
         return res.status(404).json({ message: "Enrollment not found" });
       }
 
-      let course = await db.collection("courses").findOne({
-        key: key,
-      });
+      let course = await db.collection("courses").findOne({courseId});
 
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
@@ -1689,7 +1675,7 @@ router.post("/:id/rate", auth, async (req, res) => {
 
     // Check if course exists
     let course = await db.collection("courses").findOne({
-      key: courseId,
+      courseId,
     });
 
     if (!course) {
@@ -1747,7 +1733,7 @@ router.post("/:id/rate", auth, async (req, res) => {
 
     // Update course with new rating data
     await db.collection("courses").updateOne(
-      { key: courseId },
+      { courseId },
       {
         $set: {
           reviews: updatedReviews,

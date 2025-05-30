@@ -139,3 +139,6 @@ dist
 # Editor files
 .vscode
 .cursor*
+
+# Todo 
+todo.txt
