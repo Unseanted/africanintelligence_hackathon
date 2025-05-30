@@ -35,6 +35,8 @@ import {
   BookOpen
 } from 'lucide-react';
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import AnalyticsSettings from './AnalyticsSettings';
 
 // Mock data for charts
 const timeSpentData = [
@@ -69,6 +71,11 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 const AnalyticsDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('week');
+  const [data, setData] = useState({
+    timeSpent: timeSpentData,
+    skillProgress: skillProgressData,
+    activity: activityData
+  });
   const [settings, setSettings] = useState({
     display: {
       showTimeSpent: true,
@@ -163,27 +170,118 @@ const AnalyticsDashboard = () => {
     }
   });
 
-  const handleExport = () => {
+  // Function to generate data based on time range
+  const generateDataForTimeRange = (range) => {
+    const now = new Date();
+    let data = [];
+
+    switch (range) {
+      case 'week':
+        // Generate data for the last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          data.push({
+            name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            hours: Math.random() * 5 + 1,
+            completed: Math.floor(Math.random() * 5) + 1,
+            inProgress: Math.floor(Math.random() * 3) + 1
+          });
+        }
+        break;
+      case 'month':
+        // Generate data for the last 30 days
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          data.push({
+            name: date.toLocaleDateString('en-US', { day: 'numeric' }),
+            hours: Math.random() * 5 + 1,
+            completed: Math.floor(Math.random() * 5) + 1,
+            inProgress: Math.floor(Math.random() * 3) + 1
+          });
+        }
+        break;
+      case 'year':
+        // Generate data for the last 12 months
+        for (let i = 11; i >= 0; i--) {
+          const date = new Date(now);
+          date.setMonth(date.getMonth() - i);
+          data.push({
+            name: date.toLocaleDateString('en-US', { month: 'short' }),
+            hours: Math.random() * 20 + 10,
+            completed: Math.floor(Math.random() * 10) + 5,
+            inProgress: Math.floor(Math.random() * 5) + 2
+          });
+        }
+        break;
+    }
+
+    return data;
+  };
+
+  const handleTimeRangeChange = (range) => {
     setIsLoading(true);
-    // Simulate export process
+    setTimeRange(range);
+    
+    // Simulate data loading
     setTimeout(() => {
-      toast.success('Analytics data exported successfully!');
+      const newData = generateDataForTimeRange(range);
+      setData(prev => ({
+        ...prev,
+        timeSpent: newData,
+        activity: newData
+      }));
       setIsLoading(false);
-    }, 1500);
+      toast.success(`Updated to ${range} view`);
+    }, 500);
   };
 
   const handleRefresh = () => {
     setIsLoading(true);
+    
     // Simulate data refresh
     setTimeout(() => {
-      toast.success('Analytics data refreshed!');
+      const newData = generateDataForTimeRange(timeRange);
+      setData(prev => ({
+        ...prev,
+        timeSpent: newData,
+        activity: newData
+      }));
       setIsLoading(false);
+      toast.success('Data refreshed successfully');
     }, 1000);
   };
 
-  const handleTimeRangeChange = (range) => {
-    setTimeRange(range);
-    toast.info(`Time range updated to ${range}`);
+  const handleExport = () => {
+    setIsLoading(true);
+    
+    // Prepare data for export
+    const exportData = {
+      timeRange,
+      timeSpent: data.timeSpent,
+      skillProgress: data.skillProgress,
+      activity: data.activity,
+      exportDate: new Date().toISOString()
+    };
+
+    // Convert to JSON and create blob
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics-export-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setIsLoading(false);
+    toast.success('Analytics data exported successfully');
   };
 
   const handleSettingChange = (category, setting, value) => {
@@ -303,7 +401,11 @@ const AnalyticsDashboard = () => {
             variant="outline" 
             size="sm"
             onClick={() => handleTimeRangeChange('week')}
-            className={timeRange === 'week' ? 'bg-primary text-primary-foreground' : ''}
+            className={cn(
+              timeRange === 'week' && 'bg-primary text-primary-foreground',
+              isLoading && 'opacity-50 cursor-not-allowed'
+            )}
+            disabled={isLoading}
           >
             Week
           </Button>
@@ -311,7 +413,11 @@ const AnalyticsDashboard = () => {
             variant="outline" 
             size="sm"
             onClick={() => handleTimeRangeChange('month')}
-            className={timeRange === 'month' ? 'bg-primary text-primary-foreground' : ''}
+            className={cn(
+              timeRange === 'month' && 'bg-primary text-primary-foreground',
+              isLoading && 'opacity-50 cursor-not-allowed'
+            )}
+            disabled={isLoading}
           >
             Month
           </Button>
@@ -319,7 +425,11 @@ const AnalyticsDashboard = () => {
             variant="outline" 
             size="sm"
             onClick={() => handleTimeRangeChange('year')}
-            className={timeRange === 'year' ? 'bg-primary text-primary-foreground' : ''}
+            className={cn(
+              timeRange === 'year' && 'bg-primary text-primary-foreground',
+              isLoading && 'opacity-50 cursor-not-allowed'
+            )}
+            disabled={isLoading}
           >
             Year
           </Button>
@@ -328,6 +438,7 @@ const AnalyticsDashboard = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={isLoading}
+            className={cn(isLoading && 'opacity-50 cursor-not-allowed')}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -337,6 +448,7 @@ const AnalyticsDashboard = () => {
             size="sm"
             onClick={handleExport}
             disabled={isLoading}
+            className={cn(isLoading && 'opacity-50 cursor-not-allowed')}
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -351,10 +463,17 @@ const AnalyticsDashboard = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">75%</div>
-            <Progress value={75} className="mt-2" />
+            <div className="text-2xl font-bold">
+              {timeRange === 'week' ? '75%' : timeRange === 'month' ? '82%' : '90%'}
+            </div>
+            <Progress 
+              value={timeRange === 'week' ? 75 : timeRange === 'month' ? 82 : 90} 
+              className="mt-2" 
+            />
             <p className="text-xs text-muted-foreground mt-2">
-              +5% from last month
+              {timeRange === 'week' ? '+5% from last week' : 
+               timeRange === 'month' ? '+8% from last month' : 
+               '+12% from last year'}
             </p>
           </CardContent>
         </Card>
@@ -415,7 +534,7 @@ const AnalyticsDashboard = () => {
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={timeSpentData}>
+                    <AreaChart data={data.timeSpent}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
@@ -441,7 +560,7 @@ const AnalyticsDashboard = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={skillProgressData}
+                        data={data.skillProgress}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -450,7 +569,7 @@ const AnalyticsDashboard = () => {
                         dataKey="value"
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
-                        {skillProgressData.map((entry, index) => (
+                        {data.skillProgress.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -490,7 +609,7 @@ const AnalyticsDashboard = () => {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activityData}>
+                  <BarChart data={data.activity}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -504,354 +623,11 @@ const AnalyticsDashboard = () => {
           </Card>
         </TabsContent>
         <TabsContent value="settings" className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">Analytics Preferences</h3>
-              <p className="text-sm text-muted-foreground">Configure your analytics preferences and notification settings</p>
-            </div>
-            <Button variant="outline" onClick={handleResetSettings}>
-              Reset to Defaults
-            </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Display Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Display Settings
-                </CardTitle>
-                <CardDescription>Customize how your analytics are displayed</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Chart Theme</Label>
-                  <Select
-                    value={settings.display.chartTheme}
-                    onValueChange={(value) => handleSettingChange('display', 'chartTheme', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select theme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="contrast">High Contrast</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Data Density</Label>
-                  <Select
-                    value={settings.display.dataDensity}
-                    onValueChange={(value) => handleSettingChange('display', 'dataDensity', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select density" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="detailed">Detailed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showTrends">Show Trends</Label>
-                    <Switch
-                      id="showTrends"
-                      checked={settings.display.showTrends}
-                      onCheckedChange={(checked) => handleSettingChange('display', 'showTrends', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showComparisons">Show Comparisons</Label>
-                    <Switch
-                      id="showComparisons"
-                      checked={settings.display.showComparisons}
-                      onCheckedChange={(checked) => handleSettingChange('display', 'showComparisons', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showPredictions">Show Predictions</Label>
-                    <Switch
-                      id="showPredictions"
-                      checked={settings.display.showPredictions}
-                      onCheckedChange={(checked) => handleSettingChange('display', 'showPredictions', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showInsights">Show Insights</Label>
-                    <Switch
-                      id="showInsights"
-                      checked={settings.display.showInsights}
-                      onCheckedChange={(checked) => handleSettingChange('display', 'showInsights', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Analytics Tracking */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart2 className="h-4 w-4" />
-                  Analytics Tracking
-                </CardTitle>
-                <CardDescription>Configure what data to track and analyze</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="trackTimeSpent">Track Time Spent</Label>
-                    <Switch
-                      id="trackTimeSpent"
-                      checked={settings.analytics.trackTimeSpent}
-                      onCheckedChange={(checked) => handleSettingChange('analytics', 'trackTimeSpent', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="trackProgress">Track Progress</Label>
-                    <Switch
-                      id="trackProgress"
-                      checked={settings.analytics.trackProgress}
-                      onCheckedChange={(checked) => handleSettingChange('analytics', 'trackProgress', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="trackSkills">Track Skills</Label>
-                    <Switch
-                      id="trackSkills"
-                      checked={settings.analytics.trackSkills}
-                      onCheckedChange={(checked) => handleSettingChange('analytics', 'trackSkills', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="trackEngagement">Track Engagement</Label>
-                    <Switch
-                      id="trackEngagement"
-                      checked={settings.analytics.trackEngagement}
-                      onCheckedChange={(checked) => handleSettingChange('analytics', 'trackEngagement', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Learning Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Learning Settings
-                </CardTitle>
-                <CardDescription>Configure learning path and recommendations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showLearningPath">Show Learning Path</Label>
-                    <Switch
-                      id="showLearningPath"
-                      checked={settings.learning.showLearningPath}
-                      onCheckedChange={(checked) => handleSettingChange('learning', 'showLearningPath', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showSkillGaps">Show Skill Gaps</Label>
-                    <Switch
-                      id="showSkillGaps"
-                      checked={settings.learning.showSkillGaps}
-                      onCheckedChange={(checked) => handleSettingChange('learning', 'showSkillGaps', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showRecommendations">Show Recommendations</Label>
-                    <Switch
-                      id="showRecommendations"
-                      checked={settings.learning.showRecommendations}
-                      onCheckedChange={(checked) => handleSettingChange('learning', 'showRecommendations', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showPrerequisites">Show Prerequisites</Label>
-                    <Switch
-                      id="showPrerequisites"
-                      checked={settings.learning.showPrerequisites}
-                      onCheckedChange={(checked) => handleSettingChange('learning', 'showPrerequisites', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notification Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Notification Settings
-                </CardTitle>
-                <CardDescription>Configure your notification preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="weeklyReport">Weekly Report</Label>
-                    <Switch
-                      id="weeklyReport"
-                      checked={settings.notifications.weeklyReport}
-                      onCheckedChange={(checked) => handleSettingChange('notifications', 'weeklyReport', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="achievementAlerts">Achievement Alerts</Label>
-                    <Switch
-                      id="achievementAlerts"
-                      checked={settings.notifications.achievementAlerts}
-                      onCheckedChange={(checked) => handleSettingChange('notifications', 'achievementAlerts', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="goalReminders">Goal Reminders</Label>
-                    <Switch
-                      id="goalReminders"
-                      checked={settings.notifications.goalReminders}
-                      onCheckedChange={(checked) => handleSettingChange('notifications', 'goalReminders', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="skillGapAlerts">Skill Gap Alerts</Label>
-                    <Switch
-                      id="skillGapAlerts"
-                      checked={settings.notifications.skillGapAlerts}
-                      onCheckedChange={(checked) => handleSettingChange('notifications', 'skillGapAlerts', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Goals Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Goals Settings
-                </CardTitle>
-                <CardDescription>Configure goal tracking and display preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showGoalProgress">Show Goal Progress</Label>
-                    <Switch
-                      id="showGoalProgress"
-                      checked={settings.goals.showGoalProgress}
-                      onCheckedChange={(checked) => handleSettingChange('goals', 'showGoalProgress', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showGoalPredictions">Show Goal Predictions</Label>
-                    <Switch
-                      id="showGoalPredictions"
-                      checked={settings.goals.showGoalPredictions}
-                      onCheckedChange={(checked) => handleSettingChange('goals', 'showGoalPredictions', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showGoalInsights">Show Goal Insights</Label>
-                    <Switch
-                      id="showGoalInsights"
-                      checked={settings.goals.showGoalInsights}
-                      onCheckedChange={(checked) => handleSettingChange('goals', 'showGoalInsights', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showGoalTrends">Show Goal Trends</Label>
-                    <Switch
-                      id="showGoalTrends"
-                      checked={settings.goals.showGoalTrends}
-                      onCheckedChange={(checked) => handleSettingChange('goals', 'showGoalTrends', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Preferences */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  General Preferences
-                </CardTitle>
-                <CardDescription>Configure general analytics preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Default Time Range</Label>
-                  <Select
-                    value={settings.preferences.defaultTimeRange}
-                    onValueChange={(value) => handleSettingChange('preferences', 'defaultTimeRange', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="week">Week</SelectItem>
-                      <SelectItem value="month">Month</SelectItem>
-                      <SelectItem value="year">Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Refresh Interval (minutes)</Label>
-                  <Input
-                    type="number"
-                    value={settings.preferences.refreshInterval}
-                    onChange={(e) => handleSettingChange('preferences', 'refreshInterval', e.target.value)}
-                    min="1"
-                    max="60"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="autoRefresh">Auto Refresh</Label>
-                    <Switch
-                      id="autoRefresh"
-                      checked={settings.preferences.autoRefresh}
-                      onCheckedChange={(checked) => handleSettingChange('preferences', 'autoRefresh', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showTooltips">Show Tooltips</Label>
-                    <Switch
-                      id="showTooltips"
-                      checked={settings.preferences.showTooltips}
-                      onCheckedChange={(checked) => handleSettingChange('preferences', 'showTooltips', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="showGuides">Show Guides</Label>
-                    <Switch
-                      id="showGuides"
-                      checked={settings.preferences.showGuides}
-                      onCheckedChange={(checked) => handleSettingChange('preferences', 'showGuides', checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <AnalyticsSettings 
+            settings={settings}
+            onSettingsChange={handleSettingChange}
+            onResetSettings={handleResetSettings}
+          />
         </TabsContent>
       </Tabs>
     </div>
