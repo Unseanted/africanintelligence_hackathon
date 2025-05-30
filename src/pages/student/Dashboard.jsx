@@ -31,11 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSocket } from '@/services/socketService';
+import { useXP } from "@/contexts/XPContext";
+import XPProgress from "@/components/xp/XPProgress";
 
 const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const { enrolledCourses, CoursesHub } = useTourLMS();
   const [loading, setLoading] = useState(true);
+  const { user, course, API_URL, token } = useTourLMS();
+  const { userXP, awardXP } = useXP();
   const [userStats, setUserStats] = useState({
     totalPoints: 0,
     rank: 0,
@@ -44,14 +48,20 @@ const Dashboard = () => {
     currentStreak: 0,
     totalXp: 0,
     totalEnrolled: 0,
-    certificatesEarned: 0
+    certificatesEarned: 0,
+    completedLessons: 0,
+    totalLessons: 0,
+    completedQuizzes: 0,
+    totalQuizzes: 0,
+    averageScore: 0,
+    lastActive: new Date(),
+    streakDays: 0,
   });
   const [categories, setCategories] = useState([]);
   const [relatedCourses, setRelatedCourses] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const socket = useSocket();
 
-  const { user, token } = useTourLMS();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,7 +85,14 @@ const Dashboard = () => {
           currentStreak: calculateStreak(courses),
           totalXp: courses.reduce((sum, course) => sum + (course.xp || 0), 0),
           totalEnrolled: courses.length,
-          certificatesEarned: courses.filter(c => c.certificateIssued).length
+          certificatesEarned: courses.filter(c => c.certificateIssued).length,
+          completedLessons: courses.reduce((sum, course) => sum + (course.completedLessons || 0), 0),
+          totalLessons: courses.reduce((sum, course) => sum + (course.totalLessons || 0), 0),
+          completedQuizzes: courses.reduce((sum, course) => sum + (course.completedQuizzes || 0), 0),
+          totalQuizzes: courses.reduce((sum, course) => sum + (course.totalQuizzes || 0), 0),
+          averageScore: courses.reduce((sum, course) => sum + (course.averageScore || 0), 0) / courses.length,
+          lastActive: new Date(courses[0]?.lastAccessedAt || new Date()),
+          streakDays: calculateStreak(courses),
         });
 
         // Find related courses
@@ -135,6 +152,41 @@ const Dashboard = () => {
       socket.off('challenge:stats');
     };
   }, [socket]);
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/users/${user._id}/stats`, {
+          headers: {
+            "x-auth-token": token,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user stats");
+        }
+
+        const stats = await response.json();
+        setUserStats({
+          ...stats,
+          totalPoints: userXP?.totalXP || 0,
+        });
+
+        // Award XP for daily login if not already awarded today
+        const lastLogin = new Date(stats.lastActive);
+        const today = new Date();
+        if (lastLogin.toDateString() !== today.toDateString()) {
+          await awardXP(user._id, 'DAILY_LOGIN');
+        }
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      }
+    };
+
+    if (user?._id) {
+      fetchUserStats();
+    }
+  }, [user?._id, API_URL, token, userXP, awardXP]);
 
   const calculateStreak = (courses) => {
     if (!courses || courses.length === 0) return 0;
@@ -228,9 +280,11 @@ const Dashboard = () => {
                   <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">Total Points</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-50">{userStats.totalPoints}</p>
-                  <Progress value={(userStats.totalPoints / 1000) * 100} className="mt-2" />
+                  <p className="text-sm text-blue-600 dark:text-blue-400">Total XP</p>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-50">
+                    {userXP?.totalXP || 0}
+                  </p>
+                  <Progress value={userXP ? (userXP.totalXP / (userXP.nextLevelXP + userXP.totalXP)) * 100 : 0} className="mt-2" />
                 </div>
               </div>
             </Card>
@@ -240,12 +294,21 @@ const Dashboard = () => {
             <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800/50">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-green-100 dark:bg-green-800/30 rounded-xl">
-                  <Star className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-green-600 dark:text-green-400">Current Rank</p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-50">#{userStats.rank}</p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">Among all students</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">Progress</p>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-50">
+                    {userStats.totalLessons > 0 
+                      ? Math.round((userStats.completedLessons / userStats.totalLessons) * 100)
+                      : 0}%
+                  </p>
+                  <Progress 
+                    value={userStats.totalLessons > 0 
+                      ? (userStats.completedLessons / userStats.totalLessons) * 100 
+                      : 0} 
+                    className="mt-2" 
+                  />
                 </div>
               </div>
             </Card>
@@ -274,7 +337,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-purple-600 dark:text-purple-400">Challenges</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-50">{userStats.completedChallenges}/{userStats.completedChallenges + userStats.activeChallenges}</p>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-50">0/1</p>
                   <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Completed</p>
                 </div>
               </div>
@@ -282,6 +345,11 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </motion.section>
+      
+      {/* XP Progress Section */}
+      <div className="mb-8">
+        <XPProgress userId={user?._id} />
+      </div>
       
       {/* Course Progress Section */}
       <section className="space-y-6">

@@ -61,6 +61,19 @@ const TopicRow: React.FC<TopicRowProps> = ({
   const isLiked = post.likes?.includes(currentUserId);
   const isAuthor = post.author._id === currentUserId;
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -105,7 +118,7 @@ const TopicRow: React.FC<TopicRowProps> = ({
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                {formatDate(post.createdAt)}
               </span>
               <span className="flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />

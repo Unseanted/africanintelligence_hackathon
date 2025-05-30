@@ -9,10 +9,10 @@ class WebSocketService {
     this.reconnectDelay = 1000;
   }
 
-  connect() {
-    const { token } = useTourLMS();
-    const wsUrl = `${process.env.REACT_APP_WS_URL}?token=${token}`;
+  connect(token) {
+    if (!token) return;
 
+    const wsUrl = `${import.meta.env.VITE_WS_URL}?token=${token}`;
     this.socket = new WebSocket(wsUrl);
 
     this.socket.onopen = () => {
