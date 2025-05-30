@@ -279,7 +279,7 @@ const ContentManagementPage = () => {
       </div>
       
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full max-w-3xl mb-8">
+        <TabsList className="grid grid-cols-7 w-full max-w-5xl mb-8">
           <TabsTrigger value="submission">
             <FilePlus className="w-4 h-4 mr-2" />
             Submit Content

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,11 @@ import {
   Clock,
   Users
 } from 'lucide-react';
+import AllRecommendations from './AllRecommendations';
 
 const Recommendations = () => {
+  const [showAll, setShowAll] = useState(false);
+
   // Mock data for recommendations
   const recommendations = {
     basedOnProgress: [
@@ -87,11 +90,15 @@ const Recommendations = () => {
     }
   };
 
+  if (showAll) {
+    return <AllRecommendations onBack={() => setShowAll(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Personalized Recommendations</h2>
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => setShowAll(true)}>
           View All
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
