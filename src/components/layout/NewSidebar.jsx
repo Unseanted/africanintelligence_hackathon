@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
 import {
@@ -19,7 +20,9 @@ import {
   Calendar,
   GraduationCap,
   X,
-  FileCode
+  FileCode,
+  Bot,
+  BarChart2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,27 +52,46 @@ const studentLinks = [
   { to: "/student/courses", icon: BookOpen, label: "Courses", color: "text-green-500" },
   { to: "/student/forum", icon: MessageSquare, label: "Forum", color: "text-indigo-500" },
   { to: "/student/events", icon: Calendar, label: "Events", color: "text-indigo-500" },
-  { to: '/student/apiDocs', icon: FileCode,label: 'API Documentation', color: "text-indigo-500" },
+  { to: '/student/apiDocs', icon: FileCode, label: 'API Documentation', color: "text-indigo-500" },
   { to: "/student/leaderboard", icon: Trophy, label: "Leaderboard", color: "text-amber-500" },
+  { to: "/student/challenges", icon: Cpu, label: "Challenges", color: "text-purple-500" },
   { to: "/student/badges", icon: Star, label: "Badges", color: "text-yellow-500" },
+  { to: "/student/content-management", icon: FileText, label: "Content", color: "text-emerald-500" },
+  { to: "/student/analytics", icon: BarChart2, label: "Analytics", color: "text-rose-500" },
+  { 
+    to: "/student/ai-assistant", 
+    icon: Bot, 
+    label: "AI Assistant", 
+    color: "text-purple-500",
+    highlight: true
+  },
     // { to: "/student/friends", icon: UserPlus, label: "Friends", color: "text-violet-500" },
   // { to: "/student/messages", icon: MessageSquare, label: "Messages", color: "text-emerald-500" },
   // { to: "/student/jobs", icon: Briefcase, label: "Job Board", color: "text-amber-500" },
   // { to: "/student/certificates", icon: Award, label: "Certificates", color: "text-pink-500" },
   // { to: "/student/notifications", icon: Bell, label: "Notifications", color: "text-orange-500" },
 ];
-
 const sidebarVariants = {
   hidden: { x: '-100%', transition: { type: 'spring', stiffness: 400, damping: 40 } },
   visible: { x: 0, transition: { type: 'spring', stiffness: 400, damping: 40 } },
 };
 
 const NewSidebar = ({ userType, isOpen, onClose, theme }) => {
+  const location = useLocation();
   const links = {
     admin: adminLinks,
     facilitator: facilitatorLinks,
     student: studentLinks,
   }[userType] || studentLinks;
+
+  // Function to check if a link is active
+  const isLinkActive = (to) => {
+    // Handle root path separately
+    if (to === '/admin' || to === '/facilitator' || to === '/student') {
+      return location.pathname === to;
+    }
+    return location.pathname.startsWith(to);
+  };
 
   return (
     <AnimatePresence>
@@ -113,38 +135,52 @@ const NewSidebar = ({ userType, isOpen, onClose, theme }) => {
                 </button>
               </div>
               <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
-                {links.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    className={({ isActive }) =>
-                      cn(
+                {links.map((link) => {
+                  const isActive = isLinkActive(link.to);
+                  return (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
                         isActive
                           ? `${theme === 'light' ? 'bg-amber-100/50 text-amber-600' : 'bg-gold-900/30 text-gold-300'} font-medium shadow-inner`
                           : `${theme === 'light' ? 'text-slate-700' : 'text-slate-300'} hover:bg-opacity-10`,
                         theme === 'light' ? 'hover:bg-amber-100/30' : 'hover:bg-amber-500/10'
-                      )
-                    }
-                    onClick={onClose}
-                  >
-                    <div className={`relative z-10 ${link.color} p-2 rounded-lg ${
-                      theme === 'light' ? 'bg-amber-50/50' : 'bg-gold-300/10'
-                    }`}>
-                      <link.icon className="h-5 w-5" />
-                    </div>
-                    <span className="relative z-10 font-medium">{link.label}</span>
-                    <motion.div 
-                      className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity -z-10 ${
-                        theme === 'light' 
-                          ? 'bg-gradient-to-r from-amber-100/50 to-transparent' 
-                          : 'bg-gradient-to-r from-amber-500/20 to-transparent'
-                      }`}
-                      initial={false}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </NavLink>
-                ))}
+                      )}
+                      onClick={onClose}
+                      end // This ensures exact matching for parent routes
+                    >
+                      <div className={`relative z-10 ${link.color} p-2 rounded-lg ${
+                        theme === 'light' ? 'bg-amber-50/50' : 'bg-gold-300/10'
+                      }`}>
+                        <link.icon className="h-5 w-5" />
+                      </div>
+                      <span className="relative z-10 font-medium">{link.label}</span>
+                      {isActive && (
+                        <motion.div 
+                          className={`absolute inset-0 ${
+                            theme === 'light' 
+                              ? 'bg-gradient-to-r from-amber-100/50 to-transparent' 
+                              : 'bg-gradient-to-r from-amber-500/20 to-transparent'
+                          }`}
+                          layoutId="activeLink"
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        />
+                      )}
+                      {!isActive && (
+                        <motion.div 
+                          className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity -z-10 ${
+                            theme === 'light' 
+                              ? 'bg-gradient-to-r from-amber-100/50 to-transparent' 
+                              : 'bg-gradient-to-r from-amber-500/20 to-transparent'
+                          }`}
+                          transition={{ duration: 0.3 }}
+                        />
+                      )}
+                    </NavLink>
+                  );
+                })}
               </nav>
               <div className={`mt-auto p-4 border-t ${
                 theme === 'light' ? 'border-amber-200/50' : 'border-gold-300/20'
