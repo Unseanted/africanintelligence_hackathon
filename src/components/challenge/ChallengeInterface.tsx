@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -18,10 +18,20 @@ interface TeamMember {
   role: string;
 }
 
+interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  startTime: number;
+  endTime: number;
+  status: 'pending' | 'active' | 'completed';
+  maxScore: number;
+}
+
 interface ChallengeUpdate {
   type: string;
   endTime?: number;
-  challenge?: any;
+  challenge?: Challenge;
   score?: number;
   rankings?: Array<{ teamId: string; score: number }>;
 }
@@ -36,48 +46,7 @@ const ChallengeInterface: React.FC<ChallengeInterfaceProps> = ({ challengeId, te
   const { toast } = useToast();
   const wsService = WebSocketService.getInstance();
 
-  useEffect(() => {
-    if (!token) return;
-
-    // Initialize WebSocket connection
-    wsService.initialize(token);
-
-    // Join team room
-    wsService.joinTeam(teamId);
-
-    // Set up event listeners
-    wsService.onTeamUpdate((data) => {
-      if (data.type === 'member_joined') {
-        setTeamMembers(prev => [...prev, { id: data.userId, name: data.userName, role: 'member' }]);
-      }
-    });
-
-    wsService.onChallengeUpdate((data: ChallengeUpdate) => {
-      handleChallengeUpdate(data);
-    });
-
-    wsService.onLeaderboardUpdate((data) => {
-      setRankings(prev => {
-        const newRankings = [...prev];
-        const index = newRankings.findIndex(r => r.teamId === data.teamId);
-        if (index >= 0) {
-          newRankings[index].score = data.score;
-        } else {
-          newRankings.push({ teamId: data.teamId, score: data.score });
-        }
-        return newRankings.sort((a, b) => b.score - a.score);
-      });
-    });
-
-    // Start challenge
-    wsService.startChallenge(challengeId);
-
-    return () => {
-      wsService.disconnect();
-    };
-  }, [token, teamId, challengeId]);
-
-  const handleChallengeUpdate = (data: ChallengeUpdate) => {
+  const handleChallengeUpdate = useCallback((data: ChallengeUpdate) => {
     switch (data.type) {
       case 'started':
         setIsActive(true);
@@ -111,7 +80,47 @@ const ChallengeInterface: React.FC<ChallengeInterfaceProps> = ({ challengeId, te
         }
         break;
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    // Initialize WebSocket connection
+    wsService.initialize(token);
+
+    // Join team room
+    wsService.joinTeam(teamId);
+
+    // Set up event listeners
+    wsService.onTeamUpdate((data) => {
+      if (data.type === 'member_joined') {
+        setTeamMembers(prev => [...prev, { id: data.userId, name: data.userName, role: 'member' }]);
+      }
+    });
+
+    wsService.onChallengeUpdate(handleChallengeUpdate);
+
+    wsService.onLeaderboardUpdate((data) => {
+      setRankings(prev => {
+        const newRankings = [...prev];
+        const index = newRankings.findIndex(r => r.teamId === data.teamId);
+        if (index >= 0) {
+          newRankings[index].score = data.score;
+        } else {
+          newRankings.push({ teamId: data.teamId, score: data.score });
+        }
+        return newRankings.sort((a, b) => b.score - a.score);
+      });
+    });
+
+    // Start challenge
+    wsService.startChallenge(challengeId);
+
+    return () => {
+      wsService.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, teamId, challengeId, handleChallengeUpdate]);
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);

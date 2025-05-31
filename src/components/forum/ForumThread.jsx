@@ -1,7 +1,7 @@
 // ForumThread.jsx
 import React, { useState } from 'react';
-import { VoteTypes, UserRoles, AssignmentStatus } from './forumTypes';
-import { forumUsers, forumCategories } from './forumData';
+import { VoteTypes, UserRoles, AssignmentStatus } from '../../types/forumTypes';
+import { forumUsers, forumCategories } from '../../data/forumData';
 
 const ForumThread = ({ thread, currentUserId, onVote, onReply, onAssign }) => {
   const [replyContent, setReplyContent] = useState('');
