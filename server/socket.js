@@ -3,6 +3,69 @@ const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 const axios = require("axios");
 
+// Rate limiting implementation using token bucket algorithm
+class RateLimiter {
+  constructor(tokensPerInterval, interval) {
+    this.tokensPerInterval = tokensPerInterval;
+    this.interval = interval;
+    this.tokens = tokensPerInterval;
+    this.lastRefill = Date.now();
+    this.userBuckets = new Map();
+  }
+
+  refillTokens() {
+    const now = Date.now();
+    const timePassed = now - this.lastRefill;
+    const tokensToAdd =
+      Math.floor(timePassed / this.interval) * this.tokensPerInterval;
+
+    if (tokensToAdd > 0) {
+      this.tokens = Math.min(this.tokensPerInterval, this.tokens + tokensToAdd);
+      this.lastRefill = now;
+    }
+  }
+
+  getUserBucket(userId) {
+    if (!this.userBuckets.has(userId)) {
+      this.userBuckets.set(userId, {
+        tokens: this.tokensPerInterval,
+        lastRefill: Date.now(),
+      });
+    }
+    return this.userBuckets.get(userId);
+  }
+
+  refillUserTokens(userId) {
+    const bucket = this.getUserBucket(userId);
+    const now = Date.now();
+    const timePassed = now - bucket.lastRefill;
+    const tokensToAdd =
+      Math.floor(timePassed / this.interval) * this.tokensPerInterval;
+
+    if (tokensToAdd > 0) {
+      bucket.tokens = Math.min(
+        this.tokensPerInterval,
+        bucket.tokens + tokensToAdd
+      );
+      bucket.lastRefill = now;
+    }
+  }
+
+  async consumeToken(userId) {
+    this.refillUserTokens(userId);
+    const bucket = this.getUserBucket(userId);
+
+    if (bucket.tokens > 0) {
+      bucket.tokens--;
+      return true;
+    }
+    return false;
+  }
+}
+
+// Create rate limiter: 2 requests per minute per user
+const rateLimiter = new RateLimiter(2, 60000);
+
 const setupSocket = (server, db) => {
   const io = new Server(server, {
     cors: {
@@ -115,11 +178,22 @@ const setupSocket = (server, db) => {
       }
     });
 
-    // Handle AI chat messages
+    // Handle AI chat messages with rate limiting
     socket.on("ai:message", async (message) => {
       try {
         if (!message || typeof message !== "string") {
           socket.emit("error", { message: "Invalid message format" });
+          return;
+        }
+
+        // Check rate limit
+        const canProceed = await rateLimiter.consumeToken(socket.user._id);
+        if (!canProceed) {
+          socket.emit("error", {
+            message:
+              "Rate limit exceeded. Please wait before sending more messages.",
+            code: "RATE_LIMIT_EXCEEDED",
+          });
           return;
         }
 
@@ -130,7 +204,7 @@ const setupSocket = (server, db) => {
         const response = await axios.post(
           "https://api.openai.com/v1/chat/completions",
           {
-            model: "gpt-3.5-turbo",
+            model: "gpt-4.1",
             messages: [
               {
                 role: "system",
@@ -150,6 +224,7 @@ const setupSocket = (server, db) => {
             },
           }
         );
+        console.log(response.data);
 
         const aiResponse = response.data.choices[0].message.content;
 
@@ -168,7 +243,19 @@ const setupSocket = (server, db) => {
         });
       } catch (error) {
         console.error("AI chat error:", error);
-        socket.emit("error", { message: "Failed to process AI message" });
+
+        // Handle specific OpenAI API errors
+        if (error.response?.status === 429) {
+          socket.emit("error", {
+            message: "OpenAI API rate limit exceeded. Please try again later.",
+            code: "OPENAI_RATE_LIMIT",
+          });
+        } else {
+          socket.emit("error", {
+            message: "Failed to process AI message",
+            code: "AI_ERROR",
+          });
+        }
       } finally {
         // Turn off typing indicator
         socket.emit("ai:typing", false);
@@ -182,7 +269,7 @@ const setupSocket = (server, db) => {
       socket.rooms.forEach((room) => {
         if (room !== socket.id) {
           // Exclude the socket's own room
-          updateRoomOnlineCount(room);
+          // updateRoomOnlineCount(room);
         }
       });
     });

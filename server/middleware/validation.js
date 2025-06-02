@@ -27,12 +27,9 @@ const validateForumPost = (req, res, next) => {
         typeof isCommunityPost !== "boolean" &&
         !["true", "false"].includes(isCommunityPost)
       ) {
-        return res
-          .status(400)
-          .json({
-            message:
-              'isCommunityPost must be a boolean or "true"/"false" string',
-          });
+        return res.status(400).json({
+          message: 'isCommunityPost must be a boolean or "true"/"false" string',
+        });
       }
     }
 
@@ -60,11 +57,9 @@ const validateForumPost = (req, res, next) => {
       "feedback",
     ];
     if (!allowedCategories.includes(category)) {
-      return res
-        .status(400)
-        .json({
-          message: `Category must be one of: ${allowedCategories.join(", ")}`,
-        });
+      return res.status(400).json({
+        message: `Category must be one of: ${allowedCategories.join(", ")}`,
+      });
     }
 
     // If a file is uploaded, it’s handled by multer; no additional validation needed here
@@ -89,11 +84,9 @@ const validateComment = (req, res, next) => {
 
     // Validate content length
     if (content.length < 1 || content.length > 2000) {
-      return res
-        .status(400)
-        .json({
-          message: "Comment content must be between 1 and 2000 characters",
-        });
+      return res.status(400).json({
+        message: "Comment content must be between 1 and 2000 characters",
+      });
     }
 
     next();
@@ -103,7 +96,7 @@ const validateComment = (req, res, next) => {
   }
 };
 
-export const validateAIChat = (validations) => {
+const validateAIChat = (validations) => {
   return async (req, res, next) => {
     await Promise.all(validations.map((validation) => validation.run(req)));
 
@@ -119,4 +112,5 @@ export const validateAIChat = (validations) => {
 module.exports = {
   validateForumPost,
   validateComment,
+  validateAIChat,
 };
