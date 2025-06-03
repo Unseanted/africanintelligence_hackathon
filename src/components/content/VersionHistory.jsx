@@ -91,6 +91,10 @@ const VersionHistory = ({ contentId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(null);
   const [selectedTab, setSelectedTab] = useState("commits");
+  const [branches, setBranches] = useState(['main', 'feature/content-update', 'bugfix/typos']);
+  const [activeBranch, setActiveBranch] = useState('main');
+  const [isCreatingPR, setIsCreatingPR] = useState(false);
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
   const { toast } = useToast();
 
   const fetchVersions = () => {
@@ -116,6 +120,70 @@ const VersionHistory = ({ contentId }) => {
     });
   };
 
+  const handleCreateBranch = () => {
+    setIsCreatingBranch(true);
+    const branchName = prompt('Enter new branch name:');
+    if (branchName) {
+      const newBranch = `feature/${branchName.toLowerCase().replace(/\s+/g, '-')}`;
+      setBranches(prev => [...prev, newBranch]);
+      setActiveBranch(newBranch);
+      toast({
+        title: "Success",
+        description: `Created new branch: ${newBranch}`,
+      });
+    }
+    setIsCreatingBranch(false);
+  };
+
+  const handleCreatePR = () => {
+    setIsCreatingPR(true);
+    const prTitle = prompt('Enter PR title:');
+    if (prTitle) {
+      toast({
+        title: "Success",
+        description: `Created PR: ${prTitle}`,
+      });
+    }
+    setIsCreatingPR(false);
+  };
+
+  const handleMergeBranch = (branchName) => {
+    if (branchName === 'main') {
+      toast({
+        title: "Error",
+        description: "Cannot merge main branch",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confirm(`Are you sure you want to merge ${branchName} into main?`)) {
+      setBranches(prev => prev.filter(b => b !== branchName));
+      toast({
+        title: "Success",
+        description: `Merged ${branchName} into main`,
+      });
+    }
+  };
+
+  const handleComment = (versionId) => {
+    const comment = prompt('Enter your comment:');
+    if (comment) {
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    }
+  };
+
+  const handleViewChanges = (version) => {
+    // In a real app, this would open a diff view
+    toast({
+      title: "View Changes",
+      description: `Showing changes for version ${version.versionNumber}`,
+    });
+  };
+
   useEffect(() => {
     fetchVersions();
   }, [contentId]);
@@ -129,19 +197,33 @@ const VersionHistory = ({ contentId }) => {
             Version History
           </h2>
           <Badge variant="outline" className="font-mono">
-            {currentVersion?.branch || 'main'}
+            {activeBranch}
           </Badge>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleCreateBranch}
+            disabled={isCreatingBranch}
+          >
             <GitFork className="w-4 h-4 mr-2" />
-            New Branch
+            {isCreatingBranch ? "Creating..." : "New Branch"}
           </Button>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleCreatePR}
+            disabled={isCreatingPR || activeBranch === 'main'}
+          >
             <GitPullRequest className="w-4 h-4 mr-2" />
-            Create PR
+            {isCreatingPR ? "Creating..." : "Create PR"}
           </Button>
-          <Button variant="outline" onClick={fetchVersions} disabled={isLoading}>
+          <Button 
+            variant="outline" 
+            onClick={fetchVersions} 
+            disabled={isLoading}
+          >
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
@@ -214,13 +296,21 @@ const VersionHistory = ({ contentId }) => {
                         Restore this version
                       </Button>
                       
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleComment(version.id)}
+                      >
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Comment
                       </Button>
                     </div>
                     
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewChanges(version)}
+                    >
                       View Changes
                     </Button>
                   </div>
@@ -234,19 +324,32 @@ const VersionHistory = ({ contentId }) => {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">Active Branches</h3>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleCreateBranch}
+                disabled={isCreatingBranch}
+              >
                 <GitFork className="w-4 h-4 mr-2" />
-                New Branch
+                {isCreatingBranch ? "Creating..." : "New Branch"}
               </Button>
             </div>
             <div className="space-y-2">
-              {['main', 'feature/content-update', 'bugfix/typos'].map((branch) => (
+              {branches.map((branch) => (
                 <div key={branch} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg">
                   <div className="flex items-center gap-2">
                     <GitBranch className="w-4 h-4 text-gray-500" />
                     <span className="font-mono">{branch}</span>
+                    {branch === activeBranch && (
+                      <Badge variant="secondary">Current</Badge>
+                    )}
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleMergeBranch(branch)}
+                    disabled={branch === 'main' || branch === activeBranch}
+                  >
                     <GitMerge className="w-4 h-4 mr-2" />
                     Merge
                   </Button>
