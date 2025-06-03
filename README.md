@@ -107,7 +107,11 @@ African Intelligence LMS is a comprehensive learning management system designed 
 
 - **Perez-salem Tuwam** - Backend Developer & Database Specialist
   - [GitHub](https://github.com/perez-salem21)
+<<<<<<< HEAD
   - [Twitter](https://twitter.com/perez21)
+=======
+  - [Twitter](https://twitter.com/perezsalem_21)
+>>>>>>> cd67be2f49dda719e9eec1d9965505651349f3a1
 
 - **Kimah Lydia Pam** - Backend Developer
   - [GitHub](https://github.com/kimax2)

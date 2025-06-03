@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clg, jp, ocn } from "../../lib/basic";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { initializeNotifications, requestNotificationPermission } from "@/api/notificationService";
+import AIChatbot from "@/components/ai/AIChatbot";
 
 
 let ison=false;
@@ -434,6 +435,7 @@ const Layout = ({ userType }) => {
         
         <main className="flex-1 overflow-auto p-4 md:p-6 pt-20 mt-8">
           <Outlet />
+          {userType === 'student' && <AIChatbot />}
         </main>
         
         <footer className={`border-t py-4 px-4 ${
