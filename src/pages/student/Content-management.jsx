@@ -22,7 +22,8 @@ import {
   GitCommit,
   GitMerge,
   GitCompare,
-  MessageSquare
+  MessageSquare,
+  Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import ContentAnalyzer from '@/components/content/ContentAnalyzer';
 
 // Dummy data for testing
 const dummySubmissions = [
@@ -238,78 +240,35 @@ const ContentManagementPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Content Management</h1>
-          <p className="text-gray-500 mt-1">Collaborative content development with version control</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsBranchModalOpen(true)}
-          >
-            <GitFork className="w-4 h-4 mr-2" />
-            New Branch
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsPRModalOpen(true)}
-            disabled={activeBranch === 'main'}
-          >
-            <GitPullRequest className="w-4 h-4 mr-2" />
-            Create PR
-          </Button>
-        </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Content Management</h1>
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
-        <Badge variant="outline" className="font-mono">
-          {activeBranch}
-        </Badge>
-        <Separator orientation="vertical" className="h-6" />
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Users className="w-4 h-4" />
-          <span>{submissions.length} contributors</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Code2 className="w-4 h-4" />
-          <span>{submissions.length} commits</span>
-        </div>
-      </div>
-      
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full max-w-5xl mb-8">
-          <TabsTrigger value="submission">
-            <FilePlus className="w-4 h-4 mr-2" />
-            Submit Content
+      <Tabs defaultValue="submission" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="submission" className="flex items-center gap-2">
+            <FilePlus className="w-4 h-4" />
+            Submissions
           </TabsTrigger>
-          <TabsTrigger value="review">
-            <ClipboardList className="w-4 h-4 mr-2" />
-            Review Queue
+          <TabsTrigger value="analyzer" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            Content Analyzer
           </TabsTrigger>
-          <TabsTrigger value="prs">
-            <GitPullRequest className="w-4 h-4 mr-2" />
-            Pull Requests
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            History
           </TabsTrigger>
-          <TabsTrigger value="commits">
-            <GitCommit className="w-4 h-4 mr-2" />
-            Commits
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <History className="w-4 h-4 mr-2" />
-            Version History
-          </TabsTrigger>
-          <TabsTrigger value="contributors">
-            <Award className="w-4 h-4 mr-2" />
+          <TabsTrigger value="contributors" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
             Contributors
           </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="w-4 h-4 mr-2" />
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
             Settings
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="submission">
           <div className="max-w-6xl mx-auto">
             <ContentEditor 
@@ -325,154 +284,11 @@ const ContentManagementPage = () => {
             />
           </div>
         </TabsContent>
-        
-        <TabsContent value="review">
-          <div className="max-w-6xl mx-auto">
-            {submissions.filter(s => s.status !== 'approved').map(submission => (
-              <div key={submission.id} className="mb-6">
-                <ReviewProcess 
-                  content={submission}
-                  onReviewComplete={({ status, review }) => {
-                    handleStatusChange(submission.id, status);
-                    toast.success(`Review ${status} for ${submission.title}`);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="prs">
-          <div className="max-w-6xl mx-auto space-y-4">
-            {pullRequests.map(pr => (
-              <Card key={pr.id} className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-medium">{pr.title}</h3>
-                    <p className="text-sm text-gray-600">{pr.description}</p>
-                  </div>
-                  <Badge variant={
-                    pr.status === 'open' ? 'default' :
-                    pr.status === 'merged' ? 'success' :
-                    pr.status === 'needs_revision' ? 'warning' :
-                    'destructive'
-                  }>
-                    {pr.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="w-4 h-4" />
-                    <span>{pr.sourceBranch} → {pr.targetBranch}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-4 h-4" />
-                    <span>{pr.changes.filesChanged} files changed</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-green-600">
-                    <span>+{pr.changes.additions}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-red-600">
-                    <span>-{pr.changes.deletions}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={pr.author.avatar} />
-                      <AvatarFallback>{pr.author.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{pr.author.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(pr.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <GitCompare className="w-4 h-4 mr-2" />
-                      Compare
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Review
-                    </Button>
-                    {pr.status === 'open' && (
-                      <Button size="sm">
-                        <GitMerge className="w-4 h-4 mr-2" />
-                        Merge
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+        <TabsContent value="analyzer">
+          <ContentAnalyzer />
         </TabsContent>
 
-        <TabsContent value="commits">
-          <div className="max-w-6xl mx-auto space-y-4">
-            {submissions.map(submission => (
-              <Card key={submission.id} className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-medium">{submission.title}</h3>
-                    <p className="text-sm text-gray-600">{submission.contentType}</p>
-                  </div>
-                  <Badge variant="outline" className="font-mono">
-                    {submission.commitHash}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="w-4 h-4" />
-                    <span>{submission.branch}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-4 h-4" />
-                    <span>{submission.changes.filesChanged} files changed</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-green-600">
-                    <span>+{submission.changes.additions}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-red-600">
-                    <span>-{submission.changes.deletions}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={submission.contributor.avatar} />
-                      <AvatarFallback>{submission.contributor.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{submission.contributor.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(submission.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <GitCompare className="w-4 h-4 mr-2" />
-                      View Changes
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Comment
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
         <TabsContent value="history">
           <div className="max-w-4xl mx-auto">
             <VersionHistory 
@@ -480,7 +296,7 @@ const ContentManagementPage = () => {
             />
           </div>
         </TabsContent>
-        
+
         <TabsContent value="contributors">
           <div className="max-w-6xl mx-auto">
             <ContributorRecognition 
