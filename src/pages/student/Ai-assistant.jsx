@@ -52,10 +52,9 @@ const AIAssistantPage = () => {
   useEffect(() => {
     if (!token) return;
 
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
+    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3031', {
       auth: { token }
     });
-
     newSocket.on('connect', () => {
       console.log('Connected to WebSocket');
       setIsOnline(true);

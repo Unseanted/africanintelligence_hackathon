@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 const axios = require("axios");
+const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 
 // Rate limiting implementation using token bucket algorithm
 class RateLimiter {
@@ -100,6 +101,8 @@ const setupSocket = (server, db) => {
       next(new Error("Authentication error"));
     }
   });
+
+  console.log("web socket ready for connection");
 
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.user._id}`);
@@ -201,6 +204,7 @@ const setupSocket = (server, db) => {
         socket.emit("ai:typing", true);
 
         // Call LLM API (example using OpenAI - replace with your preferred LLM)
+        /*
         const response = await axios.post(
           "https://api.openai.com/v1/chat/completions",
           {
@@ -226,21 +230,32 @@ const setupSocket = (server, db) => {
         );
         console.log(response.data);
 
-        const aiResponse = response.data.choices[0].message.content;
+        */
+        const mockesponse = {
+          data: {
+            choices: [{ message: { content: "This is a mock response" } }],
+          },
+        };
+        const aiResponse = mockesponse.data.choices[0].message.content;
 
         // Store the conversation in the database
-        await db.collection("ai_chat_history").insertOne({
+        /*  
+        Conversation.addMessage({role, content, tokenCount, model})
+
+        await db.collection("AIChatMessage").insertOne({
           userId: socket.user._id,
           message,
           response: aiResponse,
           timestamp: new Date(),
         });
+        */
 
         // Send the response back to the client
         socket.emit("ai:response", {
           message: aiResponse,
           timestamp: new Date(),
         });
+        console.log("response emitted");
       } catch (error) {
         console.error("AI chat error:", error);
 
@@ -266,6 +281,7 @@ const setupSocket = (server, db) => {
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.user._id}`);
       // Update online count for all rooms the user was in
+      return;
       socket.rooms.forEach((room) => {
         if (room !== socket.id) {
           // Exclude the socket's own room

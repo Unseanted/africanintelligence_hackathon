@@ -1,4 +1,5 @@
 const express = require("express");
+const setupSocket = require("./socket");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
 const path = require("path");
@@ -87,10 +88,13 @@ async function startServer() {
     }
 
     // Start the server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
     });
+
+    // Start websocket server
+    const webSocketServer = setupSocket(server, app.locals.db);
   } catch (error) {
     console.error("Error starting server:", error);
     process.exit(1);
