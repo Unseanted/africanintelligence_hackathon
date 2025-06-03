@@ -40,7 +40,17 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
     contentType: 'lesson',
     branch: 'main',
     commitMessage: '',
-    isDraft: true
+    isDraft: true,
+    formatting: {
+      bold: false,
+      italic: false,
+      underline: false,
+      align: 'left',
+      list: null,
+      link: null,
+      image: null,
+      code: false
+    }
   });
 
   const [editorState, setEditorState] = useState({
@@ -63,13 +73,72 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
     });
   };
 
+  const handleFormatting = (type, value) => {
+    setContent(prev => {
+      const newFormatting = { ...prev.formatting };
+      
+      switch (type) {
+        case 'bold':
+        case 'italic':
+        case 'underline':
+        case 'code':
+          newFormatting[type] = !prev.formatting[type];
+          break;
+        case 'align':
+          newFormatting.align = value;
+          break;
+        case 'list':
+          newFormatting.list = prev.formatting.list === value ? null : value;
+          break;
+        case 'link':
+          const url = prompt('Enter URL:');
+          if (url) {
+            newFormatting.link = url;
+          }
+          break;
+        case 'image':
+          const imageUrl = prompt('Enter image URL:');
+          if (imageUrl) {
+            newFormatting.image = imageUrl;
+          }
+          break;
+      }
+
+      const newContent = {
+        ...prev,
+        formatting: newFormatting
+      };
+
+      setEditorState(prev => ({
+        ...prev,
+        isDirty: true,
+        history: [...prev.history.slice(0, prev.currentHistoryIndex + 1), newContent],
+        currentHistoryIndex: prev.currentHistoryIndex + 1
+      }));
+
+      return newContent;
+    });
+  };
+
   const handleSave = () => {
-    onSave?.(content);
+    // Create a formatted version of the content
+    const formattedContent = {
+      ...content,
+      formattedBody: {
+        text: content.body,
+        formatting: content.formatting
+      }
+    };
+
+    // Call the onSave callback with the formatted content
+    onSave?.(formattedContent);
+    
     setEditorState(prev => ({
       ...prev,
       isDirty: false,
       lastSaved: new Date()
     }));
+    
     toast.success('Content saved successfully');
   };
 
@@ -99,6 +168,20 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
     toast.success(`Created new branch: ${branchName}`);
   };
 
+  const handlePreview = () => {
+    // Create a formatted version of the content for preview
+    const previewContent = {
+      ...content,
+      formattedBody: {
+        text: content.body,
+        formatting: content.formatting
+      }
+    };
+
+    // Call the onPreview callback with the formatted content
+    onPreview?.(previewContent);
+  };
+
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -117,13 +200,21 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
             <Redo className="w-4 h-4 mr-2" />
             Redo
           </Button>
-          <Button variant="outline" onClick={() => onPreview?.(content)}>
+          <Button 
+            variant="outline" 
+            onClick={handlePreview}
+            className="hover:bg-primary/10"
+          >
             <Eye className="w-4 h-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={handleSave}>
+          <Button 
+            onClick={handleSave}
+            disabled={!editorState.isDirty}
+            className={editorState.isDirty ? "bg-primary hover:bg-primary/90" : ""}
+          >
             <Save className="w-4 h-4 mr-2" />
-            Save
+            {editorState.isDirty ? "Save Changes" : "Saved"}
           </Button>
         </div>
       </div>
@@ -154,39 +245,83 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
             <div className="flex items-center justify-between">
               <Label>Content</Label>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.bold ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('bold')}
+                >
                   <Bold className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.italic ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('italic')}
+                >
                   <Italic className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.underline ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('underline')}
+                >
                   <Underline className="w-4 h-4" />
                 </Button>
                 <Separator orientation="vertical" className="h-6" />
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.align === 'left' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('align', 'left')}
+                >
                   <AlignLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.align === 'center' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('align', 'center')}
+                >
                   <AlignCenter className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.align === 'right' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('align', 'right')}
+                >
                   <AlignRight className="w-4 h-4" />
                 </Button>
                 <Separator orientation="vertical" className="h-6" />
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.list === 'bullet' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('list', 'bullet')}
+                >
                   <List className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.list === 'ordered' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('list', 'ordered')}
+                >
                   <ListOrdered className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.link ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('link')}
+                >
                   <Link className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.image ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('image')}
+                >
                   <ImageIcon className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant={content.formatting.code ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleFormatting('code')}
+                >
                   <Code2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -195,7 +330,16 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
               value={content.body}
               onChange={(e) => handleContentChange('body', e.target.value)}
               placeholder="Write your content here..."
-              className="min-h-[400px] font-mono"
+              className={`min-h-[400px] font-mono ${
+                content.formatting.align === 'center' ? 'text-center' : 
+                content.formatting.align === 'right' ? 'text-right' : 'text-left'
+              }`}
+              style={{
+                fontWeight: content.formatting.bold ? 'bold' : 'normal',
+                fontStyle: content.formatting.italic ? 'italic' : 'normal',
+                textDecoration: content.formatting.underline ? 'underline' : 'none',
+                fontFamily: content.formatting.code ? 'monospace' : 'inherit'
+              }}
             />
           </div>
         </div>
