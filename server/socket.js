@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
+const { vapid_private_key } = require("./configs/config");
 
 // Rate limiting implementation using token bucket algorithm
 class RateLimiter {
@@ -64,198 +65,117 @@ class RateLimiter {
   }
 }
 
-// Create rate limiter: 2 requests per minute per user
-const rateLimiter = new RateLimiter(2, 60000);
+// Initialize rate limiter (10 messages per minute)
+const rateLimiter = new RateLimiter(10, 60 * 1000);
 
 const setupSocket = (server, db) => {
   const io = new Server(server, {
     cors: {
-      origin: "*", // Adjust based on your frontend URL for security
+      origin: "*",
       methods: ["GET", "POST"],
     },
   });
 
+  // Authentication middleware
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
       if (!token) {
-        return next(new Error("Authentication error: No token provided"));
+        return next(new Error("Authentication error"));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, vapid_private_key);
       const user = await db
         .collection("users")
-        .findOne(
-          { _id: new ObjectId(decoded.id) },
-          { projection: { _id: 1, name: 1, email: 1 } }
-        );
+        .findOne({ _id: new ObjectId(decoded.userId) });
 
       if (!user) {
-        return next(new Error("Authentication error: User not found"));
+        return next(new Error("User not found"));
       }
 
       socket.user = user;
       next();
     } catch (error) {
-      console.error("Socket authentication error:", error);
       next(new Error("Authentication error"));
     }
   });
 
-  console.log("web socket ready for connection");
-
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.user._id}`);
 
-    // Track online users per room
-    const updateRoomOnlineCount = (room) => {
-      const roomSockets = io.sockets.adapter.rooms.get(room);
-      const count = roomSockets ? roomSockets.size : 0;
-      io.to(room).emit("room:online_count", { room, count });
-    };
-
-    // Handle joining rooms
-    socket.on("join_room", (room) => {
-      if (!room || typeof room !== "string") {
-        socket.emit("error", { message: "Invalid room name" });
-        return;
-      }
-
-      socket.join(room);
-      console.log(`User ${socket.user._id} joined room: ${room}`);
-      updateRoomOnlineCount(room);
-    });
-
-    // Handle forum post creation
-    socket.on("forum:create_post", (post) => {
-      if (!post || !post._id || !post.title) {
-        socket.emit("error", { message: "Invalid post data" });
-        return;
-      }
-
-      if (post.isCommunityPost) {
-        io.to("forum:community").emit("forum:new_community_post", post);
-      } else if (post.courseId) {
-        io.to(`forum:course:${post.courseId}`).emit(
-          "forum:new_course_post",
-          post
-        );
-      }
-    });
-
-    // Handle forum comment creation
-    socket.on("forum:create_comment", ({ postId, courseId, comment }) => {
-      if (!postId || !comment || !comment._id || !comment.content) {
-        socket.emit("error", { message: "Invalid comment data" });
-        return;
-      }
-
-      if (courseId) {
-        io.to(`forum:course:${courseId}`).emit("forum:new_course_comment", {
-          postId,
-          comment,
-        });
-      } else {
-        io.to("forum:community").emit("forum:new_community_comment", {
-          postId,
-          comment,
-        });
-      }
-    });
-
-    // Handle toggling likes on a forum post
-    socket.on("forum:toggle_like", ({ postId, courseId }) => {
-      if (!postId) {
-        socket.emit("error", { message: "Invalid post ID" });
-        return;
-      }
-
-      if (courseId) {
-        io.to(`forum:course:${courseId}`).emit("forum:course_post_updated", {
-          _id: postId,
-        });
-      } else {
-        io.to("forum:community").emit("forum:community_post_updated", {
-          _id: postId,
-        });
-      }
-    });
-
-    // Handle AI chat messages with rate limiting
-    socket.on("ai:message", async (message) => {
+    socket.on("ai:message", async (data) => {
       try {
-        if (!message || typeof message !== "string") {
-          socket.emit("error", { message: "Invalid message format" });
-          return;
-        }
-
         // Check rate limit
-        const canProceed = await rateLimiter.consumeToken(socket.user._id);
+        const canProceed = await rateLimiter.consumeToken(socket.user._id.toString());
         if (!canProceed) {
           socket.emit("error", {
-            message:
-              "Rate limit exceeded. Please wait before sending more messages.",
+            message: "Rate limit exceeded. Please wait before sending more messages.",
             code: "RATE_LIMIT_EXCEEDED",
           });
           return;
         }
 
-        // Emit typing indicator
+        // Turn on typing indicator
         socket.emit("ai:typing", true);
 
-        // Call LLM API (example using OpenAI - replace with your preferred LLM)
-        /*
+        // Extract message and context
+        const { message, context = {} } = data;
+        const { courseId, lessonId } = context;
+
+        // Prepare conversation context
+        let systemMessage = "You are an AI learning assistant for an online learning platform.";
+        if (courseId) {
+          const course = await db.collection("courses").findOne({ _id: new ObjectId(courseId) });
+          if (course) {
+            systemMessage += ` The user is currently studying the course "${course.title}".`;
+          }
+        }
+        if (lessonId) {
+          const lesson = await db.collection("lessons").findOne({ _id: new ObjectId(lessonId) });
+          if (lesson) {
+            systemMessage += ` They are specifically working on the lesson "${lesson.title}".`;
+          }
+        }
+
+        // Call OpenAI API
         const response = await axios.post(
           "https://api.openai.com/v1/chat/completions",
           {
-            model: "gpt-4.1",
+            model: "gpt-3.5-turbo",
             messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful AI assistant for an educational platform.",
-              },
-              {
-                role: "user",
-                content: message,
-              },
+              { role: "system", content: systemMessage },
+              { role: "user", content: message }
             ],
+            temperature: 0.7,
+            max_tokens: 500
           },
           {
             headers: {
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json",
-            },
+              "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json"
+            }
           }
         );
-        console.log(response.data);
 
-        */
-        const mockesponse = {
-          data: {
-            choices: [{ message: { content: "This is a mock response" } }],
-          },
-        };
-        const aiResponse = mockesponse.data.choices[0].message.content;
+        const aiResponse = response.data.choices[0].message.content;
 
         // Store the conversation in the database
-        /*  
-        Conversation.addMessage({role, content, tokenCount, model})
-
-        await db.collection("AIChatMessage").insertOne({
+        await db.collection("ai_chat_messages").insertOne({
           userId: socket.user._id,
           message,
           response: aiResponse,
-          timestamp: new Date(),
+          context: {
+            courseId: courseId ? new ObjectId(courseId) : null,
+            lessonId: lessonId ? new ObjectId(lessonId) : null
+          },
+          timestamp: new Date()
         });
-        */
 
         // Send the response back to the client
         socket.emit("ai:response", {
           message: aiResponse,
-          timestamp: new Date(),
+          timestamp: new Date()
         });
-        console.log("response emitted");
       } catch (error) {
         console.error("AI chat error:", error);
 
@@ -263,12 +183,12 @@ const setupSocket = (server, db) => {
         if (error.response?.status === 429) {
           socket.emit("error", {
             message: "OpenAI API rate limit exceeded. Please try again later.",
-            code: "OPENAI_RATE_LIMIT",
+            code: "OPENAI_RATE_LIMIT"
           });
         } else {
           socket.emit("error", {
             message: "Failed to process AI message",
-            code: "AI_ERROR",
+            code: "AI_ERROR"
           });
         }
       } finally {
@@ -280,14 +200,6 @@ const setupSocket = (server, db) => {
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.user._id}`);
-      // Update online count for all rooms the user was in
-      return;
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          // Exclude the socket's own room
-          // updateRoomOnlineCount(room);
-        }
-      });
     });
   });
 
