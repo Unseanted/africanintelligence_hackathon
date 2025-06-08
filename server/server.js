@@ -78,6 +78,7 @@ async function startServer() {
     app.use("/api/forum", forumRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);
+    app.use("/api/assistant", assistantConvoRoutes);
 
     // Serve static files in production
     if (process.env.NODE_ENV === "production") {

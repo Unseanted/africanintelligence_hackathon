@@ -3,6 +3,11 @@ const Schema = mongoose.Schema;
 
 const messageSchema = new Schema(
   {
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: "AIConversation",
+      required: true,
+    },
     role: {
       type: String,
       enum: ["user", "assistant"],
@@ -125,12 +130,14 @@ aiConversationSchema.virtual("formattedLastActivity").get(function () {
 
 // Method to add a message
 aiConversationSchema.methods.addMessage = function (
+  conversationId,
   role,
   content,
   aiModel = null,
   tokenCount = 0
 ) {
   this.messages.push({
+    conversationId,
     role,
     content,
     aiModel,
@@ -142,7 +149,10 @@ aiConversationSchema.methods.addMessage = function (
 };
 
 // Method to get recent conversations for a user
-aiConversationSchema.statics.getRecentConversations = function (userId, limit = 20) {
+aiConversationSchema.statics.getRecentConversations = function (
+  userId,
+  limit = 20
+) {
   return this.find({
     userId,
     isArchived: false,
@@ -173,10 +183,13 @@ aiConversationSchema.statics.searchConversations = function (
     .lean();
 };
 
-const Conversation = mongoose.model("AIChat", aiConversationSchema);
-const AIChatMessage = mongoose.model("AIChatMessage", messageSchema);
+const AIConversation = mongoose.model("AIConversation", aiConversationSchema);
+const AIConversationMessage = mongoose.model(
+  "AIConversationMessage",
+  messageSchema
+);
 
 module.exports = {
-  Conversation,
-  AIChatMessage,
+  AIConversation,
+  AIConversationMessage,
 };
