@@ -37,11 +37,11 @@ const studentSchema = new Schema(
       default: 0,
     },
     lastLogin: {
-      type: Date,
+      type: Number,
       default: Date.now,
     },
     lastActive: {
-      type: Date,
+      type: Number,
       default: Date.now,
     },
     level: {
@@ -77,25 +77,6 @@ const studentSchema = new Schema(
         ref: "Activity",
       },
     ],
-    notifications: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-      },
-    ],
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 5000, // Limit message length to 5000 characters
-    },
-    aiModel: {
-      type: String,
-      enum: ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku"],
-      required: function () {
-        return this.role === "assistant"; // Only required for assistant messages
-      },
-    },
-    tokenCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,
@@ -103,6 +84,17 @@ const studentSchema = new Schema(
 );
 
 // Index for faster queries
-messageSchema.index({ conversationId: 1, createdAt: 1 });
+studentSchema.index({ user: 1 });
+
+studentSchema.pre("save", async function (next) {
+  // Calculate xpToNextLevel
+  // TODO: Implement better XP calculation
+  if (!this.isModified("xp")) {
+    this.xpToNextLevel = this.xp.allTime + 100;
+  }
+  next();
+});
+
+// TODO: Update badges
 
 module.exports = mongoose.model("Student", studentSchema);
