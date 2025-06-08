@@ -81,7 +81,7 @@ const aiConversationSchema = new Schema(
 
 // Update metadata before saving
 aiConversationSchema.pre("save", function (next) {
-  this.metadata.messageCount = this.messages.length;
+  this.metadata.messageCount = Math.floor(this.messages.length / 2); // Counting only assistant messages
   this.metadata.totalTokens = this.messages.reduce(
     (sum, msg) => sum + (msg.tokenCount || 0),
     0
@@ -89,7 +89,7 @@ aiConversationSchema.pre("save", function (next) {
   this.metadata.lastActivity = new Date().getTime();
 
   // Auto-generate title from first user message if still default
-  if (this.title === "New Chat" && this.messages.length > 0) {
+  if (this.title === "New Conversation" && this.messages.length > 0) {
     const firstUserMessage = this.messages.find((msg) => msg.role === "user");
     if (firstUserMessage) {
       this.title =
@@ -127,22 +127,22 @@ aiConversationSchema.virtual("formattedLastActivity").get(function () {
 aiConversationSchema.methods.addMessage = function (
   role,
   content,
-  model = null,
+  aiModel = null,
   tokenCount = 0
 ) {
   this.messages.push({
     role,
     content,
-    model,
+    aiModel,
     tokenCount,
-    timestamp: new Date(),
+    timestamp: new Date().getTime(),
   });
 
   return this.save();
 };
 
-// Method to get recent chats for a user
-aiConversationSchema.statics.getRecentChats = function (userId, limit = 20) {
+// Method to get recent conversations for a user
+aiConversationSchema.statics.getRecentConversations = function (userId, limit = 20) {
   return this.find({
     userId,
     isArchived: false,
@@ -154,7 +154,7 @@ aiConversationSchema.statics.getRecentChats = function (userId, limit = 20) {
 };
 
 // Method to search chats
-aiConversationSchema.statics.searchChats = function (
+aiConversationSchema.statics.searchConversations = function (
   userId,
   query,
   limit = 10
