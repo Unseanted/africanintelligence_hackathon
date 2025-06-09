@@ -142,3 +142,6 @@ dist
 
 # Todo 
 todo.txt
+
+# Socket test
+socket-test.js
