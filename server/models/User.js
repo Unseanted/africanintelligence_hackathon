@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  badges: [{
+    type: String,
+    default: ''
+  }],// ["1 day streak", "5 courses completed"]
   bio: {
     type: String,
     default: ''
@@ -46,6 +50,10 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+
+// api/student/badges
+// Post api/badges
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

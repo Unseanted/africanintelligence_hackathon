@@ -30,14 +30,14 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
-
+ 
 // Configure Web Push
 if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
   webpush.setVapidDetails(
     "mailto:test@example.com",
-    process.env.PUBLIC_VAPID_KEY,
-    process.env.PRIVATE_VAPID_KEY
-  );
+    process.env.PUBLIC_VAPID_KEY, 
+    process.env.PRIVATE_VAPID_KEY 
+  ); 
   app.set("webpush", webpush);
   console.log("Web Push configured successfully");
 } else {
@@ -49,7 +49,7 @@ const specs = swaggerJsdoc(swaggerOptions);
 
 // Serve Swagger UI at a specific endpoint
 app.use(
-  "/api-docs",
+  "/api-docs", 
   swaggerUi.serve,
   swaggerUi.setup(specs, { explorer: true })
 );
