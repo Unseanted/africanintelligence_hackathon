@@ -4,7 +4,16 @@ import { TouchableRipple } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname, Stack } from 'expo-router';
 import { ThemedText } from '../components/ThemedText';
-import { AIAssistant } from '../components/AIAssistant';
+import AIAssistant from '../components/AIAssistant';
+
+// Color Constants
+const PRIMARY = '#FFBF00';
+const PRIMARY_LIGHT = 'rgba(255, 191, 0, 0.1)';
+const TEXT_INACTIVE = '#9CA3AF';
+const BACKGROUND = '#000';
+const BORDER = 'rgba(255, 191, 0, 0.2)';
+const SHADOW = '#000000';
+const TEXT_PRIMARY = '#000000';
 
 type NavItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -14,17 +23,13 @@ type NavItem = {
   activeColor: string;
 };
 
-// Define colors for consistency with project's UI
-const INACTIVE_COLOR = '#9ca3af'; // Gray from ThemedText subtitle
-const ACTIVE_COLOR = '#FFBF00'; // Amber for active color
-const ACTIVE_BACKGROUND_COLOR = 'rgba(255, 191, 0, 0.1)'; // Light amber transparent
-
 const navItems: NavItem[] = [
-  { icon: 'view-dashboard', label: 'Dashboard', route: '/student', inactiveColor: INACTIVE_COLOR, activeColor: ACTIVE_COLOR },
-  { icon: 'forum', label: 'Forum', route: '/(tabs)/forum', inactiveColor: INACTIVE_COLOR, activeColor: ACTIVE_COLOR },
-  { icon: 'trophy', label: 'Leaderboard', route: '/(tabs)/leaderboard', inactiveColor: INACTIVE_COLOR, activeColor: ACTIVE_COLOR },
-  { icon: 'calendar-star', label: 'Events', route: '/(tabs)/events', inactiveColor: INACTIVE_COLOR, activeColor: ACTIVE_COLOR },
-  { icon: 'flag-checkered', label: 'Challenges', route: '/(tabs)/challenges', inactiveColor: INACTIVE_COLOR, activeColor: ACTIVE_COLOR },
+  { icon: 'view-dashboard', label: 'Dashboard', route: '/student', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  { icon: 'forum', label: 'Forum', route: '/(tabs)/forum', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  { icon: 'trophy', label: 'Leaderboard', route: '/(tabs)/leaderboard', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  { icon: 'calendar-star', label: 'Events', route: '/(tabs)/events', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  { icon: 'flag-checkered', label: 'Challenges', route: '/(tabs)/challenges', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  { icon: 'account', label: 'Profile', route: '/(tabs)/profile', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
 ];
 
 export default function StudentLayout() {
@@ -98,27 +103,27 @@ export default function StudentLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
-    borderColor :'rgba(255, 191, 0, 0.2)',
+    backgroundColor: BACKGROUND,
+    borderColor: BORDER,
   },
   bottomNav: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#111827',
+    backgroundColor: BACKGROUND,
     borderRadius: 30,
     marginHorizontal: 16,
     marginBottom: 16,
     overflow: 'hidden',
     paddingVertical: 12,
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
     borderWidth: 1,
-    borderColor: ACTIVE_COLOR,
+    borderColor: PRIMARY,
   },
   navItemsContainer: {
     flexDirection: 'row',
@@ -141,7 +146,7 @@ const styles = StyleSheet.create({
   },
   activeNavItemInner: {
     flexDirection: 'column',
-    backgroundColor: ACTIVE_BACKGROUND_COLOR,
+    backgroundColor: PRIMARY_LIGHT,
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -149,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 0,
     borderWidth: 1,
-    borderColor: ACTIVE_COLOR,
+    borderColor: PRIMARY,
     paddingTop: 4,
   },
   navItemText: {
@@ -157,5 +162,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 0,
+    color: TEXT_PRIMARY,
   },
 });

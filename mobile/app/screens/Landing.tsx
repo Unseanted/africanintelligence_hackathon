@@ -23,7 +23,7 @@ export default function Landing() {
         <View className="w-full space-y-4">
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('Login')}
+            onPress={() => (navigation as any).navigate('Login')}
             className="w-full"
           >
             Login
@@ -31,7 +31,7 @@ export default function Landing() {
           
           <Button
             mode="outlined"
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => (navigation as any).navigate('Register')}
             className="w-full"
           >
             Register

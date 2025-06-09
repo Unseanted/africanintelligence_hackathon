@@ -3,12 +3,11 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
+import { ThemedText } from './components/ThemedText';
+import { ThemedView } from './components/ThemedView';
 
-export default function HomeScreen() {
+export default function LandingPage() {
   useEffect(() => {
-    
     const timer = setTimeout(() => {
       router.replace('/(auth)/login');
     }, 3000);
@@ -47,4 +46,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 24,
   },
-});
+}); 

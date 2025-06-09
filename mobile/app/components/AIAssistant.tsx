@@ -9,7 +9,7 @@ type Message = {
   isUser: boolean;
 };
 
-export function AIAssistant() {
+export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isVisible, setIsVisible] = useState(false);
