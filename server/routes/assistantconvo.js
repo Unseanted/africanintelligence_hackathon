@@ -3,20 +3,13 @@ const {
   createConversation,
   getConversations,
   getMessages,
-  sendMessage,
   deleteConversation,
 } = require("../controllers/ai-assistantController");
-const { auth } = require("../middleware/auth.middleware");
-const {
-  validateAIConversation,
-} = require("../middleware/validation.middleware");
+const auth = require("../middleware/auth");
+const { validateAIConversation } = require("../middleware/validation");
 const {
   createAiConversationValidation,
-  sendAiConversationMessageValidation,
-} = require("../validations/ai-conversationMessageValidation");
-const {
-  aiConversationMessageLimiter,
-} = require("../middleware/rate-limit.middleware");
+} = require("../validations/aiAssistantValidation");
 
 const router = express.Router();
 

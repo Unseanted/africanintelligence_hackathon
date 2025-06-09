@@ -11,6 +11,7 @@ const studentRoutes = require("./routes/studentRoutes");
 const courseRoutes = require("./routes/course");
 const forumRoutes = require("./routes/forum");
 const notificationRoutes = require("./routes/notification");
+const assistantConvoRoutes = require("./routes/assistantconvo");
 const uploadRoutes = require("./routes/upload");
 const adminServices = require("./services/adminServices");
 const webpush = require("web-push");

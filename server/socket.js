@@ -3,8 +3,69 @@ const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
-const { vapid_private_key } = require("./configs/config");
+const { vapid_private_key, mistral_api_key } = require("./configs/config");
 
+class LLMStrategy {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+  }
+
+  async generateResponse(message) {
+    throw new Error("Not implemented");
+  }
+}
+
+class LLMContext {
+  constructor(strategy) {
+    this.strategy = strategy;
+  }
+
+  setStrategy(strategy) {
+    this.strategy = strategy;
+  }
+
+  async generateResponse(message) {
+    return this.strategy.generateResponse(message);
+  }
+}
+
+class MockLLM extends LLMStrategy {
+  constructor(apiKey) {
+    super(apiKey);
+    this.model = "mock-model";
+  }
+
+  async generateResponse(message) {
+    return {
+      role: "assistant",
+      content: "This is a mock response",
+      model: this.model,
+      timestamp: new Date(),
+    };
+  }
+}
+
+class MistralLLM extends LLMStrategy {
+  constructor(apiKey) {
+    super(apiKey);
+    this.model = "mistral-large-latest";
+  }
+
+  async generateResponse(message) {
+    const response = await axios.post(
+      "https://api.mistral.ai/v1/chat/completions",
+      {
+        model: this.model,
+        messages: [{ role: "user", content: message }],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      }
+    );
+  }
+}
 // Rate limiting implementation using token bucket algorithm
 class RateLimiter {
   constructor(tokensPerInterval, interval) {
@@ -100,16 +161,61 @@ const setupSocket = (server, db) => {
     }
   });
 
+  console.log("Socket server is running");
+
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.user._id}`);
+    console.log(`User connected: ${socket.user._id }`);
 
     socket.on("ai:message", async (data) => {
+      const {message, context} = data;
+      const {conversationId, role, content, timestamp} = context;
+
+      const conversation = await db.collection("AIConversation").findOne({conversationId: conversationId});
+
+      if (conversation) {
+        conversation.addMessage({
+          conversationId: conversation._id,
+          role,
+          content,
+          tokenCount: 0,
+          timestamp,
+        })
+      }
+
+      socket.emit("ai:typing", true);
+      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
+      const response = await llmContext.generateResponse(message);
+      console.log(response);
+      const aiMessage = {
+        conversationId: conversationId,
+        role: "assistant",
+        content: response.content,
+        aiModel: response.model,
+        tokenCount: 0,
+        timestamp: response.timestamp,
+      }
+      socket.emit("ai:response", {
+        message: response,
+      });
+      socket.emit("ai:typing", false);
+
+      // Store the conversation in the database
+      if (conversation) {
+        conversation.addMessage(aiMessage);
+      }
+      
+    });
+
+    /*socket.on("ai:message", async (data) => {
       try {
         // Check rate limit
-        const canProceed = await rateLimiter.consumeToken(socket.user._id.toString());
+        const canProceed = await rateLimiter.consumeToken(
+          socket.user._id.toString()
+        );
         if (!canProceed) {
           socket.emit("error", {
-            message: "Rate limit exceeded. Please wait before sending more messages.",
+            message:
+              "Rate limit exceeded. Please wait before sending more messages.",
             code: "RATE_LIMIT_EXCEEDED",
           });
           return;
@@ -118,24 +224,31 @@ const setupSocket = (server, db) => {
         // Turn on typing indicator
         socket.emit("ai:typing", true);
 
+        
         // Extract message and context
         const { message, context = {} } = data;
         const { courseId, lessonId } = context;
 
         // Prepare conversation context
-        let systemMessage = "You are an AI learning assistant for an online learning platform.";
+        let systemMessage =
+          "You are an AI learning assistant for an online learning platform.";
         if (courseId) {
-          const course = await db.collection("courses").findOne({ _id: new ObjectId(courseId) });
+          const course = await db
+            .collection("courses")
+            .findOne({ _id: new ObjectId(courseId) });
           if (course) {
             systemMessage += ` The user is currently studying the course "${course.title}".`;
           }
         }
         if (lessonId) {
-          const lesson = await db.collection("lessons").findOne({ _id: new ObjectId(lessonId) });
+          const lesson = await db
+            .collection("lessons")
+            .findOne({ _id: new ObjectId(lessonId) });
           if (lesson) {
             systemMessage += ` They are specifically working on the lesson "${lesson.title}".`;
           }
         }
+        
 
         // Call OpenAI API
         const response = await axios.post(
@@ -144,16 +257,16 @@ const setupSocket = (server, db) => {
             model: "gpt-3.5-turbo",
             messages: [
               { role: "system", content: systemMessage },
-              { role: "user", content: message }
+              { role: "user", content: message },
             ],
             temperature: 0.7,
-            max_tokens: 500
+            max_tokens: 500,
           },
           {
             headers: {
-              "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json"
-            }
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
           }
         );
 
@@ -166,15 +279,15 @@ const setupSocket = (server, db) => {
           response: aiResponse,
           context: {
             courseId: courseId ? new ObjectId(courseId) : null,
-            lessonId: lessonId ? new ObjectId(lessonId) : null
+            lessonId: lessonId ? new ObjectId(lessonId) : null,
           },
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         // Send the response back to the client
         socket.emit("ai:response", {
           message: aiResponse,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       } catch (error) {
         console.error("AI chat error:", error);
@@ -183,23 +296,30 @@ const setupSocket = (server, db) => {
         if (error.response?.status === 429) {
           socket.emit("error", {
             message: "OpenAI API rate limit exceeded. Please try again later.",
-            code: "OPENAI_RATE_LIMIT"
+            code: "OPENAI_RATE_LIMIT",
           });
         } else {
           socket.emit("error", {
             message: "Failed to process AI message",
-            code: "AI_ERROR"
+            code: "AI_ERROR",
           });
         }
       } finally {
         // Turn off typing indicator
         socket.emit("ai:typing", false);
       }
-    });
+    }); */
+
+
 
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.user._id}`);
+    });
+
+    // Ping-pong handler for connection testing
+    socket.on("ping", (data) => {
+      socket.emit("pong");
     });
   });
 

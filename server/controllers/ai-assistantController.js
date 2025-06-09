@@ -1,5 +1,8 @@
 const { Request, Response } = require("express");
-const { AIConversation, AIConversationMessage } = require("../models/AssistantConvo.model");
+const {
+  AIConversation,
+  AIConversationMessage,
+} = require("../models/AssistantConvo");
 const Joi = require("joi");
 
 const createConversationSchema = Joi.object({

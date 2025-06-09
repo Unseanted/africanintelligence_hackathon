@@ -134,7 +134,8 @@ aiConversationSchema.methods.addMessage = function (
   role,
   content,
   aiModel = null,
-  tokenCount = 0
+  tokenCount = 0,
+  timestamp = new Date().getTime()
 ) {
   this.messages.push({
     conversationId,
@@ -142,7 +143,7 @@ aiConversationSchema.methods.addMessage = function (
     content,
     aiModel,
     tokenCount,
-    timestamp: new Date().getTime(),
+    timestamp,
   });
 
   return this.save();
