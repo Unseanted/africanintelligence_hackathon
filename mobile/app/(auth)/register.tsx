@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, ImageBackground } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
-import { router, Link } from 'expo-router';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
-import { IconSymbol } from '../components/IconSymbol';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useTourLMS } from '../contexts/TourLMSContext';
+import { useToast } from '../hooks/use-toast';
+import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -17,60 +20,139 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register, API_URL } = useTourLMS();
+  const { toast } = useToast();
+
+  const [, response, promptAsync] = Google.useAuthRequest({
+    clientId: 'YOUR_EXPO_CLIENT_ID',
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    scopes: ['profile', 'email'],
+    redirectUri: 'exp://localhost:19000/--/oauth2redirect/google'
+  });
+
+  const handleGoogleResponse = useCallback(async (token: string | undefined) => {
+    if (!token) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          role,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.user && result.token) {
+        await register({
+          name: result.user.name,
+          email: result.user.email,
+          password: '',
+          role: result.user.role
+        });
+        toast({
+          title: "Tribe Welcomes You!",
+          description: "You've joined African Intelligence. Onward to greatness!",
+        });
+        router.replace('/(tabs)/student');
+      } else {
+        throw new Error(result.message || 'Google signup failed');
+      }
+    } catch (error: any) {
+      console.error("Google Signup error:", error);
+      toast({
+        title: "Entry Denied",
+        description: error.message || "Failed to signup with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_URL, role, register, toast]);
+
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleResponse(response.authentication?.accessToken);
+    }
+  }, [response, handleGoogleResponse]);
 
   const handleSubmit = async () => {
     if (password !== confirmPassword) {
-      // TODO: Add toast notification
+      toast({
+        title: "Password Mismatch",
+        description: "Ensure your passwords align, warrior.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!agreeTerms) {
-      // TODO: Add toast notification
+      toast({
+        title: "Tribal Pact",
+        description: "Accept the tribe's code to join the ascent.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
     try {
-      // TODO: Implement actual registration logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const userData = { name, email, password, role };
+      await register(userData);
+      toast({
+        title: "Tribe Welcomes You!",
+        description: "You've joined African Intelligence. Onward to greatness!",
+      });
       router.replace('/(tabs)/student');
-    } catch (error) {
-      console.error('Registration error:', error);
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Entry Denied",
+        description: error.message || "The tribe couldn't forge your path. Try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: BACKGROUND }]}>
       <View style={styles.content}>
-        <ThemedView style={styles.formContainer}>
-          {/* Logo and Header */}
+        <View style={styles.formContainer}>
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <IconSymbol size={40} color="#eab308" />
+              <Image
+                source={require('../../assets/images/logo1.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
             </View>
-            <ThemedText style={styles.title}>Join African Intelligence</ThemedText>
-            <ThemedText style={styles.subtitle}>
-              Forge your path in the tribe's ascent
-            </ThemedText>
+            <Text style={[styles.title, { color: TEXT_PRIMARY }]}>
+              Join African Intelligence
+            </Text>
+            <Text style={[styles.subtitle, { color: TEXT_SECONDARY }]}>
+              Forge your path in the tribe&apos;s ascent
+            </Text>
           </View>
 
-          {/* Registration Form */}
           <View style={styles.form}>
-            {/* Name Input */}
             <TextInput
               label="Tribal Name"
               value={name}
               onChangeText={setName}
               mode="outlined"
               style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
+              theme={{ colors: { primary: PRIMARY } }}
               disabled={isLoading}
               placeholder="Akin Zulu"
             />
 
-            {/* Email Input */}
             <TextInput
               label="Email"
               value={email}
@@ -79,12 +161,11 @@ export default function Register() {
               keyboardType="email-address"
               autoCapitalize="none"
               style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
+              theme={{ colors: { primary: PRIMARY } }}
               disabled={isLoading}
               placeholder="you@africanintelligence.com"
             />
 
-            {/* Password Input */}
             <TextInput
               label="Password"
               value={password}
@@ -98,12 +179,11 @@ export default function Register() {
                 />
               }
               style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
+              theme={{ colors: { primary: PRIMARY } }}
               disabled={isLoading}
               placeholder="••••••••"
             />
 
-            {/* Confirm Password Input */}
             <TextInput
               label="Confirm Password"
               value={confirmPassword}
@@ -117,20 +197,19 @@ export default function Register() {
                 />
               }
               style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
+              theme={{ colors: { primary: PRIMARY } }}
               disabled={isLoading}
               placeholder="••••••••"
             />
 
-            {/* Role Selection */}
             <View style={styles.roleContainer}>
-              <Text style={styles.roleLabel}>I join as a</Text>
+              <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>I join as a</Text>
               <View style={styles.roleButtons}>
                 <Button
                   mode={role === 'facilitator' ? 'contained' : 'outlined'}
                   onPress={() => setRole('facilitator')}
                   style={styles.roleButton}
-                  theme={{ colors: { primary: '#eab308' } }}
+                  theme={{ colors: { primary: PRIMARY } }}
                   disabled={isLoading}
                 >
                   Griot (Facilitator)
@@ -139,7 +218,7 @@ export default function Register() {
                   mode={role === 'student' ? 'contained' : 'outlined'}
                   onPress={() => setRole('student')}
                   style={styles.roleButton}
-                  theme={{ colors: { primary: '#eab308' } }}
+                  theme={{ colors: { primary: PRIMARY } }}
                   disabled={isLoading}
                 >
                   Warrior (Student)
@@ -147,41 +226,48 @@ export default function Register() {
               </View>
             </View>
 
-            {/* Terms Agreement */}
             <View style={styles.termsContainer}>
               <Checkbox
                 status={agreeTerms ? 'checked' : 'unchecked'}
                 onPress={() => setAgreeTerms(!agreeTerms)}
-                color="#eab308"
+                color={PRIMARY}
                 disabled={isLoading}
               />
-              <Text style={styles.termsText}>
+              <Text style={[styles.termsText, { color: TEXT_SECONDARY }]}>
                 I pledge to the{' '}
-                <Text style={styles.termsLink} onPress={() => router.push('/terms')}>
+                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/terms' as any)}>
                   Tribal Code
                 </Text>{' '}
                 and{' '}
-                <Text style={styles.termsLink} onPress={() => router.push('/privacy')}>
+                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/privacy' as any)}>
                   Sacred Pact
                 </Text>
               </Text>
             </View>
 
-            {/* Register Button */}
             <Button
               mode="contained"
               onPress={handleSubmit}
               loading={isLoading}
               disabled={isLoading}
               style={styles.registerButton}
-              theme={{ colors: { primary: '#eab308' } }}
+              theme={{ colors: { primary: PRIMARY } }}
             >
               {isLoading ? 'Forging Your Path...' : 'Join the Tribe'}
             </Button>
 
-            {/* Login Link */}
+            <Button
+              mode="outlined"
+              onPress={() => promptAsync()}
+              disabled={isLoading}
+              style={styles.googleButton}
+              icon="google"
+            >
+              Continue with Google
+            </Button>
+
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>
+              <Text style={[styles.loginText, { color: TEXT_SECONDARY }]}>
                 Already in the tribe?{' '}
                 <Text
                   style={styles.loginLink}
@@ -192,7 +278,7 @@ export default function Register() {
               </Text>
             </View>
           </View>
-        </ThemedView>
+        </View>
       </View>
     </ScrollView>
   );
@@ -201,52 +287,52 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Dark background
   },
   content: {
     flex: 1,
     padding: 20,
   },
   formContainer: {
-    backgroundColor: 'rgba(15, 23, 42, 0.5)', // slate-900 with opacity
+    backgroundColor: CARD_BACKGROUND,
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.2)', // gold-300 with opacity
+    borderColor: 'rgba(234, 179, 8, 0.2)',
   },
   header: {
     alignItems: 'center',
     marginBottom: 30,
   },
   logoContainer: {
-    backgroundColor: 'rgba(234, 179, 8, 0.2)', // amber-500 with opacity
+    backgroundColor: 'rgba(234, 179, 8, 0.2)',
     padding: 15,
     borderRadius: 30,
     marginBottom: 20,
   },
+  logo: {
+    width: 40,
+    height: 40,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fef3c7', // amber-100
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#fcd34d', // amber-300
     textAlign: 'center',
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)', // slate-800 with opacity
-    borderColor: 'rgba(234, 179, 8, 0.2)', // gold-300 with opacity
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderColor: 'rgba(234, 179, 8, 0.2)',
   },
   roleContainer: {
     marginVertical: 10,
   },
   roleLabel: {
-    color: '#fef3c7', // amber-100
     marginBottom: 8,
     fontSize: 16,
   },
@@ -263,29 +349,30 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   termsText: {
-    color: '#fcd34d', // amber-300
     flex: 1,
     marginLeft: 8,
   },
   termsLink: {
-    color: '#eab308', // amber-500
+    color: PRIMARY,
     fontWeight: 'bold',
   },
   registerButton: {
     marginTop: 20,
     paddingVertical: 8,
-    backgroundColor: '#eab308', // amber-500
+  },
+  googleButton: {
+    marginTop: 8,
+    borderColor: PRIMARY,
   },
   loginContainer: {
     marginTop: 20,
     alignItems: 'center',
   },
   loginText: {
-    color: '#fcd34d', // amber-300
     fontSize: 16,
   },
   loginLink: {
-    color: '#eab308', // amber-500
+    color: PRIMARY,
     fontWeight: 'bold',
   },
 }); 

@@ -1,259 +1,218 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Button, ProgressBar } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Image } from 'react-native';
+import { Card, ActivityIndicator, Searchbar } from 'react-native-paper';
+import { useTourLMS } from '../contexts/TourLMSContext';
+import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
+import { router } from 'expo-router';
 import { ThemedView } from '../components/ThemedView';
 import { ThemedText } from '../components/ThemedText';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { Course } from '../contexts/TourLMSContext';
 
-export default function CoursesPage() {
-  return (
-    <ScrollView style={styles.container}>
-      <ThemedView style={styles.content}>
-        <ThemedText style={styles.title}>Courses</ThemedText>
+export default function CoursesScreen() {
+  const { CoursesHub, loading: contextLoading, getCoursesHub } = useTourLMS();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
 
-        {/* In Progress Courses */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>In Progress</ThemedText>
-          
-          <Card style={styles.courseCard}>
-            <Card.Content>
-              <View style={styles.courseHeader}>
-                <MaterialCommunityIcons name="book-open" size={24} color="#6366f1" />
-                <View style={styles.courseInfo}>
-                  <ThemedText style={styles.courseTitle}>Introduction to Machine Learning</ThemedText>
-                  <ThemedText style={styles.courseSubtitle}>Module 3 of 8</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.courseDescription}>
-                Learn the fundamentals of machine learning algorithms and their applications.
-              </ThemedText>
-              <View style={styles.progressContainer}>
-                <ThemedText style={styles.progressText}>Course Progress</ThemedText>
-                <ProgressBar
-                  progress={0.4}
-                  color="#6366f1"
-                  style={styles.progressBar}
-                />
-                <ThemedText style={styles.progressPercentage}>40% Complete</ThemedText>
-              </View>
-              <Button
-                mode="contained"
-                onPress={() => {}}
-                style={styles.continueButton}
-                theme={{ colors: { primary: '#6366f1' } }}
-              >
-                Continue Learning
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
+  useEffect(() => {
+    if (CoursesHub.length > 0) {
+      setFilteredCourses(CoursesHub);
+    }
+  }, [CoursesHub]);
 
-        {/* Available Courses */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Available Courses</ThemedText>
-          
-          <Card style={styles.courseCard}>
-            <Card.Content>
-              <View style={styles.courseHeader}>
-                <MaterialCommunityIcons name="code-braces" size={24} color="#22c55e" />
-                <View style={styles.courseInfo}>
-                  <ThemedText style={styles.courseTitle}>Deep Learning with Python</ThemedText>
-                  <ThemedText style={styles.courseSubtitle}>8 modules • 12 hours</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.courseDescription}>
-                Master deep learning concepts and implement neural networks using Python and TensorFlow.
-              </ThemedText>
-              <View style={styles.courseStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="account-group" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>1.2k students</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="star" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>4.8/5 rating</ThemedText>
-                </View>
-              </View>
-              <Button
-                mode="outlined"
-                onPress={() => {}}
-                style={styles.enrollButton}
-                theme={{ colors: { primary: '#22c55e' } }}
-              >
-                Enroll Now
-              </Button>
-            </Card.Content>
-          </Card>
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await getCoursesHub();
+    } catch (error) {
+      console.error('Error refreshing courses:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-          <Card style={styles.courseCard}>
-            <Card.Content>
-              <View style={styles.courseHeader}>
-                <MaterialCommunityIcons name="robot" size={24} color="#a855f7" />
-                <View style={styles.courseInfo}>
-                  <ThemedText style={styles.courseTitle}>Natural Language Processing</ThemedText>
-                  <ThemedText style={styles.courseSubtitle}>6 modules • 10 hours</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.courseDescription}>
-                Learn to build and deploy NLP models for text classification, sentiment analysis, and more.
-              </ThemedText>
-              <View style={styles.courseStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="account-group" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>850 students</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="star" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>4.9/5 rating</ThemedText>
-                </View>
-              </View>
-              <Button
-                mode="outlined"
-                onPress={() => {}}
-                style={styles.enrollButton}
-                theme={{ colors: { primary: '#a855f7' } }}
-              >
-                Enroll Now
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredCourses(CoursesHub);
+    } else {
+      const filtered = CoursesHub.filter(course => 
+        course.title.toLowerCase().includes(query.toLowerCase()) ||
+        course.description.toLowerCase().includes(query.toLowerCase()) ||
+        (course.category?.toLowerCase() || '').includes(query.toLowerCase())
+      );
+      setFilteredCourses(filtered);
+    }
+  };
 
-        {/* Completed Courses */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Completed Courses</ThemedText>
-          <Card style={styles.courseCard}>
-            <Card.Content>
-              <View style={styles.courseHeader}>
-                <MaterialCommunityIcons name="check-circle" size={24} color="#10b981" />
-                <View style={styles.courseInfo}>
-                  <ThemedText style={styles.courseTitle}>Python for Data Science</ThemedText>
-                  <ThemedText style={styles.courseSubtitle}>Completed 2 weeks ago</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.courseDescription}>
-                Mastered Python programming and data analysis using pandas, NumPy, and scikit-learn.
-              </ThemedText>
-              <View style={styles.courseStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="certificate" size={16} color="#eab308" />
-                  <ThemedText style={styles.statText}>Certificate earned</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="star" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>Final grade: 95%</ThemedText>
-                </View>
-              </View>
-              <Button
-                mode="outlined"
-                onPress={() => {}}
-                style={styles.viewButton}
-                theme={{ colors: { primary: '#10b981' } }}
-              >
-                View Certificate
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
+  const handleCoursePress = (courseId: string) => {
+    router.push(`/course/${courseId}`);
+  };
+
+  if (contextLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PRIMARY} />
       </ThemedView>
-    </ScrollView>
+    );
+  }
+
+  return (
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="primary" style={styles.title}>Courses</ThemedText>
+        <Searchbar
+          placeholder="Search courses..."
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+          iconColor={PRIMARY}
+          inputStyle={{ color: TEXT_PRIMARY }}
+          placeholderTextColor={TEXT_SECONDARY}
+        />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[PRIMARY]}
+            tintColor={PRIMARY}
+          />
+        }
+      >
+        <View style={styles.coursesGrid}>
+          {filteredCourses.length === 0 ? (
+            <ThemedText type="secondary" style={styles.noCourses}>
+              No courses found
+            </ThemedText>
+          ) : (
+            filteredCourses.map((course) => (
+              <Card
+                key={course._id}
+                style={styles.courseCard}
+                onPress={() => handleCoursePress(course._id)}
+              >
+                <View style={styles.imageContainer}>
+                  {course.thumbnail ? (
+                    <Image
+                      source={{ uri: course.thumbnail }}
+                      style={styles.courseImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.courseImage, styles.placeholderImage]}>
+                      <ThemedText type="secondary" style={styles.placeholderText}>
+                        {course.title.charAt(0)}
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+                <Card.Content style={styles.cardContent}>
+                  <ThemedText type="primary" style={styles.courseTitle}>
+                    {course.title}
+                  </ThemedText>
+                  <ThemedText type="secondary" style={styles.courseDescription}>
+                    {course.description}
+                  </ThemedText>
+                  <View style={styles.courseMeta}>
+                    <ThemedText type="secondary" style={styles.metaText}>
+                      {course.category || 'Uncategorized'}
+                    </ThemedText>
+                    <ThemedText type="secondary" style={styles.metaText}>
+                      {course.totalStudents || 0} students
+                    </ThemedText>
+                  </View>
+                </Card.Content>
+              </Card>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
   },
-  content: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
     padding: 16,
-    paddingBottom: 100,
+    backgroundColor: CARD_BACKGROUND,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
     marginBottom: 16,
   },
-  section: {
-    marginBottom: 24,
+  searchBar: {
+    backgroundColor: BACKGROUND,
+    elevation: 0,
+    borderWidth: 1,
+    borderColor: PRIMARY,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
+  scrollView: {
+    flex: 1,
+  },
+  coursesGrid: {
+    padding: 16,
+    gap: 16,
   },
   courseCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
+    backgroundColor: CARD_BACKGROUND,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  courseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+  imageContainer: {
+    height: 200,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
-  courseInfo: {
+  courseImage: {
     flex: 1,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  placeholderImage: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  cardContent: {
+    padding: 16,
   },
   courseTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  courseSubtitle: {
-    fontSize: 14,
-    color: '#9ca3af',
+    marginBottom: 8,
   },
   courseDescription: {
     fontSize: 14,
-    color: '#d1d5db',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  courseStats: {
+  courseMeta: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 16,
-  },
-  stat: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 4,
   },
-  statText: {
+  metaText: {
     fontSize: 12,
-    color: '#9ca3af',
   },
-  progressContainer: {
-    marginBottom: 16,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-  },
-  progressPercentage: {
-    fontSize: 12,
-    color: '#6366f1',
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  continueButton: {
-    marginTop: 8,
-  },
-  enrollButton: {
-    marginTop: 8,
-  },
-  viewButton: {
-    marginTop: 8,
+  noCourses: {
+    textAlign: 'center',
+    marginTop: 32,
+    fontSize: 16,
   },
 }); 
