@@ -1,4 +1,4 @@
-export const API_URL = 'https://africanapi.onrender.com/api';
+export const API_URL = 'https://api.tourlms.com';
 
 const api = {
   API_URL

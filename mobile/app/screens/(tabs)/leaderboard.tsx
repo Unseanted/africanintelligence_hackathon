@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, Modal } from 'react-native';
 import { Text, Card, Searchbar, Avatar, ProgressBar, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, WARNING, INFO } from '../constants/colors';
-import { useTourLMS } from '../contexts/TourLMSContext';
-import { useToast } from '../hooks/use-toast';
-import DefaultAvatar from '../components/DefaultAvatar';
+import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, WARNING, INFO } from '../../constants/colors';
+import { useTourLMS } from '../../../contexts/TourLMSContext';
+import { useToast } from '../../hooks/use-toast';
+import DefaultAvatar from '../../components/DefaultAvatar';
+import { ThemedText } from '../../../components/ThemedText';
+import { ThemedView } from '../../../components/ThemedView';
 
 const { width } = Dimensions.get('window');
 
@@ -853,18 +855,8 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Leaderboard</Text>
-        <Searchbar
-          placeholder="Search users or departments..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-          inputStyle={styles.searchInput}
-        />
-      </View>
-
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.header}>Leaderboard</ThemedText>
       <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={styles.statsButton}
@@ -978,32 +970,16 @@ export default function LeaderboardScreen() {
 
       {renderUserModal()}
       {renderStatsModal()}
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    padding: 16,
   },
   header: {
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: PRIMARY,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 1,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: TEXT_PRIMARY,
     marginBottom: 16,
   },
   actionsContainer: {
@@ -1047,21 +1023,6 @@ const styles = StyleSheet.create({
   activeViewToggle: {
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
-  searchBar: {
-    backgroundColor: CARD_BACKGROUND,
-    elevation: 2,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  searchInput: {
-    color: TEXT_PRIMARY,
-    fontSize: 16,
-  },
   filtersContainer: {
     paddingVertical: 12,
     backgroundColor: CARD_BACKGROUND,
@@ -1076,10 +1037,10 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   filterButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginHorizontal: 6,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginHorizontal: 4,
+    borderRadius: 16,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: BORDER_COLOR,

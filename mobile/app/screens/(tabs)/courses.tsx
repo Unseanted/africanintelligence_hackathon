@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Image } from 'react-native';
-import { Card, ActivityIndicator, Searchbar } from 'react-native-paper';
-import { useTourLMS } from '../contexts/TourLMSContext';
+import { Card, ActivityIndicator, Searchbar, Button, Text } from 'react-native-paper';
+import { useTourLMS } from '../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
 import { router } from 'expo-router';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
-import type { Course } from '../contexts/TourLMSContext';
+import { ThemedView } from '../../components/ThemedView';
+import { ThemedText } from '../../components/ThemedText';
+import type { Course } from '../../contexts/TourLMSContext';
 
 export default function CoursesScreen() {
   const { CoursesHub, loading: contextLoading, getCoursesHub } = useTourLMS();
