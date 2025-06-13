@@ -13,6 +13,7 @@ const forumRoutes = require("./routes/forum");
 const notificationRoutes = require("./routes/notification");
 const uploadRoutes = require("./routes/upload");
 const adminServices = require("./services/adminServices");
+const badgeRoutes = require("./routes/badges");
 const webpush = require("web-push");
 const { clg } = require("./routes/basics");
 const swaggerUi = require("swagger-ui-express");
@@ -30,14 +31,14 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
- 
+
 // Configure Web Push
 if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
   webpush.setVapidDetails(
     "mailto:test@example.com",
-    process.env.PUBLIC_VAPID_KEY, 
-    process.env.PRIVATE_VAPID_KEY 
-  ); 
+    process.env.PUBLIC_VAPID_KEY,
+    process.env.PRIVATE_VAPID_KEY
+  );
   app.set("webpush", webpush);
   console.log("Web Push configured successfully");
 } else {
@@ -49,7 +50,7 @@ const specs = swaggerJsdoc(swaggerOptions);
 
 // Serve Swagger UI at a specific endpoint
 app.use(
-  "/api-docs", 
+  "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(specs, { explorer: true })
 );
@@ -78,6 +79,7 @@ async function startServer() {
     app.use("/api/forum", forumRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);
+    app.use("/api/badges", badgeRoutes);
 
     // Serve static files in production
     if (process.env.NODE_ENV === "production") {
