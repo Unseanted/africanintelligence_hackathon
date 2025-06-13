@@ -36,3 +36,9 @@ export const Colors = {
     border: '#92400e', // Amber-800
   },
 };
+
+export const PRIMARY = '#FF4B4B';
+export const SECONDARY = '#4B4BFF';
+export const BACKGROUND = '#FFFFFF';
+export const TEXT = '#000000';
+export const TEXT_SECONDARY = '#666666';

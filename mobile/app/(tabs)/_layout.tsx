@@ -1,19 +1,17 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TouchableRipple } from 'react-native-paper';
+import { TouchableRipple, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter, usePathname, Stack } from 'expo-router';
-import { ThemedText } from '../components/ThemedText';
+import { useRouter, usePathname, Tabs } from 'expo-router';
 import AIAssistant from '../components/AIAssistant';
 
 // Color Constants
 const PRIMARY = '#FFBF00';
 const PRIMARY_LIGHT = 'rgba(255, 191, 0, 0.1)';
 const TEXT_INACTIVE = '#9CA3AF';
-const BACKGROUND = '#000';
 const BORDER = 'rgba(255, 191, 0, 0.2)';
 const SHADOW = '#000000';
-const TEXT_PRIMARY = '#000000';
+const BACKGROUND = '#111827';
 
 type NavItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -24,48 +22,70 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { icon: 'view-dashboard', label: 'Dashboard', route: '/student', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
-  { icon: 'forum', label: 'Forum', route: '/(tabs)/forum', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
-  { icon: 'trophy', label: 'Leaderboard', route: '/(tabs)/leaderboard', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
-  { icon: 'calendar-star', label: 'Events', route: '/(tabs)/events', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
-  { icon: 'flag-checkered', label: 'Challenges', route: '/(tabs)/challenges', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
-  { icon: 'account', label: 'Profile', route: '/(tabs)/profile', inactiveColor: TEXT_INACTIVE, activeColor: PRIMARY },
+  {
+    icon: 'home',
+    label: 'Home',
+    route: '/student',
+    inactiveColor: TEXT_INACTIVE,
+    activeColor: PRIMARY,
+  },
+  {
+    icon: 'book',
+    label: 'Courses',
+    route: '/courses',
+    inactiveColor: TEXT_INACTIVE,
+    activeColor: PRIMARY,
+  },
+  {
+    icon: 'forum',
+    label: 'Forum',
+    route: '/forum',
+    inactiveColor: TEXT_INACTIVE,
+    activeColor: PRIMARY,
+  },
+  {
+    icon: 'trophy',
+    label: 'Leaderboard',
+    route: '/leaderboard',
+    inactiveColor: TEXT_INACTIVE,
+    activeColor: PRIMARY,
+  },
+  {
+    icon: 'account',
+    label: 'Profile',
+    route: '/profile',
+    inactiveColor: TEXT_INACTIVE,
+    activeColor: PRIMARY,
+  },
 ];
 
-export default function StudentLayout() {
+export default function Layout() {
   const router = useRouter();
   const pathname = usePathname();
 
   const isActive = (route: string) => {
-    const cleanPathname = pathname.replace(/\/$/, '');
-    let cleanRoute = route.replace(/\/$/, '');
-    
-    // Handle the special case for the dashboard route
-    if (cleanRoute === '/student') {
-      return cleanPathname === '/student';
-    }
-
-    // For (tabs) routes, usePathname usually returns the path without the (tabs) segment
-    if (cleanRoute.startsWith('/(tabs)/')) {
-      cleanRoute = cleanRoute.replace('/(tabs)', '');
-    }
-
-    return cleanPathname.startsWith(cleanRoute);
+    return pathname === route;
   };
 
   return (
-    <View style={styles.container}>
-      <Stack
+    <View style={[styles.container, { backgroundColor: BACKGROUND }]}>
+      <Tabs
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: '#111827' },
+          tabBarStyle: { display: 'none' },
         }}
-      />
+      >
+        <Tabs.Screen name="student" />
+        <Tabs.Screen name="courses" />
+        <Tabs.Screen name="forum" />
+        <Tabs.Screen name="leaderboard" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
       
       <AIAssistant />
       
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { backgroundColor: BACKGROUND }]}>
         <View style={styles.navItemsContainer}>
           {navItems.map((item) => {
             const active = isActive(item.route);
@@ -86,9 +106,9 @@ export default function StudentLayout() {
                     color={active ? item.activeColor : item.inactiveColor}
                   />
                   {active && (
-                    <ThemedText style={[styles.navItemText, { color: item.activeColor }]}>
+                    <Text style={[styles.navItemText, { color: item.activeColor }]}>
                       {item.label}
-                    </ThemedText>
+                    </Text>
                   )}
                 </View>
               </TouchableRipple>
@@ -103,7 +123,6 @@ export default function StudentLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BACKGROUND,
     borderColor: BORDER,
   },
   bottomNav: {
@@ -111,7 +130,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: BACKGROUND,
     borderRadius: 30,
     marginHorizontal: 16,
     marginBottom: 16,
@@ -162,6 +180,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 0,
-    color: TEXT_PRIMARY,
   },
 });
