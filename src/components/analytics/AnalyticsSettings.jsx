@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Eye,
   BarChart2,
@@ -21,13 +22,120 @@ import {
   Settings,
   Trash2,
   Save,
-  Upload
+  Upload,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { toast } from "sonner";
 
-const AnalyticsSettings = ({ settings, onSettingsChange, onResetSettings }) => {
+const defaultSettings = {
+  display: {
+    chartTheme: 'default',
+    dataDensity: 'normal',
+    showTrends: true,
+    showComparisons: true,
+    showPredictions: true,
+    showInsights: true
+  },
+  analytics: {
+    trackTimeSpent: true,
+    trackProgress: true,
+    trackSkills: true,
+    trackEngagement: true
+  },
+  learning: {
+    showLearningPath: true,
+    showSkillGaps: true,
+    showRecommendations: true,
+    showPrerequisites: true
+  },
+  notifications: {
+    weeklyReport: true,
+    achievementAlerts: true,
+    goalReminders: true,
+    skillGapAlerts: true
+  },
+  goals: {
+    showGoalProgress: true,
+    showGoalPredictions: true,
+    showGoalInsights: true,
+    showGoalTrends: true
+  },
+  preferences: {
+    defaultTimeRange: 'week',
+    refreshInterval: 5,
+    autoRefresh: true,
+    showTooltips: true,
+    showGuides: true,
+    autoBackup: true,
+    dataRetention: 30,
+    compressData: false
+  }
+};
+
+const AnalyticsSettings = ({ initialSettings = defaultSettings, onSettingsChange: parentOnSettingsChange }) => {
+  const [settings, setSettings] = useState(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  useEffect(() => {
+    setHasChanges(JSON.stringify(settings) !== JSON.stringify(initialSettings));
+  }, [settings, initialSettings]);
+
   const handleSettingChange = (category, setting, value) => {
-    onSettingsChange(category, setting, value);
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [setting]: value
+      }
+    }));
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      await parentOnSettingsChange?.(settings);
+      toast.success('Settings saved successfully');
+      setHasChanges(false);
+    } catch (error) {
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetSettings = () => {
+    setConfirmAction({
+      type: 'reset',
+      title: 'Reset Settings',
+      description: 'Are you sure you want to reset all settings to default values? This action cannot be undone.'
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleClearData = () => {
+    setConfirmAction({
+      type: 'clear',
+      title: 'Clear Analytics Data',
+      description: 'Are you sure you want to clear all analytics data? This action cannot be undone.'
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmAction.type === 'reset') {
+      setSettings(defaultSettings);
+      toast.success('Settings reset to defaults');
+    } else if (confirmAction.type === 'clear') {
+      // Implement data clearing logic here
+      toast.success('Analytics data cleared successfully');
+    }
+    setShowConfirmDialog(false);
+    setConfirmAction(null);
   };
 
   const handleImportSettings = (event) => {
@@ -37,33 +145,41 @@ const AnalyticsSettings = ({ settings, onSettingsChange, onResetSettings }) => {
       reader.onload = (e) => {
         try {
           const importedSettings = JSON.parse(e.target.result);
-          onSettingsChange('import', null, importedSettings);
-          toast.success('Settings imported successfully');
+          // Validate imported settings structure
+          if (validateSettings(importedSettings)) {
+            setSettings(importedSettings);
+            toast.success('Settings imported successfully');
+          } else {
+            toast.error('Invalid settings format');
+          }
         } catch (error) {
-          toast.error('Invalid settings file');
+          toast.error('Failed to import settings');
         }
       };
       reader.readAsText(file);
     }
   };
 
-  const handleExportSettings = () => {
-    const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(settingsBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `analytics-settings-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success('Settings exported successfully');
+  const validateSettings = (settings) => {
+    // Basic validation of settings structure
+    const requiredCategories = ['display', 'analytics', 'learning', 'notifications', 'goals', 'preferences'];
+    return requiredCategories.every(category => settings[category] && typeof settings[category] === 'object');
   };
 
-  const handleClearData = () => {
-    if (window.confirm('Are you sure you want to clear all analytics data? This action cannot be undone.')) {
-      // Implement data clearing logic here
-      toast.success('Analytics data cleared successfully');
+  const handleExportSettings = () => {
+    try {
+      const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(settingsBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analytics-settings-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Settings exported successfully');
+    } catch (error) {
+      toast.error('Failed to export settings');
     }
   };
 
@@ -75,17 +191,37 @@ const AnalyticsSettings = ({ settings, onSettingsChange, onResetSettings }) => {
           <p className="text-sm text-muted-foreground">Configure your analytics preferences and data management</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportSettings}>
+          <Button 
+            variant="outline" 
+            onClick={handleExportSettings}
+            disabled={isSaving}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Settings
           </Button>
-          <Button variant="outline" onClick={onResetSettings}>
+          <Button 
+            variant="outline" 
+            onClick={handleResetSettings}
+            disabled={isSaving}
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Reset to Defaults
           </Button>
-          <Button variant="outline" onClick={handleClearData}>
+          <Button 
+            variant="outline" 
+            onClick={handleClearData}
+            disabled={isSaving}
+          >
             <Trash2 className="h-4 w-4 mr-2" />
             Clear Data
+          </Button>
+          <Button 
+            onClick={handleSaveSettings}
+            disabled={!hasChanges || isSaving}
+            className={hasChanges ? "bg-primary hover:bg-primary/90" : ""}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? "Saving..." : hasChanges ? "Save Changes" : "Saved"}
           </Button>
         </div>
       </div>
@@ -501,6 +637,34 @@ const AnalyticsSettings = ({ settings, onSettingsChange, onResetSettings }) => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              {confirmAction?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-500 mb-4">{confirmAction?.description}</p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmAction}
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

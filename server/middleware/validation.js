@@ -1,3 +1,5 @@
+const { validationResult } = require("express-validator");
+
 const validateForumPost = (req, res, next) => {
   try {
     const { title, content, category, isCommunityPost } = req.body;
@@ -62,7 +64,7 @@ const validateForumPost = (req, res, next) => {
       });
     }
 
-    // If a file is uploaded, it’s handled by multer; no additional validation needed here
+    // If a file is uploaded, it's handled by multer; no additional validation needed here
 
     next();
   } catch (error) {
@@ -96,7 +98,7 @@ const validateComment = (req, res, next) => {
   }
 };
 
-const validateAIChat = (validations) => {
+const validateAIConversation = (validations) => {
   return async (req, res, next) => {
     await Promise.all(validations.map((validation) => validation.run(req)));
 
@@ -112,5 +114,5 @@ const validateAIChat = (validations) => {
 module.exports = {
   validateForumPost,
   validateComment,
-  validateAIChat,
+  validateAIConversation,
 };

@@ -3,16 +3,13 @@ const {
   createConversation,
   getConversations,
   getMessages,
-  sendMessage,
   deleteConversation,
-} = require("../controllers/ai-chatController");
-const { auth } = require("../middleware/auth.middleware");
-const { validateAIChat } = require("../middleware/validation.middleware");
+} = require("../controllers/ai-assistantController");
+const auth = require("../middleware/auth");
+const { validateAIConversation } = require("../middleware/validation");
 const {
-  createAiChatValidation,
-  sendAiChatMessageValidation,
-} = require("../validations/ai-chatMessageValidation");
-const { aiChatMessageLimiter } = require("../middleware/rate-limit.middleware");
+  createAiConversationValidation,
+} = require("../validations/aiAssistantValidation");
 
 const router = express.Router();
 
@@ -20,7 +17,7 @@ router.use(auth);
 
 /**
  * @swagger
- * /api/chat/conversations:
+ * /api/assistant/conversations:
  *   post:
  *     summary: Create a new conversation
  *     tags: [Chat]
@@ -47,13 +44,13 @@ router.use(auth);
  */
 router.post(
   "/conversations",
-  validateAIChat(createAiChatValidation),
+  validateAIConversation(createAiConversationValidation),
   createConversation
 );
 
 /**
  * @swagger
- * /api/chat/conversations:
+ * /api/assistant/conversations:
  *   get:
  *     summary: Get all conversations
  *     tags: [Chat]
@@ -67,7 +64,7 @@ router.get("/conversations", getConversations);
 
 /**
  * @swagger
- * /api/chat/conversations/{conversationId}/messages:
+ * /api/assistant/conversations/{conversationId}/messages:
  *   get:
  *     summary: Get messages in a conversation
  *     tags: [Chat]
@@ -89,49 +86,7 @@ router.get("/conversations/:conversationId/messages", getMessages);
 
 /**
  * @swagger
- * /api/chat/conversations/{conversationId}/messages:
- *   post:
- *     summary: Send a message in a conversation
- *     tags: [Chat]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: conversationId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - content
- *               - role
- *             properties:
- *               content:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [user, assistant]
- *     responses:
- *       201:
- *         description: Message sent successfully
- *       404:
- *         description: Conversation not found
- */
-router.post(
-  "/conversations/:conversationId/messages",
-  validateAIChat(sendAiChatMessageValidation),
-  aiChatMessageLimiter,
-  sendMessage
-);
-
-/**
- * @swagger
- * /api/chat/conversations/{conversationId}:
+ * /api/assistant/conversations/{conversationId}:
  *   delete:
  *     summary: Delete a conversation
  *     tags: [Chat]

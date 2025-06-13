@@ -3,6 +3,11 @@ const Schema = mongoose.Schema;
 
 const messageSchema = new Schema(
   {
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: "AIConversation",
+      required: true,
+    },
     role: {
       type: String,
       enum: ["user", "assistant"],
@@ -81,7 +86,7 @@ const aiConversationSchema = new Schema(
 
 // Update metadata before saving
 aiConversationSchema.pre("save", function (next) {
-  this.metadata.messageCount = this.messages.length;
+  this.metadata.messageCount = Math.floor(this.messages.length / 2); // Counting only assistant messages
   this.metadata.totalTokens = this.messages.reduce(
     (sum, msg) => sum + (msg.tokenCount || 0),
     0
@@ -89,7 +94,7 @@ aiConversationSchema.pre("save", function (next) {
   this.metadata.lastActivity = new Date().getTime();
 
   // Auto-generate title from first user message if still default
-  if (this.title === "New Chat" && this.messages.length > 0) {
+  if (this.title === "New Conversation" && this.messages.length > 0) {
     const firstUserMessage = this.messages.find((msg) => msg.role === "user");
     if (firstUserMessage) {
       this.title =
@@ -125,24 +130,30 @@ aiConversationSchema.virtual("formattedLastActivity").get(function () {
 
 // Method to add a message
 aiConversationSchema.methods.addMessage = function (
+  conversationId,
   role,
   content,
-  model = null,
-  tokenCount = 0
+  aiModel = null,
+  tokenCount = 0,
+  timestamp = new Date().getTime()
 ) {
   this.messages.push({
+    conversationId,
     role,
     content,
-    model,
+    aiModel,
     tokenCount,
-    timestamp: new Date(),
+    timestamp,
   });
 
   return this.save();
 };
 
-// Method to get recent chats for a user
-aiConversationSchema.statics.getRecentChats = function (userId, limit = 20) {
+// Method to get recent conversations for a user
+aiConversationSchema.statics.getRecentConversations = function (
+  userId,
+  limit = 20
+) {
   return this.find({
     userId,
     isArchived: false,
@@ -154,7 +165,7 @@ aiConversationSchema.statics.getRecentChats = function (userId, limit = 20) {
 };
 
 // Method to search chats
-aiConversationSchema.statics.searchChats = function (
+aiConversationSchema.statics.searchConversations = function (
   userId,
   query,
   limit = 10
@@ -173,10 +184,13 @@ aiConversationSchema.statics.searchChats = function (
     .lean();
 };
 
-const Conversation = mongoose.model("AIChat", aiConversationSchema);
-const AIChatMessage = mongoose.model("AIChatMessage", messageSchema);
+const AIConversation = mongoose.model("AIConversation", aiConversationSchema);
+const AIConversationMessage = mongoose.model(
+  "AIConversationMessage",
+  messageSchema
+);
 
 module.exports = {
-  Conversation,
-  AIChatMessage,
+  AIConversation,
+  AIConversationMessage,
 };
