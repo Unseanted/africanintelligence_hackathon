@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, NativeSyntheticEvent, TextInputSubmitEditingEventData, Keyboard } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AIService } from '../services/aiService';
+import { ActivityIndicator } from 'react-native-paper';
 
 type Message = {
   id: string;
@@ -9,32 +11,88 @@ type Message = {
   isUser: boolean;
 };
 
+type ChatMessage = {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+};
+
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const aiService = AIService.getInstance();
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
-    const newMessage: Message = {
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage: Message = {
       id: Date.now().toString(),
       text: input.trim(),
       isUser: true,
     };
 
-    setMessages([...messages, newMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const systemMessage: ChatMessage = {
+        role: 'system',
+        content: 'You are a helpful AI assistant for an educational platform. Provide clear, concise, and accurate responses.'
+      };
+
+      const historyMessages: ChatMessage[] = messages.map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.text
+      }));
+
+      const newUserMessage: ChatMessage = {
+        role: 'user',
+        content: userMessage.text
+      };
+
+      const chatMessages: ChatMessage[] = [
+        systemMessage,
+        ...historyMessages,
+        newUserMessage
+      ];
+
+      const response = await aiService.chat(chatMessages);
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm your AI learning assistant. How can I help you today?",
+        text: response,
         isUser: false,
       };
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I apologize, but I'm having trouble connecting right now. Please try again later.",
+        isUser: false,
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+      e.preventDefault();
+      if (!loading && input.trim()) {
+        handleSend();
+      }
+    }
   };
 
   return (
@@ -68,7 +126,11 @@ export default function AIAssistant() {
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.chatContainer}
             >
-              <ScrollView style={styles.messagesContainer}>
+              <ScrollView 
+                ref={scrollViewRef}
+                style={styles.messagesContainer}
+                contentContainerStyle={styles.messagesContent}
+              >
                 {messages.map((message) => (
                   <View
                     key={message.id}
@@ -80,6 +142,11 @@ export default function AIAssistant() {
                     <ThemedText style={styles.messageText}>{message.text}</ThemedText>
                   </View>
                 ))}
+                {loading && (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#6366f1" />
+                  </View>
+                )}
               </ScrollView>
 
               <View style={styles.inputContainer}>
@@ -90,12 +157,27 @@ export default function AIAssistant() {
                   placeholderTextColor="#9ca3af"
                   style={styles.input}
                   multiline
+                  maxLength={500}
+                  editable={!loading}
+                  onKeyPress={handleKeyPress}
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    if (!loading && input.trim()) {
+                      handleSend();
+                    }
+                  }}
                 />
                 <TouchableOpacity 
-                  style={styles.sendButton}
+                  style={[styles.sendButton, loading && styles.sendButtonDisabled]}
                   onPress={handleSend}
+                  disabled={loading || !input.trim()}
                 >
-                  <MaterialCommunityIcons name="send" size={24} color="#6366f1" />
+                  <MaterialCommunityIcons 
+                    name="send" 
+                    size={24} 
+                    color={loading || !input.trim() ? "#9ca3af" : "#6366f1"} 
+                  />
                 </TouchableOpacity>
               </View>
             </KeyboardAvoidingView>
@@ -157,6 +239,8 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     flex: 1,
+  },
+  messagesContent: {
     padding: 16,
   },
   messageBubble: {
@@ -200,6 +284,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  loadingContainer: {
+    padding: 16,
     alignItems: 'center',
   },
 }); 

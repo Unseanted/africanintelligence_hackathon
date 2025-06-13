@@ -1,171 +1,127 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Button, ProgressBar } from 'react-native-paper';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
+import { Text, Card, Button, ProgressBar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { PRIMARY } from '../constants/colors';
 
-export default function ChallengesPage() {
+export default function Challenges() {
+  const activeChallenges = [
+    {
+      id: '1',
+      title: 'AI Model Training',
+      description: 'Train a machine learning model to classify images with 90% accuracy.',
+      deadline: 'March 25, 2024',
+      participants: 45,
+      progress: 0.6,
+      points: 500,
+    },
+    {
+      id: '2',
+      title: 'Data Visualization',
+      description: 'Create an interactive dashboard using Python and Plotly.',
+      deadline: 'March 30, 2024',
+      participants: 32,
+      progress: 0.3,
+      points: 300,
+    },
+  ];
+
+  const completedChallenges = [
+    {
+      id: '3',
+      title: 'Python Basics',
+      description: 'Complete 10 Python programming exercises.',
+      completedDate: 'February 28, 2024',
+      points: 200,
+    },
+  ];
+
   return (
     <ScrollView style={styles.container}>
-      <ThemedView style={styles.content}>
-        <ThemedText style={styles.title}>Challenges</ThemedText>
+      <View style={styles.header}>
+        <Text style={styles.title}>Challenges</Text>
+        <Text style={styles.subtitle}>Test your skills and earn points</Text>
+      </View>
 
-        {/* Active Challenges */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Active Challenges</ThemedText>
-          
-          <Card style={styles.challengeCard}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Active Challenges</Text>
+        {activeChallenges.map((challenge) => (
+          <Card key={challenge.id} style={styles.challengeCard}>
             <Card.Content>
               <View style={styles.challengeHeader}>
-                <MaterialCommunityIcons name="cpu" size={24} color="#6366f1" />
+                <View style={styles.challengeIcon}>
+                  <MaterialCommunityIcons name="trophy" size={24} color={PRIMARY} />
+                </View>
                 <View style={styles.challengeInfo}>
-                  <ThemedText style={styles.challengeTitle}>AI Image Recognition</ThemedText>
-                  <ThemedText style={styles.challengeSubtitle}>3 days remaining</ThemedText>
+                  <Text style={styles.challengeTitle}>{challenge.title}</Text>
+                  <Text style={styles.challengePoints}>{challenge.points} points</Text>
                 </View>
               </View>
-              <ThemedText style={styles.challengeDescription}>
-                Build an AI model that can accurately classify images into 10 different categories.
-              </ThemedText>
-              <View style={styles.challengeStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="account-group" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>45 participants</ThemedText>
+              <Text style={styles.challengeDescription}>{challenge.description}</Text>
+              <View style={styles.challengeDetails}>
+                <View style={styles.challengeDetail}>
+                  <MaterialCommunityIcons name="calendar-clock" size={16} color="#666666" />
+                  <Text style={styles.challengeDetailText}>Due: {challenge.deadline}</Text>
                 </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="trophy" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>500 points</ThemedText>
+                <View style={styles.challengeDetail}>
+                  <MaterialCommunityIcons name="account-group" size={16} color="#666666" />
+                  <Text style={styles.challengeDetailText}>{challenge.participants} participants</Text>
                 </View>
               </View>
               <View style={styles.progressContainer}>
-                <ThemedText style={styles.progressText}>Your Progress</ThemedText>
+                <Text style={styles.progressText}>Progress: {Math.round(challenge.progress * 100)}%</Text>
                 <ProgressBar
-                  progress={0.7}
-                  color="#6366f1"
+                  progress={challenge.progress}
+                  color={PRIMARY}
                   style={styles.progressBar}
                 />
-                <ThemedText style={styles.progressPercentage}>70%</ThemedText>
               </View>
               <Button
                 mode="contained"
                 onPress={() => {}}
                 style={styles.continueButton}
-                theme={{ colors: { primary: '#6366f1' } }}
+                buttonColor={PRIMARY}
               >
                 Continue Challenge
               </Button>
             </Card.Content>
           </Card>
-        </View>
+        ))}
+      </View>
 
-        {/* Available Challenges */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Available Challenges</ThemedText>
-          
-          <Card style={styles.challengeCard}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Completed Challenges</Text>
+        {completedChallenges.map((challenge) => (
+          <Card key={challenge.id} style={styles.challengeCard}>
             <Card.Content>
               <View style={styles.challengeHeader}>
-                <MaterialCommunityIcons name="code-braces" size={24} color="#22c55e" />
+                <View style={styles.challengeIcon}>
+                  <MaterialCommunityIcons name="trophy-check" size={24} color="#666666" />
+                </View>
                 <View style={styles.challengeInfo}>
-                  <ThemedText style={styles.challengeTitle}>Natural Language Processing</ThemedText>
-                  <ThemedText style={styles.challengeSubtitle}>Starts in 2 days</ThemedText>
+                  <Text style={styles.challengeTitle}>{challenge.title}</Text>
+                  <Text style={styles.challengePoints}>{challenge.points} points earned</Text>
                 </View>
               </View>
-              <ThemedText style={styles.challengeDescription}>
-                Create a sentiment analysis model that can accurately classify text into positive, negative, or neutral.
-              </ThemedText>
-              <View style={styles.challengeStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="clock-outline" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>7 days duration</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="trophy" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>750 points</ThemedText>
+              <Text style={styles.challengeDescription}>{challenge.description}</Text>
+              <View style={styles.challengeDetails}>
+                <View style={styles.challengeDetail}>
+                  <MaterialCommunityIcons name="calendar-check" size={16} color="#666666" />
+                  <Text style={styles.challengeDetailText}>Completed: {challenge.completedDate}</Text>
                 </View>
               </View>
               <Button
                 mode="outlined"
                 onPress={() => {}}
-                style={styles.registerButton}
-                theme={{ colors: { primary: '#22c55e' } }}
+                style={styles.viewDetailsButton}
+                textColor={PRIMARY}
               >
-                Register Interest
+                View Details
               </Button>
             </Card.Content>
           </Card>
-
-          <Card style={styles.challengeCard}>
-            <Card.Content>
-              <View style={styles.challengeHeader}>
-                <MaterialCommunityIcons name="robot" size={24} color="#a855f7" />
-                <View style={styles.challengeInfo}>
-                  <ThemedText style={styles.challengeTitle}>Reinforcement Learning</ThemedText>
-                  <ThemedText style={styles.challengeSubtitle}>Coming soon</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.challengeDescription}>
-                Develop an AI agent that can learn to play a simple game using reinforcement learning algorithms.
-              </ThemedText>
-              <View style={styles.challengeStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="clock-outline" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>10 days duration</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="trophy" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>1000 points</ThemedText>
-                </View>
-              </View>
-              <Button
-                mode="outlined"
-                onPress={() => {}}
-                style={styles.registerButton}
-                theme={{ colors: { primary: '#a855f7' } }}
-              >
-                Register Interest
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Completed Challenges */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Completed Challenges</ThemedText>
-          <Card style={styles.challengeCard}>
-            <Card.Content>
-              <View style={styles.challengeHeader}>
-                <MaterialCommunityIcons name="check-circle" size={24} color="#10b981" />
-                <View style={styles.challengeInfo}>
-                  <ThemedText style={styles.challengeTitle}>Data Visualization</ThemedText>
-                  <ThemedText style={styles.challengeSubtitle}>Completed 2 weeks ago</ThemedText>
-                </View>
-              </View>
-              <ThemedText style={styles.challengeDescription}>
-                Created interactive visualizations for a complex dataset using D3.js and React.
-              </ThemedText>
-              <View style={styles.challengeStats}>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="star" size={16} color="#eab308" />
-                  <ThemedText style={styles.statText}>3rd Place</ThemedText>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="trophy" size={16} color="#9ca3af" />
-                  <ThemedText style={styles.statText}>500 points earned</ThemedText>
-                </View>
-              </View>
-              <Button
-                mode="outlined"
-                onPress={() => {}}
-                style={styles.viewButton}
-                theme={{ colors: { primary: '#10b981' } }}
-              >
-                View Submission
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
-      </ThemedView>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -173,38 +129,50 @@ export default function ChallengesPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: '#FFFFFF',
   },
-  content: {
-    flex: 1,
-    padding: 16,
-    paddingBottom: 100,
+  header: {
+    padding: 20,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
+    color: '#000000',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
   },
   section: {
-    marginBottom: 24,
+    padding: 16,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#000000',
     marginBottom: 16,
   },
   challengeCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   challengeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  challengeIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 191, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   challengeInfo: {
     flex: 1,
@@ -212,58 +180,50 @@ const styles = StyleSheet.create({
   challengeTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#000000',
     marginBottom: 4,
   },
-  challengeSubtitle: {
+  challengePoints: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: '#666666',
   },
   challengeDescription: {
     fontSize: 14,
-    color: '#d1d5db',
+    color: '#666666',
     marginBottom: 16,
   },
-  challengeStats: {
+  challengeDetails: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
     marginBottom: 16,
   },
-  stat: {
+  challengeDetail: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  statText: {
-    fontSize: 12,
-    color: '#9ca3af',
+  challengeDetailText: {
+    fontSize: 14,
+    color: '#666666',
   },
   progressContainer: {
     marginBottom: 16,
   },
   progressText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: '#666666',
     marginBottom: 8,
   },
   progressBar: {
     height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 4,
   },
-  progressPercentage: {
-    fontSize: 12,
-    color: '#6366f1',
-    textAlign: 'right',
-    marginTop: 4,
-  },
   continueButton: {
-    marginTop: 8,
+    borderRadius: 8,
   },
-  registerButton: {
-    marginTop: 8,
-  },
-  viewButton: {
-    marginTop: 8,
+  viewDetailsButton: {
+    borderRadius: 8,
+    borderColor: PRIMARY,
   },
 }); 

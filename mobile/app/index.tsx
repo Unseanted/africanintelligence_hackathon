@@ -1,19 +1,41 @@
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 
 import { ThemedText } from './components/ThemedText';
 import { ThemedView } from './components/ThemedView';
 
 export default function LandingPage() {
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const hasNavigated = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout>();
+
+  const navigateToLogin = useCallback(() => {
+    if (!hasNavigated.current) {
+      hasNavigated.current = true;
       router.replace('/(auth)/login');
+    }
+  }, []);
+
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Set new timer
+    timerRef.current = setTimeout(() => {
+      navigateToLogin();
     }, 3000);
 
-    return () => clearTimeout(timer);
-  }, []);
+    // Cleanup
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      hasNavigated.current = false;
+    };
+  }, [navigateToLogin]);
 
   return (
     <ThemedView style={styles.container}>
@@ -21,6 +43,7 @@ export default function LandingPage() {
         source={require('@/assets/images/logo1.png')}
         style={styles.logo}
         contentFit="contain"
+        cachePolicy="memory-disk"
       />
       <ThemedText type="title" style={styles.welcomeText}>
         Welcome to African Intelligence

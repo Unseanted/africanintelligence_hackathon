@@ -1,223 +1,232 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ImageBackground, ScrollView } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, Image } from 'react-native';
+import { Text, TextInput, Button, SegmentedButtons } from 'react-native-paper';
+import { useTourLMS } from '../contexts/TourLMSContext';
+import { useToast } from '../hooks/use-toast';
+import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { router } from 'expo-router';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
-import { IconSymbol } from '../components/IconSymbol';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function Login() {
+WebBrowser.maybeCompleteAuthSession();
+
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('student');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { login, API_URL } = useTourLMS();
+  const { toast } = useToast();
+
+  const [, response, promptAsync] = Google.useAuthRequest({
+    clientId: 'YOUR_EXPO_CLIENT_ID',
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    scopes: ['profile', 'email'],
+    redirectUri: 'exp://localhost:19000/--/oauth2redirect/google'
+  });
+
+  const handleGoogleResponse = useCallback(async (token: string | undefined) => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          role,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.user && result.token) {
+        await login(result.user.email, '');
+        toast({
+          title: "Access Granted!",
+          description: `Welcome back, ${result.user.name}, to African Intelligence!`,
+        });
+        router.replace('/(tabs)/student');
+      } else {
+        throw new Error(result.message || 'Google login failed');
+      }
+    } catch (error: any) {
+      console.error("Google Login error:", error);
+      toast({
+        title: "Access Denied",
+        description: error.message || "Failed to login with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL, login, role, toast]);
+
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleResponse(response.authentication?.accessToken);
+    }
+  }, [response, handleGoogleResponse]);
+
+  const handleGoogleLogin = () => {
+    promptAsync();
+  };
 
   const handleLogin = async () => {
-    setIsLoading(true);
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // TODO: Implement actual login logic
-      // For now, just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Navigate based on role
-      switch (role) {
-        case 'student':
-          router.replace('/(tabs)/student');
-          break;
-        case 'facilitator':
-          router.replace('/(tabs)/facilitator');
-          break;
-        case 'admin':
-          router.replace('/(tabs)/admin');
-          break;
-      }
-    } catch (error) {
-      console.error('Login error:', error);
+      setLoading(true);
+      await login(email, password);
+      toast({
+        title: "Access Granted!",
+        description: "Welcome back to African Intelligence!",
+      });
+      router.replace('/(tabs)/student');
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: BACKGROUND }]}>
       <View style={styles.content}>
-        <ThemedView style={styles.formContainer}>
-          {/* Logo and Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <IconSymbol size={40} color="#eab308" />
-            </View>
-            <ThemedText style={styles.title}>African Intelligence Login</ThemedText>
-            <ThemedText style={styles.subtitle}>
-              Reclaim your place in Africa's digital ascent
-            </ThemedText>
-          </View>
+        <Image
+          source={require('../../assets/images/logo1.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={[styles.title, { color: TEXT_PRIMARY }]}>
+          Welcome Back
+        </Text>
+        <Text style={[styles.subtitle, { color: TEXT_SECONDARY }]}>
+          Sign in to continue your learning journey
+        </Text>
 
-          {/* Login Form */}
-          <View style={styles.form}>
-            {/* Email Input */}
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              mode="outlined"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
-              disabled={isLoading}
-            />
+        <View style={styles.form}>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            mode="outlined"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.input}
+            theme={{ colors: { primary: PRIMARY } }}
+          />
+          <TextInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            mode="outlined"
+            secureTextEntry
+            style={styles.input}
+            theme={{ colors: { primary: PRIMARY } }}
+          />
+          
+          <SegmentedButtons
+            value={role}
+            onValueChange={setRole}
+            buttons={[
+              { value: 'student', label: 'Student' },
+              { value: 'facilitator', label: 'Facilitator' },
+            ]}
+            style={styles.roleSelector}
+          />
 
-            {/* Password Input */}
-            <TextInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              mode="outlined"
-              secureTextEntry={!showPassword}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? 'eye-off' : 'eye'}
-                  onPress={() => setShowPassword(!showPassword)}
-                />
-              }
-              style={styles.input}
-              theme={{ colors: { primary: '#eab308' } }}
-              disabled={isLoading}
-            />
+          <Button
+            mode="contained"
+            onPress={handleLogin}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+            buttonColor={PRIMARY}
+          >
+            {loading ? "Entering..." : "Enter African Intelligence"}
+          </Button>
 
-            {/* Role Selection */}
-            <View style={styles.roleContainer}>
-              <Text style={styles.roleLabel}>I am a</Text>
-              <View style={styles.roleButtons}>
-                <Button
-                  mode={role === 'student' ? 'contained' : 'outlined'}
-                  onPress={() => setRole('student')}
-                  style={styles.roleButton}
-                  theme={{ colors: { primary: '#eab308' } }}
-                  disabled={isLoading}
-                >
-                  Student
-                </Button>
-                <Button
-                  mode={role === 'facilitator' ? 'contained' : 'outlined'}
-                  onPress={() => setRole('facilitator')}
-                  style={styles.roleButton}
-                  theme={{ colors: { primary: '#eab308' } }}
-                  disabled={isLoading}
-                >
-                  Facilitator
-                </Button>
-              </View>
-            </View>
+          <Button
+            mode="outlined"
+            onPress={handleGoogleLogin}
+            disabled={loading}
+            style={styles.googleButton}
+            icon="google"
+          >
+            Continue with Google
+          </Button>
 
-            {/* Login Button */}
-            <Button
-              mode="contained"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-              style={styles.loginButton}
-              theme={{ colors: { primary: '#eab308' } }}
-            >
-              {isLoading ? 'Entering...' : 'Enter African Intelligence'}
-            </Button>
-
-            {/* Register Link */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>
-                New to the tribe?{' '}
-                <Text
-                  style={styles.registerLink}
-                  onPress={() => router.push('/(auth)/register')}
-                >
-                  Join Now
-                </Text>
-              </Text>
-            </View>
-          </View>
-        </ThemedView>
+          <Button
+            mode="text"
+            onPress={() => router.push('/register')}
+            style={styles.registerButton}
+          >
+            Don&apos;t have an account? Register here
+          </Button>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Dark background
   },
   content: {
     flex: 1,
     padding: 20,
+    justifyContent: 'center',
   },
-  formContainer: {
-    backgroundColor: 'rgba(15, 23, 42, 0.5)', // slate-900 with opacity
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.2)', // gold-300 with opacity
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  logoContainer: {
-    backgroundColor: 'rgba(234, 179, 8, 0.2)', // amber-500 with opacity
-    padding: 15,
-    borderRadius: 30,
+  logo: {
+    width: 120,
+    height: 120,
+    alignSelf: 'center',
     marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fef3c7', // amber-100
+    textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#fcd34d', // amber-300
     textAlign: 'center',
+    marginBottom: 32,
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)', // slate-800 with opacity
-    borderColor: 'rgba(234, 179, 8, 0.2)', // gold-300 with opacity
+    backgroundColor: CARD_BACKGROUND,
   },
-  roleContainer: {
-    marginVertical: 10,
+  roleSelector: {
+    marginVertical: 8,
   },
-  roleLabel: {
-    color: '#fef3c7', // amber-100
-    marginBottom: 8,
-    fontSize: 16,
+  button: {
+    marginTop: 8,
   },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 10,
+  googleButton: {
+    marginTop: 8,
+    borderColor: PRIMARY,
   },
-  roleButton: {
-    flex: 1,
-  },
-  loginButton: {
-    marginTop: 10,
-    paddingVertical: 8,
-    backgroundColor: '#eab308', // amber-500
-  },
-  registerContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  registerText: {
-    color: '#fcd34d', // amber-300
-    fontSize: 16,
-  },
-  registerLink: {
-    color: '#eab308', // amber-500
-    fontWeight: 'bold',
+  registerButton: {
+    marginTop: 16,
   },
 }); 
