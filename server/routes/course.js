@@ -6,6 +6,7 @@ let roleAuth = require("../middleware/roleAuth");
 let { datemap, clg } = require("./basics");
 const { body } = require("express-validator");
 const { v4: uuidv4 } = require("uuid");
+const Course = require("../models/Course");
 
 /**
  * @swagger
@@ -13,86 +14,71 @@ const { v4: uuidv4 } = require("uuid");
  *   schemas:
  *     Course:
  *       type: object
+ *       required:
+ *         - title
+ *         - category
+ *         - shortDescription
+ *         - difficulty
+ *         - facilitator
  *       properties:
  *         _id:
  *           type: string
- *           description: The course ID
- *           example: "60c72b1f9b1e8b001c8e4d3a"
- *         key:
- *           type: string
- *           description: Unique course key
- *           example: "course-20240320123456"
+ *           description: The auto-generated id of the course
  *         title:
  *           type: string
- *           description: Course title
- *           example: "Introduction to Web Development"
- *         description:
+ *           description: The title of the course
+ *         category:
  *           type: string
- *           description: Course description
- *           example: "Learn the basics of web development"
+ *           description: The category of the course
+ *         shortDescription:
+ *           type: string
+ *           description: A brief description of the course
+ *         fullDescription:
+ *           type: string
+ *           description: A detailed description of the course
+ *         difficulty:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced]
+ *           description: The difficulty level of the course
+ *         duration:
+ *           type: string
+ *           description: The duration of the course
+ *         prerequisites:
+ *           type: string
+ *           description: Prerequisites for taking the course
+ *         learningOutcomes:
+ *           type: string
+ *           description: Expected learning outcomes
+ *         thumbnail:
+ *           type: string
+ *           description: URL of the course thumbnail
  *         facilitator:
  *           type: string
  *           description: ID of the course facilitator
- *           example: "60c72b1f9b1e8b001c8e4d3a"
- *         facilitatorName:
+ *         status:
  *           type: string
- *           description: Name of the course facilitator
- *           example: "John Doe"
- *         modules:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *                 example: "HTML Basics"
- *               content:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     title:
- *                       type: string
- *                       example: "Introduction to HTML"
- *                     type:
- *                       type: string
- *                       example: "video"
- *                     url:
- *                       type: string
- *                       example: "https://example.com/video.mp4"
- *               quiz:
- *                 type: object
- *                 properties:
- *                   questions:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         question:
- *                           type: string
- *                           example: "What is HTML?"
- *                         options:
- *                           type: array
- *                           items:
- *                             type: object
- *                             properties:
- *                               text:
- *                                 type: string
- *                                 example: "Hyper Text Markup Language"
- *         enrolledStudents:
+ *           enum: [draft, published, archived]
+ *           default: draft
+ *           description: The current status of the course
+ *         forum:
+ *           type: string
+ *           description: ID of the associated forum
+ *         enrollments:
  *           type: array
  *           items:
  *             type: string
- *           description: Array of enrolled student IDs
- *           example: ["60c72b1f9b1e8b001c8e4d3a"]
- *         enrolled:
- *           type: number
- *           description: Number of enrolled students
- *           example: 50
+ *           description: Array of enrollment IDs
+ *         announcements:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of course announcements
  *         rating:
  *           type: number
+ *           minimum: 0
+ *           maximum: 5
+ *           default: 0
  *           description: Average course rating
- *           example: 4.5
  *         reviews:
  *           type: array
  *           items:
@@ -100,38 +86,84 @@ const { v4: uuidv4 } = require("uuid");
  *             properties:
  *               user:
  *                 type: string
- *                 description: User ID
- *                 example: "60c72b1f9b1e8b001c8e4d3a"
+ *                 description: ID of the user who wrote the review
  *               rating:
  *                 type: number
- *                 description: Rating value (1-5)
- *                 example: 5
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 description: Rating given by the user
  *               comment:
  *                 type: string
  *                 description: Review comment
- *                 example: "Great course!"
  *               date:
  *                 type: string
  *                 format: date-time
- *                 example: "2024-03-20T10:00:00Z"
- *         status:
- *           type: string
- *           description: Course status
- *           example: "published"
+ *                 description: Date of the review
+ *         modules:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: Module title
+ *               description:
+ *                 type: string
+ *                 description: Module description
+ *               content:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [video, document]
+ *                       description: Type of content
+ *                     title:
+ *                       type: string
+ *                       description: Content title
+ *                     url:
+ *                       type: string
+ *                       description: Content URL
+ *                     description:
+ *                       type: string
+ *                       description: Content description
+ *               quiz:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                     description: Quiz title
+ *                   description:
+ *                     type: string
+ *                     description: Quiz description
+ *                   questions:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         text:
+ *                           type: string
+ *                           description: Question text
+ *                         options:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               text:
+ *                                 type: string
+ *                                 description: Option text
+ *                               isCorrect:
+ *                                 type: boolean
+ *                                 description: Whether this is the correct answer
  *         createdAt:
- *           type: object
- *           properties:
- *             is:
- *               type: string
- *               format: date-time
- *               example: "2024-03-20T10:00:00Z"
+ *           type: string
+ *           format: date-time
+ *           description: The date the course was created
  *         updatedAt:
- *           type: object
- *           properties:
- *             is:
- *               type: string
- *               format: date-time
- *               example: "2024-03-20T10:00:00Z"
+ *           type: string
+ *           format: date-time
+ *           description: The date the course was last updated
  *     CourseRating:
  *       type: object
  *       required:
@@ -258,26 +290,34 @@ const { v4: uuidv4 } = require("uuid");
  *   get:
  *     summary: Get all courses
  *     tags: [Courses]
- *     description: Retrieves all published courses
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: difficulty
+ *         schema:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced]
+ *         description: Filter by difficulty level
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [draft, published, archived]
+ *         description: Filter by status
  *     responses:
  *       200:
- *         description: All courses retrieved successfully
+ *         description: List of courses
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Server error"
  */
 
 /**
@@ -1015,74 +1055,88 @@ router.get("/latest", async (req, res) => {
 });
 
 // Get all courses
-router.get("/", async (req, res) => {
-  try {
-    let db = req.app.locals.db;
-    let courses = await db
-      .collection("courses")
-      .find({ status: "published" })
-      .toArray();
+router.get(
+  "/",
+  auth,
+  roleAuth(["student", "facilitator"]),
+  async (req, res) => {
+    try {
+      const { difficulty, status } = req.query;
+      const query = {};
 
-    // Get facilitator names
-    let facilitatorIds = [
-      ...new Set(
-        courses
-          .map((course) =>
-            course.facilitator ? new ObjectId(course.facilitator) : null
-          )
-          .filter((id) => id !== null)
-      ),
-    ];
+      if (difficulty) query.difficulty = difficulty;
+      if (status) query.status = status;
 
-    let facilitators =
-      facilitatorIds.length > 0
-        ? await db
-            .collection("users")
-            .find({ _id: { $in: facilitatorIds } })
-            .project({ _id: 1, name: 1 })
-            .toArray()
-        : [];
+      let db = req.app.locals.db;
+      let courses = await db
+        .collection("courses")
+        .find(query)
+        .populate("facilitator", "name email")
+        .populate("enrollments", "learner progress")
+        .sort({ createdAt: -1 })
+        .toArray();
 
-    let facilitatorMap = {};
-    facilitators.forEach((f) => {
-      facilitatorMap[f._id.toString()] = f.name;
-    });
+      // Get facilitator names
+      let facilitatorIds = [
+        ...new Set(
+          courses
+            .map((course) =>
+              course.facilitator ? new ObjectId(course.facilitator) : null
+            )
+            .filter((id) => id !== null)
+        ),
+      ];
 
-    let sanitizedCourses = courses.map((course) => {
-      let facilitatorName =
-        course.facilitator && facilitatorMap[course.facilitator]
-          ? facilitatorMap[course.facilitator]
-          : "Unknown";
-      if (!course.enrolledStudents) course.enrolledStudents = [];
-      // Remove quiz answers
-      if (course.modules) {
-        course.modules.forEach((module) => {
-          if (module.quiz && module.quiz.questions) {
-            module.quiz.questions.forEach((question) => {
-              if (question.answer !== "" || question.answer !== null)
-                question.answer = "";
-              if (question.options) {
-                question.options = question.options.map((option) => ({
-                  text: option.text,
-                }));
-              }
-            });
-          }
-        });
-      }
+      let facilitators =
+        facilitatorIds.length > 0
+          ? await db
+              .collection("users")
+              .find({ _id: { $in: facilitatorIds } })
+              .project({ _id: 1, name: 1 })
+              .toArray()
+          : [];
 
-      return {
-        ...course,
-        facilitatorName,
-      };
-    });
+      let facilitatorMap = {};
+      facilitators.forEach((f) => {
+        facilitatorMap[f._id.toString()] = f.name;
+      });
 
-    res.json(sanitizedCourses);
-  } catch (error) {
-    console.error("Error fetching courses:", error);
-    res.status(500).json({ message: "Server error" });
+      let sanitizedCourses = courses.map((course) => {
+        let facilitatorName =
+          course.facilitator && facilitatorMap[course.facilitator]
+            ? facilitatorMap[course.facilitator]
+            : "Unknown";
+        if (!course.enrolledStudents) course.enrolledStudents = [];
+        // Remove quiz answers
+        if (course.modules) {
+          course.modules.forEach((module) => {
+            if (module.quiz && module.quiz.questions) {
+              module.quiz.questions.forEach((question) => {
+                if (question.answer !== "" || question.answer !== null)
+                  question.answer = "";
+                if (question.options) {
+                  question.options = question.options.map((option) => ({
+                    text: option.text,
+                  }));
+                }
+              });
+            }
+          });
+        }
+
+        return {
+          ...course,
+          facilitatorName,
+        };
+      });
+
+      res.json(sanitizedCourses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Server error" });
+    }
   }
-});
+);
 
 // Get course ratings
 router.get("/:id/ratings", auth, async (req, res) => {
@@ -1575,7 +1629,7 @@ router.post(
         return res.status(404).json({ message: "Enrollment not found" });
       }
 
-      let course = await db.collection("courses").findOne({courseId});
+      let course = await db.collection("courses").findOne({ courseId });
 
       if (!course) {
         return res.status(404).json({ message: "Course not found" });

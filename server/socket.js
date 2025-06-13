@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 const { vapid_private_key, mistral_api_key } = require("./configs/config");
+const { Mistral } = require("@mistralai/mistralai");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -49,21 +50,16 @@ class MistralLLM extends LLMStrategy {
   constructor(apiKey) {
     super(apiKey);
     this.model = "mistral-large-latest";
+    this.client = new Mistral({ apiKey: apiKey });
   }
 
   async generateResponse(message) {
-    const response = await axios.post(
-      "https://api.mistral.ai/v1/chat/completions",
-      {
-        model: this.model,
-        messages: [{ role: "user", content: message }],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-      }
-    );
+    const response = await this.client.chat.complete({
+      model: this.model,
+      messages: [{ role: "user", content: message }],
+    });
+
+    return response.choices[0].message.content;
   }
 }
 // Rate limiting implementation using token bucket algorithm
@@ -164,13 +160,15 @@ const setupSocket = (server, db) => {
   console.log("Socket server is running");
 
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.user._id }`);
+    console.log(`User connected: ${socket.user._id}`);
 
     socket.on("ai:message", async (data) => {
-      const {message, context} = data;
-      const {conversationId, role, content, timestamp} = context;
+      const { message, context } = data;
+      const { conversationId, role, content, timestamp } = context;
 
-      const conversation = await db.collection("AIConversation").findOne({conversationId: conversationId});
+      const conversation = await db
+        .collection("AIConversation")
+        .findOne({ conversationId: conversationId });
 
       if (conversation) {
         conversation.addMessage({
@@ -179,23 +177,23 @@ const setupSocket = (server, db) => {
           content,
           tokenCount: 0,
           timestamp,
-        })
+        });
       }
 
       socket.emit("ai:typing", true);
-      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
-      const response = await llmContext.generateResponse(message);
+      const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      const response = await llmContext.generateResponse(content);
       console.log(response);
       const aiMessage = {
         conversationId: conversationId,
         role: "assistant",
-        content: response.content,
-        aiModel: response.model,
+        content: response,
+        aiModel: llmContext.model,
         tokenCount: 0,
-        timestamp: response.timestamp,
-      }
+        timestamp: new Date(),
+      };
       socket.emit("ai:response", {
-        message: response,
+        message: aiMessage,
       });
       socket.emit("ai:typing", false);
 
@@ -203,7 +201,6 @@ const setupSocket = (server, db) => {
       if (conversation) {
         conversation.addMessage(aiMessage);
       }
-      
     });
 
     /*socket.on("ai:message", async (data) => {
@@ -309,8 +306,6 @@ const setupSocket = (server, db) => {
         socket.emit("ai:typing", false);
       }
     }); */
-
-
 
     // Handle disconnection
     socket.on("disconnect", () => {
