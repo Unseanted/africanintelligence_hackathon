@@ -6,7 +6,7 @@ const { ObjectId } = require('mongodb');
 
 /**
  * @swagger
- * /api/badges:
+ * /badges:
  *   get:
  *     summary: Get all badges for the authenticated user
  *     tags: [Badges]
@@ -37,7 +37,7 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   get:
  *     summary: Get a single badge by ID
  *     tags: [Badges]
@@ -77,7 +77,7 @@ router.get('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges:
+ * /badges:
  *   post:
  *     summary: Create a new badge (admin only)
  *     tags: [Badges]
@@ -122,7 +122,7 @@ router.post('/', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/award/{userId}:
+ * /badges/award/{userId}:
  *   post:
  *     summary: Award a badge to a specific user (admin only)
  *     tags: [Badges]
@@ -177,7 +177,7 @@ router.post('/award/:userId', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/user/{userId}:
+ * /badges/user/{userId}:
  *   get:
  *     summary: Get all badges for a specific user
  *     tags: [Badges]
@@ -218,7 +218,7 @@ router.get('/user/:userId', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/category/{category}:
+ * /badges/category/{category}:
  *   get:
  *     summary: Get badges by category
  *     tags: [Badges]
@@ -255,7 +255,7 @@ router.get('/category/:category', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/check/{badgeId}:
+ * /badges/check/{badgeId}:
  *   get:
  *     summary: Check if user has earned a specific badge
  *     tags: [Badges]
@@ -300,7 +300,7 @@ router.get('/check/:badgeId', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/leaderboard:
+ * /badges/leaderboard:
  *   get:
  *     summary: Get badge leaderboard (top 10 users)
  *     tags: [Badges]
@@ -345,7 +345,7 @@ router.get('/leaderboard', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   put:
  *     summary: Update a badge (admin only)
  *     tags: [Badges]
@@ -402,7 +402,7 @@ router.put('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   delete:
  *     summary: Delete a badge (admin only)
  *     tags: [Badges]
