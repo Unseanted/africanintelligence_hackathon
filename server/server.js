@@ -15,6 +15,7 @@ const eventsRoutes = require("./routes/events");
 const challengesRoutes = require("./routes/challenges");
 const uploadRoutes = require("./routes/upload");
 const adminServices = require("./services/adminServices");
+const badgeRoutes = require("./routes/badges");
 const webpush = require("web-push");
 const { clg } = require("./routes/basics");
 const swaggerUi = require("swagger-ui-express");
@@ -76,6 +77,7 @@ async function startServer() {
     app.use("/api/assistant", assistantConvoRoutes);
     app.use("/api/challenges", challengesRoutes);
     app.use("/api/events", eventsRoutes);
+    app.use("/api/badges", badgeRoutes);
 
     // Serve static files in production
     if (process.env.NODE_ENV === "production") {
@@ -83,7 +85,7 @@ async function startServer() {
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
       });
-    }
+    } 
 
     // Start the server
     const server = app.listen(PORT, () => {
