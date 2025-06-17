@@ -85,7 +85,7 @@ async function startServer() {
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
       });
-    }
+    } 
 
     // Start the server
     const server = app.listen(PORT, () => {
