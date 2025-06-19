@@ -12,12 +12,33 @@ import { offlineStorage } from '@/utils/offlineStorage';
 import { notificationService } from '@/utils/notificationService';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+/*
+  Setup:
+  - Set default model state
 
+  Creating Conversation:
+  - Clicking "New Chat" button
+  - Sending a message when no chat is selected
+
+  Clicking new chat:
+  - Call create conversation api and update current conversation and model state
+  
+  Opening conversation:
+  - Update current conversation state
+
+  Delete conversation: 
+  - call delete endpoint
+
+  Archive conversation:
+  - mark as archived
+
+ */
 const AIAssistantPage = () => {
   const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([]);
+  const [chat, setChat] = useState({userid: null});
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gpt-4');
+  const [selectedModel, setSelectedModel] = useState('mistral-large-latest');
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -39,7 +60,7 @@ const AIAssistantPage = () => {
     { id: 'gemini-pro', name: 'Gemini Pro' }
   ];
 
-  const suggestedQuestions = [
+  const oldSuggestedQuestions = [
     "Explain the current lesson concepts",
     "Create a practice quiz for me",
     "Help me debug my code",
@@ -47,6 +68,11 @@ const AIAssistantPage = () => {
     "What are the key takeaways?",
     "Give me related resources"
   ];
+
+  const suggestedQuestions = [
+    "Create a practice quiz for me",
+    "Help me debug my code",
+  ]
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -66,22 +92,23 @@ const AIAssistantPage = () => {
     });
 
     newSocket.on('ai:response', (data) => {
+      const { role, content, timestamp, model} = data;
       const aiResponse = {
-        role: 'assistant',
-        content: data.message,
-        timestamp: new Date(data.timestamp),
-        model: selectedModel
+        role,
+        content,
+        timestamp: new Date(timestamp),
+        model
       };
 
-      setChat(prev => [...prev, aiResponse]);
+      setChat(prev => ({...prev, messages: [...prev.messages, aiResponse]}));
       setIsTyping(false);
 
       // Save AI response to offline storage
       offlineStorage.saveChat({
-        id: Date.now(),
-        messages: [...chat, aiResponse],
-        model: selectedModel,
-        timestamp: new Date()
+        id: chat.id,
+        messages: chat.messages,
+        model,
+        timestamp: timestamp,
       });
 
       // Show notification for new message
@@ -106,13 +133,13 @@ const AIAssistantPage = () => {
         errorMessage = "The AI service is currently busy. Please try again in a few moments.";
       }
 
-      setChat(prev => [...prev, {
+      setChat(prev => ({...prev, messages: [...prev.messages, {
         role: 'assistant',
         content: errorMessage,
         timestamp: new Date(),
         model: selectedModel,
         isError: true
-      }]);
+      }]}));
       setIsTyping(false);
 
       // Show error notification
@@ -159,23 +186,24 @@ const AIAssistantPage = () => {
     const userMessage = message.trim();
     setMessage('');
     
-    const newChat = {
+    const newMessage = {
+      conversationId: currentChatId,
       role: 'user',
       content: userMessage,
-      timestamp: new Date(),
-      files: attachedFiles,
-      model: selectedModel
+      // timestamp: new Date().getTime(),
+      // files: attachedFiles,
+      // model: selectedModel
     };
 
-    setChat(prev => [...prev, newChat]);
+    setChat(prev => ({...prev, messages: [...prev.messages, newMessage],}));
     setAttachedFiles([]);
     setIsTyping(true);
 
     // Save to offline storage
     try {
       await offlineStorage.saveChat({
-        id: Date.now(),
-        messages: [...chat, newChat],
+        id: chat.id,
+        messages: [...chat.messages],
         model: selectedModel,
         timestamp: new Date()
       });
@@ -220,25 +248,38 @@ const AIAssistantPage = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const createNewChat = () => {
+  const createNewChat = async () => {
     const newChat = {
-      id: Date.now(),
-      title: "New Chat",
-      timestamp: new Date(),
-      model: selectedModel
+      title: "New Conversation",
+      aiModel: selectedModel,
     };
-    setChatHistory(prev => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
-    setChat([]);
-    setMessage('');
-    setAttachedFiles([]);
+    
+    const response = await axios.post(url, newChat);
+    if (response.data.success) {
+      const {id, createdAt, isArchived, messages} = response.data.conversation;
+      newChat.id = id;
+      newChat.createdAt = createdAt;
+      newChat.isArchived = isArchived;
+      newChat.messages = messages;
+      setChatHistory(prev => [newChat, ...prev]);
+      setCurrentChatId(newChat.id);
+      setChat(newChat);
+      setMessage('');
+      setAttachedFiles([]);
+
+    }
+    else {
+      // TODO: send error notification
+    }
   };
 
-  const deleteChat = (chatId) => {
+  const deleteChat = async (chatId) => {
+    // TODO: Might need to handle deleting better 
+    await axios.delete(`/api/ai-assistant/conversations/${chatId}`);
     setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
     if (currentChatId === chatId) {
       setCurrentChatId(null);
-      setChat([]);
+      setChat(null);
       setMessage('');
       setAttachedFiles([]);
     }

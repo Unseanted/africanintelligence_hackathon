@@ -271,7 +271,14 @@ router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Challenge'
+ *             type: object
+ *             properties:
+ *              title:
+ *                type: string
+ *                description: The title of the challenge
+ *              description:
+ *                type: string
+ *                description: The description of the challenge
  *     responses:
  *       200:
  *         description: Challenge updated successfully
@@ -382,13 +389,13 @@ router.post(
         return res.status(404).json({ message: "Challenge not found" });
       }
 
-      if (challenge.participants.includes(req.user._id)) {
+      if (challenge.participants.includes(req.user.userId)) {
         return res
           .status(400)
           .json({ message: "Already participating in this challenge" });
       }
 
-      challenge.participants.push(req.user._id);
+      challenge.participants.push(req.user.userId);
       await challenge.save();
 
       res.json({ message: "Successfully participated in challenge" });

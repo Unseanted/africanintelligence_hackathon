@@ -5,6 +5,7 @@ const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 const { vapid_private_key, mistral_api_key } = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
+const Student = require("./models/Student");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -309,6 +310,12 @@ const setupSocket = (server, db) => {
 
     // Handle disconnection
     socket.on("disconnect", () => {
+      // Clean up subscriptions
+      if (socket.leaderboardSubscription) {
+        const { type, timeRange } = socket.leaderboardSubscription;
+        const subscriptionKey = `${socket.id}-${type}-${timeRange}`;
+        activeSubscriptions.delete(subscriptionKey);
+      }
       console.log(`User disconnected: ${socket.user._id}`);
     });
 

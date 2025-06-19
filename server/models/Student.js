@@ -14,6 +14,12 @@ const studentSchema = new Schema(
         ref: "Course",
       },
     ],
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Student",
+      },
+    ],
     xp: {
       allTime: {
         type: Number,
@@ -96,5 +102,53 @@ studentSchema.pre("save", async function (next) {
 });
 
 // TODO: Update badges
+
+studentSchema.static.getLeaderboard = async function (
+  limit = 10,
+  timeRange = "allTime"
+) {
+  const query = {};
+  if (timeRange === "thisWeek") {
+    query["xp.thisWeek"] = { $gt: 0 };
+  } else if (timeRange === "thisMonth") {
+    query["xp.thisMonth"] = { $gt: 0 };
+  } else if (timeRange === "thisYear") {
+    query["xp.thisYear"] = { $gt: 0 };
+  } else if (timeRange !== "allTime") {
+    query["xp.allTime"] = { $gt: 0 };
+  }
+
+  return this.find(query)
+    .sort({ [`xp.${timeRange}`]: -1 })
+    .limit(limit)
+    .populate("student", "user xp");
+};
+
+studentSchema.static.getFriendsLeaderboard = async function (
+  limit = 10,
+  userId
+) {
+  const student = await this.findOne({ user: userId }).populate("friends");
+  const friends = await this.find({
+    _id: { $in: student.friends.map((friend) => friend._id) },
+  })
+    .sort({ [`xp.${timeRange}`]: -1 })
+    .limit(limit)
+    .populate("student", "user xp level");
+  
+  return friends;
+};
+
+studentSchema.static.getCourseLeaderboard = async function (
+  limit = 10,
+  courseId
+) {
+  const students = await this.find({ enrollments: courseId })
+    .sort({ "xp.allTime": -1 })
+    .limit(limit)
+    .populate("user", "name avatar");
+
+  return students;
+};
 
 module.exports = mongoose.model("Student", studentSchema);
