@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { offlineStorage } from '@/utils/offlineStorage';
 import { notificationService } from '@/utils/notificationService';
-import { aiSimulator } from '@/utils/aiSimulator';
+import { io } from 'socket.io-client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AIAssistantPage = () => {
   const [message, setMessage] = useState('');
@@ -18,17 +19,15 @@ const AIAssistantPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gpt-4');
   const [attachedFiles, setAttachedFiles] = useState([]);
-  const [chatHistory, setChatHistory] = useState([
-    { id: 1, title: "React Hooks Discussion", timestamp: new Date(), model: "gpt-4" },
-    { id: 2, title: "Context API Questions", timestamp: new Date(Date.now() - 86400000), model: "gpt-3.5-turbo" },
-    { id: 3, title: "Custom Hooks Implementation", timestamp: new Date(Date.now() - 172800000), model: "claude-3" }
-  ]);
+  const [chatHistory, setChatHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const fileInputRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'error'
-  
+  const [syncStatus, setSyncStatus] = useState('idle');
+  const [socket, setSocket] = useState(null);
+  const { token } = useAuth();
+
   // Mock context data - replace with actual context
   const currentCourse = { title: "Advanced React Development" };
   const currentLesson = { title: "Custom Hooks and Context API" };
@@ -49,6 +48,88 @@ const AIAssistantPage = () => {
     "Give me related resources"
   ];
 
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!token) return;
+
+    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3031', {
+      auth: { token }
+    });
+    newSocket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      setIsOnline(true);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket');
+      setIsOnline(false);
+    });
+
+    newSocket.on('ai:response', (data) => {
+      const aiResponse = {
+        role: 'assistant',
+        content: data.message,
+        timestamp: new Date(data.timestamp),
+        model: selectedModel
+      };
+
+      setChat(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+
+      // Save AI response to offline storage
+      offlineStorage.saveChat({
+        id: Date.now(),
+        messages: [...chat, aiResponse],
+        model: selectedModel,
+        timestamp: new Date()
+      });
+
+      // Show notification for new message
+      notificationService.showNotification('New AI Response', {
+        body: aiResponse.content.substring(0, 100) + '...',
+        tag: 'ai-response'
+      });
+    });
+
+    newSocket.on('ai:typing', (typing) => {
+      setIsTyping(typing);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+      
+      let errorMessage = "I apologize, but I'm having trouble connecting right now. Please try again.";
+      
+      if (error.code === 'RATE_LIMIT_EXCEEDED') {
+        errorMessage = "You've reached the message limit. Please wait a moment before sending more messages.";
+      } else if (error.code === 'OPENAI_RATE_LIMIT') {
+        errorMessage = "The AI service is currently busy. Please try again in a few moments.";
+      }
+
+      setChat(prev => [...prev, {
+        role: 'assistant',
+        content: errorMessage,
+        timestamp: new Date(),
+        model: selectedModel,
+        isError: true
+      }]);
+      setIsTyping(false);
+
+      // Show error notification
+      notificationService.showNotification('Error', {
+        body: errorMessage,
+        tag: 'ai-error',
+        type: 'error'
+      });
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, [token]);
+
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -56,13 +137,6 @@ const AIAssistantPage = () => {
   }, [chat]);
 
   useEffect(() => {
-    // Handle online/offline status
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     // Load chat history from offline storage
     const loadChatHistory = async () => {
       try {
@@ -76,50 +150,11 @@ const AIAssistantPage = () => {
     };
 
     loadChatHistory();
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
   }, []);
-
-  // Sync when coming back online
-  useEffect(() => {
-    if (isOnline) {
-      syncData();
-    }
-  }, [isOnline]);
-
-  const syncData = async () => {
-    setSyncStatus('syncing');
-    try {
-      await offlineStorage.sync();
-      setSyncStatus('idle');
-    } catch (error) {
-      console.error('Sync failed:', error);
-      setSyncStatus('error');
-    }
-  };
-
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    const newFiles = files.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file: file
-    }));
-    setAttachedFiles(prev => [...prev, ...newFiles]);
-  };
-
-  const removeFile = (fileId) => {
-    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() || isTyping) return;
+    if (!message.trim() || isTyping || !socket) return;
 
     const userMessage = message.trim();
     setMessage('');
@@ -145,58 +180,28 @@ const AIAssistantPage = () => {
         timestamp: new Date()
       });
 
-      // Add to sync queue if offline
-      if (!isOnline) {
-        await offlineStorage.addToSyncQueue({
-          type: 'chat',
-          data: newChat,
-          url: '/api/chat',
-          method: 'POST'
-        });
-      }
+      // Send message through WebSocket
+      socket.emit('ai:message', userMessage);
     } catch (error) {
       console.error('Failed to save chat:', error);
-    }
-
-    // Generate AI response using the simulator
-    try {
-      // Simulate typing delay
-      await aiSimulator.simulateTyping(userMessage);
-      
-      const aiResponse = {
-        role: 'assistant',
-        content: aiSimulator.generateResponse(userMessage),
-        timestamp: new Date(),
-        model: selectedModel
-      };
-
-      setChat(prev => [...prev, aiResponse]);
-
-      // Save AI response to offline storage
-      await offlineStorage.saveChat({
-        id: Date.now(),
-        messages: [...chat, newChat, aiResponse],
-        model: selectedModel,
-        timestamp: new Date()
-      });
-
-      // Show notification for new message
-      notificationService.showNotification('New AI Response', {
-        body: aiResponse.content.substring(0, 100) + '...',
-        tag: 'ai-response'
-      });
-    } catch (error) {
-      console.error('Failed to generate response:', error);
-      // Show error message
-      setChat(prev => [...prev, {
-        role: 'assistant',
-        content: "I apologize, but I'm having trouble generating a response right now. Please try again.",
-        timestamp: new Date(),
-        model: selectedModel
-      }]);
-    } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const newFiles = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file: file
+    }));
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (fileId) => {
+    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
   const handleSuggestedQuestion = (question) => {
@@ -445,7 +450,9 @@ const AIAssistantPage = () => {
                             <div className={`rounded-lg p-3 ${
                               msg.role === 'user'
                                 ? 'bg-purple-500 text-white'
-                                : 'bg-muted'
+                                : msg.isError
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                  : 'bg-muted'
                             }`}>
                               {msg.files && msg.files.length > 0 && (
                                 <div className="mb-2 space-y-1">

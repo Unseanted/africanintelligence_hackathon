@@ -1,6 +1,6 @@
 const express = require("express");
+const setupSocket = require("./socket");
 const cors = require("cors");
-const { MongoClient } = require("mongodb");
 const path = require("path");
 const auth = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
@@ -10,10 +10,18 @@ const studentRoutes = require("./routes/studentRoutes");
 const courseRoutes = require("./routes/course");
 const forumRoutes = require("./routes/forum");
 const notificationRoutes = require("./routes/notification");
+const assistantConvoRoutes = require("./routes/assistantconvo");
+const eventsRoutes = require("./routes/events");
+const challengesRoutes = require("./routes/challenges");
 const uploadRoutes = require("./routes/upload");
 const adminServices = require("./services/adminServices");
+const badgeRoutes = require("./routes/badges");
 const webpush = require("web-push");
 const { clg } = require("./routes/basics");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerOptions = require("./swagger");
+const dbConnection = require("./configs/database");
 
 // Configure the environment
 require("dotenv").config();
@@ -25,7 +33,7 @@ const PORT = process.env.PORT || 8080;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
 
 // Configure Web Push
 if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
@@ -40,17 +48,19 @@ if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
   console.warn("Web Push not configured. Missing VAPID keys.");
 }
 
-// Connect to MongoDB
-const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/lms";
-const client = new MongoClient(mongoURI);
+// Initialize swagger-jsdoc -> returns validated swagger spec in json format
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
+// Serve Swagger UI at a specific endpoint
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 async function startServer() {
   try {
-    await client.connect();
-    console.log("Connected to MongoDB");
+    // Connect to MongoDB with retry logic
+    const { mongoose, mongoClient } = await dbConnection.connect();
 
     // Make the database accessible to our routes
-    app.locals.db = client.db();
+    app.locals.db = mongoClient.db();
 
     // Initialize API documentation
     await adminServices.initializeDefaultDocumentation(app.locals.db);
@@ -64,6 +74,10 @@ async function startServer() {
     app.use("/api/forum", forumRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);
+    app.use("/api/assistant", assistantConvoRoutes);
+    app.use("/api/challenges", challengesRoutes);
+    app.use("/api/events", eventsRoutes);
+    app.use("/api/badges", badgeRoutes);
 
     // Serve static files in production
     if (process.env.NODE_ENV === "production") {
@@ -71,12 +85,16 @@ async function startServer() {
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
       });
-    }
+    } 
 
     // Start the server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
     });
+
+    // Start websocket server
+    const webSocketServer = setupSocket(server, app.locals.db);
   } catch (error) {
     console.error("Error starting server:", error);
     process.exit(1);
@@ -86,8 +104,8 @@ async function startServer() {
 // Handle process termination
 process.on("SIGINT", async () => {
   try {
-    await client.close();
-    console.log("MongoDB connection closed");
+    await dbConnection.close();
+    console.log("Server shutdown complete");
     process.exit(0);
   } catch (error) {
     console.error("Error during graceful shutdown:", error);
@@ -96,4 +114,4 @@ process.on("SIGINT", async () => {
 });
 
 // Start the server
-startServer().catch(console.error);
+startServer();

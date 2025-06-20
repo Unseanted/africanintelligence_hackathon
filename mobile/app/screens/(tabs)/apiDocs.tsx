@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Button } from 'react-native-paper';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
+import { ThemedView } from '../../../components/ThemedView';
+import { ThemedText } from '../../../components/ThemedText';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function ApiDocsPage() {

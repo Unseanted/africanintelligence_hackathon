@@ -1,35 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bot, X, Send, Minimize2, Maximize2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTourLMS } from '@/contexts/TourLMSContext';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { useToast } from '@/hooks/use-toast';
 
 const AIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [message, setMessage] = useState('');
   const [chat, setChat] = useState([]);
-  const { currentCourse, currentLesson } = useTourLMS();
+  const [socket, setSocket] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const { currentCourse, currentLesson, token, API_URL } = useTourLMS();
+  const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!token || !isOpen) return;
+
+    const newSocket = io('https://africanapi.onrender.com', {
+      path: '/socket.io',
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to AI chat');
+    });
+
+    newSocket.on('ai:response', (data) => {
+      setChat(prev => [...prev, { 
+        role: 'assistant', 
+        content: data.message,
+        timestamp: new Date(data.timestamp)
+      }]);
+      setIsTyping(false);
+    });
+
+    newSocket.on('ai:typing', (typing) => {
+      setIsTyping(typing);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+      
+      let errorMessage = "I apologize, but I'm having trouble connecting right now. Please try again.";
+      
+      if (error.code === 'RATE_LIMIT_EXCEEDED') {
+        errorMessage = "You've reached the message limit. Please wait a moment before sending more messages.";
+      } else if (error.code === 'OPENAI_RATE_LIMIT') {
+        errorMessage = "The AI service is currently busy. Please try again in a few moments.";
+      }
+
+      setChat(prev => [...prev, {
+        role: 'assistant',
+        content: errorMessage,
+        timestamp: new Date(),
+        isError: true
+      }]);
+      setIsTyping(false);
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, [token, isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isTyping || !socket) return;
 
     // Add user message to chat
-    setChat(prev => [...prev, { role: 'user', content: message }]);
+    const userMessage = {
+      role: 'user',
+      content: message.trim(),
+      timestamp: new Date()
+    };
+    
+    setChat(prev => [...prev, userMessage]);
     setMessage('');
+    setIsTyping(true);
 
-    // TODO: Add actual AI integration here
-    // For now, just simulate a response
-    setTimeout(() => {
-      setChat(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'I am your AI learning assistant. How can I help you today?' 
-      }]);
-    }, 1000);
+    // Send message through WebSocket
+    socket.emit('ai:message', {
+      message: userMessage.content,
+      context: {
+        courseId: currentCourse?.id,
+        lessonId: currentLesson?.id
+      }
+    });
   };
 
   return (
@@ -112,6 +187,8 @@ const AIChatbot = () => {
                           className={`max-w-[80%] rounded-lg p-3 ${
                             msg.role === 'user'
                               ? 'bg-purple-600 text-white'
+                              : msg.isError
+                              ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                               : 'bg-gray-100 dark:bg-slate-700'
                           }`}
                         >
@@ -119,6 +196,15 @@ const AIChatbot = () => {
                         </div>
                       </div>
                     ))
+                  )}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 dark:bg-slate-700 rounded-lg p-3 flex gap-1">
+                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100"></span>
+                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200"></span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -129,8 +215,9 @@ const AIChatbot = () => {
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Type your message..."
                       className="flex-1"
+                      disabled={isTyping}
                     />
-                    <Button type="submit" size="icon">
+                    <Button type="submit" size="icon" disabled={isTyping || !message.trim()}>
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>

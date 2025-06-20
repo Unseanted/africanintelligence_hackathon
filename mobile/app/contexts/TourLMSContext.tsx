@@ -2,13 +2,13 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../constants/api';
 
-interface User {
+export interface User {
   id: string;
   _id: string;
   name: string;
   email: string;
   role: 'student' | 'facilitator' | 'admin' | 'learner';
-  avatar?: string;
+  avatar: string;
   preferences?: {
     notifications: boolean;
     emailNotifications?: boolean;
@@ -298,12 +298,12 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     if (!state.user || !state.token) return;
     try {
       const response = await fetch(`${API_URL}/user/preferences`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${state.token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(preferences)
       });
       if (response.ok) {
         const updatedUser = { 
@@ -320,6 +320,22 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
           user: updatedUser
         }));
       }
+
+      const updatedUser = {
+        ...state.user,
+        preferences: {
+          notifications: state.user.preferences?.notifications ?? true,
+          darkMode: state.user.preferences?.darkMode ?? false,
+          ...preferences
+        }
+      };
+
+      setState(prev => ({
+        ...prev,
+        user: updatedUser
+      }));
+
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Error updating preferences:', error);
       throw error;
@@ -353,13 +369,7 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
   }, [loadStoredAuth]);
 
   const value = useMemo(() => ({
-    user: state.user,
-    token: state.token,
-    loading: state.loading,
-    enrolledCourses: state.enrolledCourses,
-    CoursesHub: state.CoursesHub,
-    facilitatorCourses: state.facilitatorCourses,
-    coursesLoaded: state.coursesLoaded,
+    ...state,
     API_URL,
     login,
     register,
@@ -369,13 +379,7 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     updateUserPreferences,
     enrollInCourse,
   }), [
-    state.user,
-    state.token,
-    state.loading,
-    state.enrolledCourses,
-    state.CoursesHub,
-    state.facilitatorCourses,
-    state.coursesLoaded,
+    state,
     login,
     register,
     logout,

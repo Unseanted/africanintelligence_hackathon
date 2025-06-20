@@ -25,20 +25,32 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const MyTeams = () => {
+  // State for storing user's teams
   const [myTeams, setMyTeams] = useState([]);
+  // Loading state
   const [loading, setLoading] = useState(true);
+  // Selected team for leave/disband action
   const [selectedTeam, setSelectedTeam] = useState(null);
+  // Loading state for leave/disband action
   const [isLeaving, setIsLeaving] = useState(false);
+  // Dialog open state
   const [confirmLeaveDialogOpen, setConfirmLeaveDialogOpen] = useState(false);
+  
+  // Get user from auth context
   const { user } = useAuth();
+  // Get API URL from context
   const { API_URL } = useTourLMS();
+  // Toast notification hook
   const { toast } = useToast();
+  // Navigation hook
   const navigate = useNavigate();
 
+  // Fetch user's teams on component mount
   useEffect(() => {
     fetchMyTeams();
   }, []);
 
+  // Function to fetch all teams the user is a member of
   const fetchMyTeams = async () => {
     try {
       setLoading(true);
@@ -55,15 +67,18 @@ const MyTeams = () => {
       // For each event, check if there are teams with the user as member
       for (const event of events) {
         try {
+          // Get teams for the current event
           const teamsResponse = await axios.get(`${API_URL}/admin/events/${event._id}/teams`, {
             headers: { 'x-auth-token': token }
           });
           
           const teams = teamsResponse.data || [];
+          // Filter teams where current user is a member
           const userTeams = teams.filter(team => 
             team.members && team.members.includes(user.id)
           );
           
+          // If user is in any teams for this event, add to display list
           if (userTeams.length > 0) {
             teamsByEvent.push({
               event: {
@@ -94,6 +109,7 @@ const MyTeams = () => {
     }
   };
 
+  // Function to handle leaving or disbanding a team
   const handleLeaveTeam = async () => {
     if (!selectedTeam || !selectedTeam.eventId || !selectedTeam.teamId) return;
     
@@ -103,7 +119,7 @@ const MyTeams = () => {
       const isLeader = selectedTeam.isLeader;
       
       if (isLeader) {
-        // If user is the leader, delete the team
+        // If user is the leader, delete the entire team
         await axios.delete(`${API_URL}/admin/events/${selectedTeam.eventId}/teams/${selectedTeam.teamId}`, {
           headers: { 'x-auth-token': token }
         });
@@ -113,7 +129,7 @@ const MyTeams = () => {
           description: 'As the leader, your team has been disbanded',
         });
       } else {
-        // Otherwise, remove the member
+        // If user is not leader, just remove themselves from the team
         await axios.delete(
           `${API_URL}/admin/events/${selectedTeam.eventId}/teams/${selectedTeam.teamId}/members/${user.id}`, 
           {
@@ -127,6 +143,7 @@ const MyTeams = () => {
         });
       }
       
+      // Refresh the team list
       fetchMyTeams();
     } catch (error) {
       console.error('Error leaving team:', error);
@@ -142,6 +159,7 @@ const MyTeams = () => {
     }
   };
 
+  // Function to show confirmation dialog before leaving/disbanding
   const confirmLeaveTeam = (eventId, teamId, teamName, isLeader) => {
     setSelectedTeam({
       eventId,
@@ -152,12 +170,14 @@ const MyTeams = () => {
     setConfirmLeaveDialogOpen(true);
   };
 
+  // Helper function to format event date
   const formatEventDate = (dateString) => {
     if (!dateString) return 'TBD';
     const date = new Date(dateString);
     return format(date, 'PPP');
   };
 
+  // Helper function to get initials from a name
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -167,6 +187,7 @@ const MyTeams = () => {
       .slice(0, 2);
   };
 
+  // Loading state UI
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -178,6 +199,7 @@ const MyTeams = () => {
     );
   }
 
+  // Empty state UI (no teams)
   if (myTeams.length === 0) {
     return (
       <div className="container px-4 py-6 mx-auto max-w-7xl">
@@ -202,13 +224,16 @@ const MyTeams = () => {
     );
   }
 
+  // Main component UI
   return (
     <div className="container px-4 py-6 mx-auto max-w-7xl">
       <h1 className="text-2xl font-bold tracking-tight mb-8">My Teams</h1>
       
       <div className="space-y-12">
+        {/* Map through each event that has teams */}
         {myTeams.map((item, eventIndex) => (
           <div key={eventIndex} className="space-y-4">
+            {/* Event header */}
             <div 
               className="cursor-pointer group" 
               onClick={() => navigate(`/student/events/${item.event._id}`)}
@@ -223,7 +248,9 @@ const MyTeams = () => {
               </p>
             </div>
             
+            {/* Teams grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Map through each team in the event */}
               {item.teams.map((team, teamIndex) => {
                 const isLeader = team.leader === user.id;
                 
@@ -232,6 +259,7 @@ const MyTeams = () => {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
+                          {/* Team avatar with initials */}
                           <Avatar className="h-10 w-10 bg-purple-600">
                             <AvatarFallback>
                               {getInitials(team.name)}
@@ -239,12 +267,14 @@ const MyTeams = () => {
                           </Avatar>
                           <div>
                             <CardTitle className="text-lg">{team.name}</CardTitle>
+                            {/* Show badge if user is leader */}
                             {isLeader && (
                               <Badge className="mt-1 bg-purple-600">Team Leader</Badge>
                             )}
                           </div>
                         </div>
                         
+                        {/* Leave/Disband button */}
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -260,15 +290,18 @@ const MyTeams = () => {
                     </CardHeader>
                     
                     <CardContent>
+                      {/* Team description */}
                       {team.description && (
                         <p className="text-sm text-gray-600 mb-4">{team.description}</p>
                       )}
                       
+                      {/* Team members section */}
                       <h4 className="font-medium mb-2 flex items-center gap-1.5">
                         <Users className="h-4 w-4" />
                         Team Members ({team.members.length})
                       </h4>
                       
+                      {/* Member avatars */}
                       <div className="flex flex-wrap gap-2">
                         {team.memberDetails && team.memberDetails.map((member, idx) => (
                           <div 
@@ -280,6 +313,7 @@ const MyTeams = () => {
                               <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                             </Avatar>
                             <span className="text-sm">{member.name}</span>
+                            {/* Show crown icon for leader */}
                             {team.leader === member._id && (
                               <Crown className="h-3 w-3 text-yellow-500 ml-1" />
                             )}
@@ -287,6 +321,7 @@ const MyTeams = () => {
                         ))}
                       </div>
                       
+                      {/* View event button */}
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -304,6 +339,7 @@ const MyTeams = () => {
         ))}
       </div>
       
+      {/* Leave/Disband confirmation dialog */}
       <AlertDialog open={confirmLeaveDialogOpen} onOpenChange={setConfirmLeaveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

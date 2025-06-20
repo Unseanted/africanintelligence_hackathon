@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, Modal } from 'react-native';
-import { Text, Card, Searchbar, Avatar, ProgressBar, IconButton } from 'react-native-paper';
+import { Text, Card, Avatar, ProgressBar, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, WARNING, INFO } from '../constants/colors';
-import { useTourLMS } from '../contexts/TourLMSContext';
-import { useToast } from '../hooks/use-toast';
+import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, WARNING, INFO } from '../../constants/colors';
+import { useTourLMS } from '../../../contexts/TourLMSContext';
+import { useToast } from '../../hooks/use-toast';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 const { width } = Dimensions.get('window');
 
@@ -945,18 +947,8 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Leaderboard</Text>
-        <Searchbar
-          placeholder="Search users or departments..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-          inputStyle={styles.searchInput}
-        />
-      </View>
-
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.header}>Leaderboard</ThemedText>
       <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={styles.statsButton}
@@ -1012,27 +1004,17 @@ export default function LeaderboardScreen() {
 
       {renderUserModal()}
       {renderStatsModal()}
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    padding: 16,
   },
   header: {
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: PRIMARY,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    marginBottom: 0,
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
@@ -1097,17 +1079,17 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
     fontSize: 16,
   },
-  filtersOuterContainer: {
-    backgroundColor: '#f7f7fa',
-    paddingVertical: 8,
-    marginHorizontal: 12,
+  filtersContainer: {
+    paddingVertical: 12,
+    backgroundColor: CARD_BACKGROUND,
+    marginTop: 16,
+    marginHorizontal: 16,
     borderRadius: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    marginTop: 8,
   },
   filtersScrollContainer: {
     flexGrow: 0,
@@ -1128,13 +1110,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButton: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
+    marginHorizontal: 4,
     borderRadius: 16,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: BORDER_COLOR,
-    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
     height: 32,
@@ -1418,134 +1400,134 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    },
-    statItem: {
-      width: '48%',
-      marginBottom: 16,
-    },
-    statLabel: {
-      color: TEXT_SECONDARY,
-      fontSize: 14,
-      marginBottom: 4,
-    },
-    statValue: {
-      color: TEXT_PRIMARY,
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-    sectionTitle: {
-      color: TEXT_PRIMARY,
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 16,
-    },
-    levelProgressContainer: {
-      marginBottom: 16,
-    },
-    levelProgressBar: {
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      marginVertical: 8,
-    },
-    xpText: {
-      color: TEXT_SECONDARY,
-      fontSize: 12,
-      textAlign: 'center',
-    },
-    badgesGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-start',
-    },
-    badgeItem: {
-      width: 60,
-      height: 60,
-      justifyContent: 'center',
-      alignItems: 'center',
-      margin: 8,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      borderRadius: 30,
-    },
-    achievementItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 16,
-    },
-    achievementIcon: {
-      marginRight: 12,
-      marginTop: 4,
-    },
-    achievementDetails: {
-      flex: 1,
-    },
-    achievementName: {
-      color: TEXT_PRIMARY,
-      fontWeight: 'bold',
-      marginBottom: 4,
-    },
-    achievementDescription: {
-      color: TEXT_SECONDARY,
-      fontSize: 14,
-      marginBottom: 4,
-    },
-    achievementDate: {
-      color: TEXT_SECONDARY,
-      fontSize: 12,
-      fontStyle: 'italic',
-    },
-    chartContainer: {
-      marginTop: 16,
-    },
-    chartItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    chartLabel: {
-      color: TEXT_SECONDARY,
-      width: 50,
-      fontSize: 12,
-    },
-    chartBarContainer: {
-      flex: 1,
-      height: 16,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      borderRadius: 8,
-      overflow: 'hidden',
-      marginHorizontal: 8,
-    },
-    chartBar: {
-      height: '100%',
-      borderRadius: 8,
-    },
-    chartValue: {
-      color: TEXT_PRIMARY,
-      width: 30,
-      textAlign: 'right',
-      fontSize: 12,
-    },
-    activityItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-      flexWrap: 'wrap',
-    },
-    activityText: {
-      color: TEXT_SECONDARY,
-      fontSize: 14,
-      marginLeft: 8,
-      flex: 1,
-    },
-    activityUser: {
-      color: TEXT_PRIMARY,
-      fontWeight: 'bold',
-    },
-    activityTime: {
-      color: TEXT_SECONDARY,
-      fontSize: 12,
-      width: '100%',
-      marginLeft: 28,
-      marginTop: 4,
-    },
-  });
+  },
+  statItem: {
+    width: '48%',
+    marginBottom: 16,
+  },
+  statLabel: {
+    color: TEXT_SECONDARY,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: TEXT_PRIMARY,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    color: TEXT_PRIMARY,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  levelProgressContainer: {
+    marginBottom: 16,
+  },
+  levelProgressBar: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 8,
+  },
+  xpText: {
+    color: TEXT_SECONDARY,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  badgesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  badgeItem: {
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 30,
+  },
+  achievementItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  achievementIcon: {
+    marginRight: 12,
+    marginTop: 4,
+  },
+  achievementDetails: {
+    flex: 1,
+  },
+  achievementName: {
+    color: TEXT_PRIMARY,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  achievementDescription: {
+    color: TEXT_SECONDARY,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  achievementDate: {
+    color: TEXT_SECONDARY,
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  chartContainer: {
+    marginTop: 16,
+  },
+  chartItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  chartLabel: {
+    color: TEXT_SECONDARY,
+    width: 50,
+    fontSize: 12,
+  },
+  chartBarContainer: {
+    flex: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+  },
+  chartBar: {
+    height: '100%',
+    borderRadius: 8,
+  },
+  chartValue: {
+    color: TEXT_PRIMARY,
+    width: 30,
+    textAlign: 'right',
+    fontSize: 12,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  activityText: {
+    color: TEXT_SECONDARY,
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
+  activityUser: {
+    color: TEXT_PRIMARY,
+    fontWeight: 'bold',
+  },
+  activityTime: {
+    color: TEXT_SECONDARY,
+    fontSize: 12,
+    width: '100%',
+    marginLeft: 28,
+    marginTop: 4,
+  },
+});

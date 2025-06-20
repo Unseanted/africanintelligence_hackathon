@@ -136,5 +136,12 @@ dist
 .pnp.*
 
 
-# others
+# Editor files
+.vscode
+.cursor*
+
+# Todo 
+todo.txt
+
+# Socket test
 socket-test.js
