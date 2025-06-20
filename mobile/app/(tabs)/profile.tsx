@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, LayoutAnimation, Linking } from 'react-native';
-import { Text, Card, Button, Avatar, List, Switch, ActivityIndicator, Divider, TextInput } from 'react-native-paper';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
+import { View, StyleSheet, ScrollView, RefreshControl, LayoutAnimation } from 'react-native';
+import { ActivityIndicator} from 'react-native-paper';
+import { PRIMARY, BACKGROUND, BORDER_COLOR } from '../constants/colors';
 import { useTourLMS } from '../contexts/TourLMSContext';
 import { useToast } from '../hooks/use-toast';
 import { router } from 'expo-router';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import ProfileHeader from '../components/profile/ProfileHeader';
+import StatsSection from '../components/profile/StatsSection';
+import AchievementsSection from '../components/profile/AchievementsSection';
+import AccountSettingsSection from '../components/profile/AccountSettingsSection';
+import SupportSection from '../components/profile/SupportSection';
+import LogoutButton from '../components/profile/LogoutButton';
+import VersionInfo from '../components/profile/VersionInfo';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Profile() {
   const { user, token, logout, API_URL, updateUserPreferences } = useTourLMS();
   const { toast } = useToast();
+  const { isDarkMode, toggleTheme, colors: themeColors } = useTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(user?.preferences?.notifications ?? true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(user?.preferences?.darkMode ?? false);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(user?.preferences?.emailNotifications ?? true);
+  const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(user?.preferences?.smsNotifications ?? false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(user?.preferences?.pushNotifications ?? true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{
@@ -96,8 +106,7 @@ export default function Profile() {
         title: "Notifications Updated",
         description: value ? "Notifications are now enabled" : "Notifications are now disabled",
       });
-    } catch (error) {
-      console.error('Error updating preferences:', error);
+    } catch {
       setNotificationsEnabled(!value);
       toast({
         title: "Update Failed",
@@ -107,20 +116,55 @@ export default function Profile() {
     }
   };
 
-  const handleDarkModeToggle = async (value: boolean) => {
-    setDarkModeEnabled(value);
+  const handleEmailNotificationToggle = async (value: boolean) => {
+    setEmailNotificationsEnabled(value);
     try {
-      await updateUserPreferences({ darkMode: value });
+      await updateUserPreferences({ emailNotifications: value });
       toast({
-        title: "Theme Updated",
-        description: value ? "Dark mode enabled" : "Light mode enabled",
+        title: "Email Notifications Updated",
+        description: value ? "Email notifications are now enabled" : "Email notifications are now disabled",
       });
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      setDarkModeEnabled(!value);
+    } catch {
+      setEmailNotificationsEnabled(!value);
       toast({
         title: "Update Failed",
-        description: "Could not update theme preferences",
+        description: "Could not update email notification preferences",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSmsNotificationToggle = async (value: boolean) => {
+    setSmsNotificationsEnabled(value);
+    try {
+      await updateUserPreferences({ smsNotifications: value });
+      toast({
+        title: "SMS Notifications Updated",
+        description: value ? "SMS notifications are now enabled" : "SMS notifications are now disabled",
+      });
+    } catch {
+      setSmsNotificationsEnabled(!value);
+      toast({
+        title: "Update Failed",
+        description: "Could not update SMS notification preferences",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePushNotificationToggle = async (value: boolean) => {
+    setPushNotificationsEnabled(value);
+    try {
+      await updateUserPreferences({ pushNotifications: value });
+      toast({
+        title: "Push Notifications Updated",
+        description: value ? "Push notifications are now enabled" : "Push notifications are now disabled",
+      });
+    } catch {
+      setPushNotificationsEnabled(!value);
+      toast({
+        title: "Update Failed",
+        description: "Could not update push notification preferences",
         variant: "destructive",
       });
     }
@@ -169,505 +213,172 @@ export default function Profile() {
 
   return (
     <ScrollView 
-      style={[styles.container, { backgroundColor: BACKGROUND }]}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[PRIMARY]} />
       }
     >
-      <View style={[styles.header, { backgroundColor: PRIMARY }]}>
-        <Avatar.Image 
-          source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }} 
-          size={100} 
-          style={styles.avatar} 
-        />
-        <Text style={[styles.name, { color: TEXT_PRIMARY }]}>{user?.name}</Text>
-        <Text style={[styles.role, { color: TEXT_PRIMARY }]}>{user?.role}</Text>
-        <View style={styles.rankBadge}>
-          <Text style={[styles.rank, { color: TEXT_PRIMARY }]}>{stats.rank}</Text>
-        </View>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-          <Card.Content>
-            <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.coursesCompleted}</Text>
-            <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Courses</Text>
-          </Card.Content>
-        </Card>
-
-        <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-          <Card.Content>
-            <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalXP}</Text>
-            <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Total XP</Text>
-          </Card.Content>
-        </Card>
-
-        <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-          <Card.Content>
-            <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.currentStreak}</Text>
-            <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Day Streak</Text>
-          </Card.Content>
-        </Card>
-      </View>
-
-      <TouchableOpacity onPress={() => toggleSection('achievements')}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Achievements</Text>
-          <Icon 
-            name={expandedSections.achievements ? "chevron-up" : "chevron-down"} 
-            size={24} 
-            color={TEXT_PRIMARY} 
-          />
-        </View>
-      </TouchableOpacity>
-
-      {expandedSections.achievements && (
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.certificates}</Text>
-              <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Certificates</Text>
-            </Card.Content>
-          </Card>
-
-          <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.achievements}</Text>
-              <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Badges</Text>
-            </Card.Content>
-          </Card>
-        </View>
-      )}
-
-      <TouchableOpacity onPress={() => toggleSection('account')}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Account Settings</Text>
-          <Icon 
-            name={expandedSections.account ? "chevron-up" : "chevron-down"} 
-            size={24} 
-            color={TEXT_PRIMARY} 
-          />
-        </View>
-      </TouchableOpacity>
-
-      {expandedSections.account && (
-        <Card style={[styles.settingsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-          <Card.Content>
-            <List.Item
-              title="Edit Profile"
-              description="Update your personal information"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="account-edit" color={PRIMARY} />}
-              onPress={() => setShowEditProfile(prev => !prev)}
-            />
-            {showEditProfile && (
-              <View style={{ padding: 16 }}>
-                <TextInput
-                  label="Name"
-                  value={editingUser.name}
-                  mode="outlined"
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setEditingUser(prev => ({ ...prev, name: text }))}
-                />
-                <TextInput
-                  label="Email"
-                  value={editingUser.email}
-                  mode="outlined"
-                  style={{ marginBottom: 12 }}
-                  keyboardType="email-address"
-                  onChangeText={(text) => setEditingUser(prev => ({ ...prev, email: text }))}
-                />
-                <TextInput
-                  label="Avatar URL"
-                  value={editingUser.avatar}
-                  mode="outlined"
-                  style={{ marginBottom: 12 }}
-                  placeholder="Enter image URL"
-                  onChangeText={(text) => setEditingUser(prev => ({ ...prev, avatar: text }))}
-                />
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      const response = await fetch(`${API_URL}/user/profile`, {
-                        method: 'PATCH',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(editingUser)
-                      });
-                      
-                      if (response.ok) {
-                        toast({
-                          title: "Profile Updated",
-                          description: "Your profile has been updated successfully",
-                        });
-                        setShowEditProfile(false);
-                      } else {
-                        throw new Error('Failed to update profile');
-                      }
-                    } catch (error) {
-                      console.error('Error updating profile:', error);
-                      toast({
-                        title: "Update Failed",
-                        description: "Could not update profile. Please try again.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  style={{ marginTop: 8 }}
-                >
-                  Save Changes
-                </Button>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Change Password"
-              description="Update your login credentials"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="lock" color={PRIMARY} />}
-              onPress={() => setShowChangePassword(prev => !prev)}
-            />
-            {showChangePassword && (
-              <View style={{ padding: 16 }}>
-                <TextInput
-                  label="Current Password"
-                  value={passwordData.currentPassword}
-                  mode="outlined"
-                  secureTextEntry
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setPasswordData(prev => ({ ...prev, currentPassword: text }))}
-                />
-                <TextInput
-                  label="New Password"
-                  value={passwordData.newPassword}
-                  mode="outlined"
-                  secureTextEntry
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setPasswordData(prev => ({ ...prev, newPassword: text }))}
-                />
-                <TextInput
-                  label="Confirm New Password"
-                  value={passwordData.confirmPassword}
-                  mode="outlined"
-                  secureTextEntry
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setPasswordData(prev => ({ ...prev, confirmPassword: text }))}
-                />
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    if (passwordData.newPassword !== passwordData.confirmPassword) {
-                      toast({
-                        title: "Error",
-                        description: "New passwords do not match",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    try {
-                      const response = await fetch(`${API_URL}/user/change-password`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                          currentPassword: passwordData.currentPassword,
-                          newPassword: passwordData.newPassword
-                        })
-                      });
-                      
-                      if (response.ok) {
-                        toast({
-                          title: "Password Updated",
-                          description: "Your password has been changed successfully",
-                        });
-                        setShowChangePassword(false);
-                        setPasswordData({
-                          currentPassword: '',
-                          newPassword: '',
-                          confirmPassword: ''
-                        });
-                      } else {
-                        throw new Error('Failed to update password');
-                      }
-                    } catch (error) {
-                      console.error('Error updating password:', error);
-                      toast({
-                        title: "Update Failed",
-                        description: "Could not update password. Please try again.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  style={{ marginTop: 8 }}
-                >
-                  Update Password
-                </Button>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Notifications"
-              description="Enable or disable app notifications"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="bell" color={PRIMARY} />}
-              right={props => (
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={handleNotificationToggle}
-                  color={PRIMARY}
-                />
-              )}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Dark Mode"
-              description="Toggle between light and dark theme"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="theme-light-dark" color={PRIMARY} />}
-              right={props => (
-                <Switch
-                  value={darkModeEnabled}
-                  onValueChange={handleDarkModeToggle}
-                  color={PRIMARY}
-                />
-              )}
-            />
-          </Card.Content>
-        </Card>
-      )}
-
-      <TouchableOpacity onPress={() => toggleSection('support')}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Support</Text>
-          <Icon 
-            name={expandedSections.support ? "chevron-up" : "chevron-down"} 
-            size={24} 
-            color={TEXT_PRIMARY} 
-          />
-        </View>
-      </TouchableOpacity>
-
-      {expandedSections.support && (
-        <Card style={[styles.settingsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-          <Card.Content>
-            <List.Item
-              title="Help Center"
-              description="Find answers to common questions"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="help-circle" color={PRIMARY} />}
-              onPress={() => setShowHelp(prev => !prev)}
-            />
-            {showHelp && (
-              <View style={{ padding: 16 }}>
-                <Text style={{ color: TEXT_PRIMARY, marginBottom: 16, fontSize: 16 }}>Frequently Asked Questions</Text>
-                <List.AccordionGroup>
-                  <List.Accordion title="How do I start a course?" id="1">
-                    <List.Item
-                      description="Browse available courses in the Courses tab and click 'Enroll' to begin your learning journey."
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                  <List.Accordion title="How do I earn XP?" id="2">
-                    <List.Item
-                      description="Complete lessons, participate in discussions, and complete challenges to earn XP points."
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                  <List.Accordion title="What are achievements?" id="3">
-                    <List.Item
-                      description="Achievements are badges you earn by completing specific milestones in your learning journey."
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                </List.AccordionGroup>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Contact Support"
-              description="Get in touch with our team"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="message" color={PRIMARY} />}
-              onPress={() => setShowContact(prev => !prev)}
-            />
-            {showContact && (
-              <View style={{ padding: 16 }}>
-                <Text style={{ color: TEXT_PRIMARY, marginBottom: 16, fontSize: 16 }}>Contact Our Support Team</Text>
-                <TextInput
-                  label="Subject"
-                  value={contactData.subject}
-                  mode="outlined"
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setContactData(prev => ({ ...prev, subject: text }))}
-                />
-                <TextInput
-                  label="Message"
-                  value={contactData.message}
-                  mode="outlined"
-                  multiline
-                  numberOfLines={4}
-                  style={{ marginBottom: 12 }}
-                  onChangeText={(text) => setContactData(prev => ({ ...prev, message: text }))}
-                />
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      const response = await fetch(`${API_URL}/support/contact`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(contactData)
-                      });
-                      
-                      if (response.ok) {
-                        toast({
-                          title: "Message Sent",
-                          description: "Our team will get back to you soon",
-                        });
-                        setShowContact(false);
-                        setContactData({ subject: '', message: '' });
-                      } else {
-                        throw new Error('Failed to send message');
-                      }
-                    } catch (error) {
-                      console.error('Error sending message:', error);
-                      toast({
-                        title: "Send Failed",
-                        description: "Could not send message. Please try again.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                >
-                  Send Message
-                </Button>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Privacy Policy"
-              description="Review our data practices"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="shield-account" color={PRIMARY} />}
-              onPress={() => setShowPrivacy(prev => !prev)}
-            />
-            {showPrivacy && (
-              <View style={{ padding: 16 }}>
-                <ScrollView style={{ maxHeight: 300 }}>
-                  <Text style={{ color: TEXT_PRIMARY, marginBottom: 16, fontSize: 16 }}>Privacy Policy</Text>
-                  <Text style={{ color: TEXT_SECONDARY, lineHeight: 20 }}>
-                    Last updated: {new Date().toLocaleDateString()}{'\n\n'}
-                    We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.{'\n\n'}
-                    1. The data we collect about you{'\n'}
-                    2. How we use your personal data{'\n'}
-                    3. Data security{'\n'}
-                    4. Your legal rights{'\n\n'}
-                    For more information, please contact our support team.
-                  </Text>
-                </ScrollView>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Terms of Service"
-              description="Read our terms and conditions"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="file-document" color={PRIMARY} />}
-              onPress={() => setShowTerms(prev => !prev)}
-            />
-            {showTerms && (
-              <View style={{ padding: 16 }}>
-                <ScrollView style={{ maxHeight: 300 }}>
-                  <Text style={{ color: TEXT_PRIMARY, marginBottom: 16, fontSize: 16 }}>Terms of Service</Text>
-                  <Text style={{ color: TEXT_SECONDARY, lineHeight: 20 }}>
-                    Last updated: {new Date().toLocaleDateString()}{'\n\n'}
-                    Please read these terms of service carefully before using our platform.{'\n\n'}
-                    1. Acceptance of Terms{'\n'}
-                    2. User Accounts{'\n'}
-                    3. Intellectual Property{'\n'}
-                    4. User Conduct{'\n'}
-                    5. Termination{'\n\n'}
-                    By using our platform, you agree to these terms.
-                  </Text>
-                </ScrollView>
-              </View>
-            )}
-            <Divider style={styles.divider} />
-            <List.Item
-              title="API Docs"
-              description="Access our API documentation"
-              titleStyle={{ color: TEXT_PRIMARY }}
-              descriptionStyle={{ color: TEXT_SECONDARY }}
-              left={props => <List.Icon {...props} icon="file-document" color={PRIMARY} />}
-              onPress={() => setShowApiDocs(prev => !prev)}
-            />
-            {showApiDocs && (
-              <View style={{ padding: 16 }}>
-                <Text style={{ color: TEXT_PRIMARY, marginBottom: 16, fontSize: 16 }}>API Documentation</Text>
-                <List.AccordionGroup>
-                  <List.Accordion title="Authentication" id="api1">
-                    <List.Item
-                      description="All API requests require authentication using a Bearer token."
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                  <List.Accordion title="Endpoints" id="api2">
-                    <List.Item
-                      description="Base URL: https://api.tourlms.com/v1"
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                  <List.Accordion title="Rate Limiting" id="api3">
-                    <List.Item
-                      description="API requests are limited to 100 requests per minute."
-                      descriptionStyle={{ color: TEXT_SECONDARY }}
-                    />
-                  </List.Accordion>
-                </List.AccordionGroup>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    Linking.openURL('https://api.tourlms.com/docs');
-                  }}
-                  style={{ marginTop: 16 }}
-                >
-                  View Full Documentation
-                </Button>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-      )}
-
-      <Button
-        mode="outlined"
-        onPress={handleLogout}
-        style={[styles.logoutButton, { borderColor: BORDER_COLOR }]}
-        textColor={TEXT_PRIMARY}
-        icon="logout"
-      >
-        Log Out
-      </Button>
-
-      <View style={styles.versionContainer}>
-        <Text style={[styles.versionText, { color: TEXT_SECONDARY }]}>v1.0.0</Text>
-      </View>
+      <ProfileHeader
+        user={user || {}}
+        rank={stats.rank}
+        colors={{ PRIMARY, TEXT_PRIMARY: themeColors.text }}
+      />
+      <StatsSection
+        stats={stats}
+        colors={{ CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <AchievementsSection
+        expanded={expandedSections.achievements}
+        onToggle={() => toggleSection('achievements')}
+        stats={{ certificates: stats.certificates, achievements: stats.achievements }}
+        colors={{ CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <AccountSettingsSection
+        expanded={expandedSections.account}
+        onToggle={() => toggleSection('account')}
+        showEditProfile={showEditProfile}
+        setShowEditProfile={setShowEditProfile}
+        showChangePassword={showChangePassword}
+        setShowChangePassword={setShowChangePassword}
+        editingUser={editingUser}
+        setEditingUser={setEditingUser}
+        onSaveProfile={async () => {
+          try {
+            const response = await fetch(`${API_URL}/user/profile`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(editingUser)
+            });
+            if (response.ok) {
+              toast({
+                title: 'Profile Updated',
+                description: 'Your profile has been updated successfully',
+              });
+              setShowEditProfile(false);
+            } else {
+              throw new Error('Failed to update profile');
+            }
+          } catch (error) {
+            console.error('Error updating profile:', error);
+            toast({
+              title: 'Update Failed',
+              description: 'Could not update profile. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        passwordData={passwordData}
+        setPasswordData={setPasswordData}
+        onChangePassword={async () => {
+          if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast({
+              title: 'Error',
+              description: 'New passwords do not match',
+              variant: 'destructive',
+            });
+            return;
+          }
+          try {
+            const response = await fetch(`${API_URL}/user/change-password`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+              })
+            });
+            if (response.ok) {
+              toast({
+                title: 'Password Updated',
+                description: 'Your password has been changed successfully',
+              });
+              setShowChangePassword(false);
+              setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+              });
+            } else {
+              throw new Error('Failed to update password');
+            }
+          } catch (error) {
+            console.error('Error updating password:', error);
+            toast({
+              title: 'Update Failed',
+              description: 'Could not update password. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        notificationsEnabled={notificationsEnabled}
+        onNotificationToggle={handleNotificationToggle}
+        emailNotificationsEnabled={emailNotificationsEnabled}
+        onEmailNotificationToggle={handleEmailNotificationToggle}
+        smsNotificationsEnabled={smsNotificationsEnabled}
+        onSmsNotificationToggle={handleSmsNotificationToggle}
+        pushNotificationsEnabled={pushNotificationsEnabled}
+        onPushNotificationToggle={handlePushNotificationToggle}
+        darkModeEnabled={isDarkMode}
+        onDarkModeToggle={toggleTheme}
+        colors={{ PRIMARY, CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <SupportSection
+        expanded={expandedSections.support}
+        onToggle={() => toggleSection('support')}
+        showHelp={showHelp}
+        setShowHelp={setShowHelp}
+        showContact={showContact}
+        setShowContact={setShowContact}
+        showPrivacy={showPrivacy}
+        setShowPrivacy={setShowPrivacy}
+        showTerms={showTerms}
+        setShowTerms={setShowTerms}
+        showApiDocs={showApiDocs}
+        setShowApiDocs={setShowApiDocs}
+        contactData={contactData}
+        setContactData={setContactData}
+        onSendContact={async () => {
+          try {
+            const response = await fetch(`${API_URL}/support/contact`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(contactData)
+            });
+            if (response.ok) {
+              toast({
+                title: 'Message Sent',
+                description: 'Our team will get back to you soon',
+              });
+              setShowContact(false);
+              setContactData({ subject: '', message: '' });
+            } else {
+              throw new Error('Failed to send message');
+            }
+          } catch (error) {
+            console.error('Error sending message:', error);
+            toast({
+              title: 'Send Failed',
+              description: 'Could not send message. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        colors={{ PRIMARY, CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <LogoutButton
+        onLogout={handleLogout}
+        colors={{ BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text }}
+      />
+      <VersionInfo version="v1.0.0" color={themeColors.textSecondary} />
     </ScrollView>
   );
 }

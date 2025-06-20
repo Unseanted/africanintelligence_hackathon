@@ -11,6 +11,9 @@ interface User {
   avatar?: string;
   preferences?: {
     notifications: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
     darkMode: boolean;
   };
 }
@@ -72,7 +75,14 @@ interface TourLMSContextType {
   logout: () => Promise<void>;
   getCoursesHub: () => Promise<void>;
   packLoad: (user: User | null, token: string | null) => Promise<void>;
-  updateUserPreferences: (preferences: { notifications?: boolean; darkMode?: boolean }) => Promise<void>;
+  updateUserPreferences: (preferences: {
+    notifications?: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+    darkMode?: boolean;
+  }) => Promise<void>;
+  enrollInCourse: (courseId: string) => Promise<void>;
 }
 
 const TourLMSContext = createContext<TourLMSContextType | undefined>(undefined);
@@ -278,9 +288,14 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateUserPreferences = async (preferences: { notifications?: boolean; darkMode?: boolean }) => {
+  const updateUserPreferences = useCallback(async (preferences: {
+    notifications?: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+    darkMode?: boolean;
+  }) => {
     if (!state.user || !state.token) return;
-    
     try {
       const response = await fetch(`${API_URL}/user/preferences`, {
         method: 'PATCH',
@@ -290,9 +305,16 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify(preferences),
       });
-      
       if (response.ok) {
-        const updatedUser = { ...state.user, preferences: { ...state.user.preferences, ...preferences } };
+        const updatedUser = { 
+          ...state.user, 
+          preferences: { 
+            ...state.user?.preferences, 
+            ...preferences,
+            notifications: preferences.notifications ?? state.user?.preferences?.notifications ?? false,
+            darkMode: preferences.darkMode ?? state.user?.preferences?.darkMode ?? false
+          } 
+        };
         setState(prev => ({
           ...prev,
           user: updatedUser
@@ -302,7 +324,29 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
       console.error('Error updating preferences:', error);
       throw error;
     }
-  };
+  }, [state.user, state.token]);
+
+  const enrollInCourse = useCallback(async (courseId: string) => {
+    if (!state.token) return;
+    try {
+      const response = await fetch(`${API_URL}/learner/courses/${courseId}/enroll`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Enroll error:', errorText);
+        throw new Error('Failed to enroll');
+      }
+      await packLoad(state.user, state.token);
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      throw error;
+    }
+  }, [state.token, state.user, packLoad]);
 
   useEffect(() => {
     loadStoredAuth();
@@ -322,7 +366,8 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     logout,
     getCoursesHub,
     packLoad,
-    updateUserPreferences
+    updateUserPreferences,
+    enrollInCourse,
   }), [
     state.user,
     state.token,
@@ -336,7 +381,8 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     logout,
     getCoursesHub,
     packLoad,
-    updateUserPreferences
+    updateUserPreferences,
+    enrollInCourse
   ]);
 
   return (
