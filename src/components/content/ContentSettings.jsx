@@ -11,18 +11,10 @@ import {
   Lock, 
   Bell, 
   GitBranch, 
-  Shield,
   UserPlus,
   UserMinus,
-  GitFork,
-  GitPullRequest,
-  GitCommit,
   FileText,
-  MessageSquare,
-  AlertCircle,
-  Code2,
   Zap,
-  Clock,
   Tag
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
