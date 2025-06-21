@@ -1,23 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, LayoutAnimation, Linking } from 'react-native';
-import { Text, Card, Button, Avatar, List, Switch, ActivityIndicator, Divider, TextInput } from 'react-native-paper';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
-import { API_URL } from '../../../constants/api';
-import { useTourLMS } from '../../../contexts/TourLMSContext';
-import { useToast } from '../../hooks/use-toast';
+import { View, StyleSheet, ScrollView, RefreshControl, LayoutAnimation } from 'react-native';
+import { ActivityIndicator} from 'react-native-paper';
+import { PRIMARY, BACKGROUND, BORDER_COLOR } from '../constants/colors';
+import { useTourLMS } from '../contexts/TourLMSContext';
+import { useToast } from '../hooks/use-toast';
 import { router } from 'expo-router';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
+import ProfileHeader from '../components/profile/ProfileHeader';
+import StatsSection from '../components/profile/StatsSection';
+import AchievementsSection from '../components/profile/AchievementsSection';
+import AccountSettingsSection from '../components/profile/AccountSettingsSection';
+import SupportSection from '../components/profile/SupportSection';
+import LogoutButton from '../components/profile/LogoutButton';
+import VersionInfo from '../components/profile/VersionInfo';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Profile() {
-  const { user, token, logout, updateUserPreferences } = useTourLMS();
+  const { user, token, logout, API_URL, updateUserPreferences } = useTourLMS();
   const { toast } = useToast();
+  const { isDarkMode, toggleTheme, colors: themeColors } = useTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(user?.preferences?.notifications ?? true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(user?.preferences?.darkMode ?? false);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(user?.preferences?.emailNotifications ?? true);
+  const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(user?.preferences?.smsNotifications ?? false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(user?.preferences?.pushNotifications ?? true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
+  const [expandedSections, setExpandedSections] = useState<{
+    account: boolean;
+    support: boolean;
+    achievements: boolean;
+  }>({
     account: false,
     support: false,
     achievements: false
@@ -95,8 +106,7 @@ export default function Profile() {
         title: "Notifications Updated",
         description: value ? "Notifications are now enabled" : "Notifications are now disabled",
       });
-    } catch (error) {
-      console.error('Error updating preferences:', error);
+    } catch {
       setNotificationsEnabled(!value);
       toast({
         title: "Update Failed",
@@ -106,20 +116,55 @@ export default function Profile() {
     }
   };
 
-  const handleDarkModeToggle = async (value: boolean) => {
-    setDarkModeEnabled(value);
+  const handleEmailNotificationToggle = async (value: boolean) => {
+    setEmailNotificationsEnabled(value);
     try {
-      await updateUserPreferences({ darkMode: value });
+      await updateUserPreferences({ emailNotifications: value });
       toast({
-        title: "Theme Updated",
-        description: value ? "Dark mode enabled" : "Light mode enabled",
+        title: "Email Notifications Updated",
+        description: value ? "Email notifications are now enabled" : "Email notifications are now disabled",
       });
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      setDarkModeEnabled(!value);
+    } catch {
+      setEmailNotificationsEnabled(!value);
       toast({
         title: "Update Failed",
-        description: "Could not update theme preferences",
+        description: "Could not update email notification preferences",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSmsNotificationToggle = async (value: boolean) => {
+    setSmsNotificationsEnabled(value);
+    try {
+      await updateUserPreferences({ smsNotifications: value });
+      toast({
+        title: "SMS Notifications Updated",
+        description: value ? "SMS notifications are now enabled" : "SMS notifications are now disabled",
+      });
+    } catch {
+      setSmsNotificationsEnabled(!value);
+      toast({
+        title: "Update Failed",
+        description: "Could not update SMS notification preferences",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePushNotificationToggle = async (value: boolean) => {
+    setPushNotificationsEnabled(value);
+    try {
+      await updateUserPreferences({ pushNotifications: value });
+      toast({
+        title: "Push Notifications Updated",
+        description: value ? "Push notifications are now enabled" : "Push notifications are now disabled",
+      });
+    } catch {
+      setPushNotificationsEnabled(!value);
+      toast({
+        title: "Update Failed",
+        description: "Could not update push notification preferences",
         variant: "destructive",
       });
     }
@@ -167,186 +212,174 @@ export default function Profile() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView 
-        style={[styles.container, { backgroundColor: BACKGROUND }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[PRIMARY]} />
-        }
-      >
-        <View style={styles.header}>
-          <Avatar.Image 
-            source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=1' }} 
-            size={100} 
-            style={styles.avatar} 
-          />
-          <ThemedText type="title" style={styles.name}>{user?.name || 'User'}</ThemedText>
-          <ThemedText style={styles.email}>{user?.email || 'No email'}</ThemedText>
-          <View style={styles.rankBadge}>
-            <Text style={[styles.rank, { color: TEXT_PRIMARY }]}>{stats.rank}</Text>
-          </View>
-        </View>
-
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.coursesCompleted}</Text>
-              <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Courses</Text>
-            </Card.Content>
-          </Card>
-
-          <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalXP}</Text>
-              <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Total XP</Text>
-            </Card.Content>
-          </Card>
-
-          <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.currentStreak}</Text>
-              <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Day Streak</Text>
-            </Card.Content>
-          </Card>
-        </View>
-
-        <TouchableOpacity onPress={() => toggleSection('achievements')}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Achievements</Text>
-            <Icon 
-              name={expandedSections.achievements ? "chevron-up" : "chevron-down"} 
-              size={24} 
-              color={TEXT_PRIMARY} 
-            />
-          </View>
-        </TouchableOpacity>
-
-        {expandedSections.achievements && (
-          <View style={styles.statsContainer}>
-            <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-              <Card.Content>
-                <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.certificates}</Text>
-                <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Certificates</Text>
-              </Card.Content>
-            </Card>
-
-            <Card style={[styles.statCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-              <Card.Content>
-                <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.achievements}</Text>
-                <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Badges</Text>
-              </Card.Content>
-            </Card>
-          </View>
-        )}
-
-        <TouchableOpacity onPress={() => toggleSection('account')}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Account Settings</Text>
-            <Icon 
-              name={expandedSections.account ? "chevron-up" : "chevron-down"} 
-              size={24} 
-              color={TEXT_PRIMARY} 
-            />
-          </View>
-        </TouchableOpacity>
-
-        {expandedSections.account && (
-          <Card style={[styles.settingsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <List.Item
-                title="Edit Profile"
-                left={props => <List.Icon {...props} icon="account-edit" />}
-                onPress={() => setShowEditProfile(true)}
-              />
-              <Divider />
-              <List.Item
-                title="Change Password"
-                left={props => <List.Icon {...props} icon="lock" />}
-                onPress={() => setShowChangePassword(true)}
-              />
-              <Divider />
-              <List.Item
-                title="Notifications"
-                left={props => <List.Icon {...props} icon="bell" />}
-                right={props => (
-                  <Switch
-                    value={notificationsEnabled}
-                    onValueChange={handleNotificationToggle}
-                  />
-                )}
-              />
-              <Divider />
-              <List.Item
-                title="Dark Mode"
-                left={props => <List.Icon {...props} icon="theme-light-dark" />}
-                right={props => (
-                  <Switch
-                    value={darkModeEnabled}
-                    onValueChange={handleDarkModeToggle}
-                  />
-                )}
-              />
-            </Card.Content>
-          </Card>
-        )}
-
-        <TouchableOpacity onPress={() => toggleSection('support')}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: TEXT_PRIMARY }]}>Support</Text>
-            <Icon 
-              name={expandedSections.support ? "chevron-up" : "chevron-down"} 
-              size={24} 
-              color={TEXT_PRIMARY} 
-            />
-          </View>
-        </TouchableOpacity>
-
-        {expandedSections.support && (
-          <Card style={[styles.settingsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <List.Item
-                title="Help Center"
-                left={props => <List.Icon {...props} icon="help-circle" />}
-                onPress={() => setShowHelp(true)}
-              />
-              <Divider />
-              <List.Item
-                title="Contact Support"
-                left={props => <List.Icon {...props} icon="email" />}
-                onPress={() => setShowContact(true)}
-              />
-              <Divider />
-              <List.Item
-                title="Privacy Policy"
-                left={props => <List.Icon {...props} icon="shield-account" />}
-                onPress={() => setShowPrivacy(true)}
-              />
-              <Divider />
-              <List.Item
-                title="Terms of Service"
-                left={props => <List.Icon {...props} icon="file-document" />}
-                onPress={() => setShowTerms(true)}
-              />
-              <Divider />
-              <List.Item
-                title="API Documentation"
-                left={props => <List.Icon {...props} icon="api" />}
-                onPress={() => setShowApiDocs(true)}
-              />
-            </Card.Content>
-          </Card>
-        )}
-
-        <Button
-          mode="outlined"
-          onPress={handleLogout}
-          style={styles.logoutButton}
-          textColor={PRIMARY}
-        >
-          Logout
-        </Button>
-      </ScrollView>
-    </ThemedView>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[PRIMARY]} />
+      }
+    >
+      <ProfileHeader
+        user={user || {}}
+        rank={stats.rank}
+        colors={{ PRIMARY, TEXT_PRIMARY: themeColors.text }}
+      />
+      <StatsSection
+        stats={stats}
+        colors={{ CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <AchievementsSection
+        expanded={expandedSections.achievements}
+        onToggle={() => toggleSection('achievements')}
+        stats={{ certificates: stats.certificates, achievements: stats.achievements }}
+        colors={{ CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <AccountSettingsSection
+        expanded={expandedSections.account}
+        onToggle={() => toggleSection('account')}
+        showEditProfile={showEditProfile}
+        setShowEditProfile={setShowEditProfile}
+        showChangePassword={showChangePassword}
+        setShowChangePassword={setShowChangePassword}
+        editingUser={editingUser}
+        setEditingUser={setEditingUser}
+        onSaveProfile={async () => {
+          try {
+            const response = await fetch(`${API_URL}/user/profile`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(editingUser)
+            });
+            if (response.ok) {
+              toast({
+                title: 'Profile Updated',
+                description: 'Your profile has been updated successfully',
+              });
+              setShowEditProfile(false);
+            } else {
+              throw new Error('Failed to update profile');
+            }
+          } catch (error) {
+            console.error('Error updating profile:', error);
+            toast({
+              title: 'Update Failed',
+              description: 'Could not update profile. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        passwordData={passwordData}
+        setPasswordData={setPasswordData}
+        onChangePassword={async () => {
+          if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast({
+              title: 'Error',
+              description: 'New passwords do not match',
+              variant: 'destructive',
+            });
+            return;
+          }
+          try {
+            const response = await fetch(`${API_URL}/user/change-password`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+              })
+            });
+            if (response.ok) {
+              toast({
+                title: 'Password Updated',
+                description: 'Your password has been changed successfully',
+              });
+              setShowChangePassword(false);
+              setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+              });
+            } else {
+              throw new Error('Failed to update password');
+            }
+          } catch (error) {
+            console.error('Error updating password:', error);
+            toast({
+              title: 'Update Failed',
+              description: 'Could not update password. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        notificationsEnabled={notificationsEnabled}
+        onNotificationToggle={handleNotificationToggle}
+        emailNotificationsEnabled={emailNotificationsEnabled}
+        onEmailNotificationToggle={handleEmailNotificationToggle}
+        smsNotificationsEnabled={smsNotificationsEnabled}
+        onSmsNotificationToggle={handleSmsNotificationToggle}
+        pushNotificationsEnabled={pushNotificationsEnabled}
+        onPushNotificationToggle={handlePushNotificationToggle}
+        darkModeEnabled={isDarkMode}
+        onDarkModeToggle={toggleTheme}
+        colors={{ PRIMARY, CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <SupportSection
+        expanded={expandedSections.support}
+        onToggle={() => toggleSection('support')}
+        showHelp={showHelp}
+        setShowHelp={setShowHelp}
+        showContact={showContact}
+        setShowContact={setShowContact}
+        showPrivacy={showPrivacy}
+        setShowPrivacy={setShowPrivacy}
+        showTerms={showTerms}
+        setShowTerms={setShowTerms}
+        showApiDocs={showApiDocs}
+        setShowApiDocs={setShowApiDocs}
+        contactData={contactData}
+        setContactData={setContactData}
+        onSendContact={async () => {
+          try {
+            const response = await fetch(`${API_URL}/support/contact`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(contactData)
+            });
+            if (response.ok) {
+              toast({
+                title: 'Message Sent',
+                description: 'Our team will get back to you soon',
+              });
+              setShowContact(false);
+              setContactData({ subject: '', message: '' });
+            } else {
+              throw new Error('Failed to send message');
+            }
+          } catch (error) {
+            console.error('Error sending message:', error);
+            toast({
+              title: 'Send Failed',
+              description: 'Could not send message. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        colors={{ PRIMARY, CARD_BACKGROUND: themeColors.cardBackground, BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text, TEXT_SECONDARY: themeColors.textSecondary }}
+      />
+      <LogoutButton
+        onLogout={handleLogout}
+        colors={{ BORDER_COLOR: themeColors.borderColor, TEXT_PRIMARY: themeColors.text }}
+      />
+      <VersionInfo version="v1.0.0" color={themeColors.textSecondary} />
+    </ScrollView>
   );
 }
 
@@ -361,28 +394,30 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
+    paddingTop: 40,
     alignItems: 'center',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingBottom: 30,
   },
   avatar: {
-    marginBottom: 10,
+    marginBottom: 16,
     borderWidth: 3,
-    borderColor: CARD_BACKGROUND,
+    borderColor: '#fff',
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  email: {
-    opacity: 0.7,
+  role: {
+    fontSize: 16,
+    marginBottom: 8,
   },
   rankBadge: {
-    backgroundColor: CARD_BACKGROUND,
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 8,
   },
   rank: {
     fontSize: 14,
@@ -390,46 +425,56 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
+    padding: 16,
+    gap: 16,
   },
   statCard: {
     flex: 1,
-    margin: 5,
     borderWidth: 1,
+    borderRadius: 12,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 5,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: CARD_BACKGROUND,
-    marginHorizontal: 15,
-    marginTop: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER_COLOR,
+    padding: 16,
+    paddingBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   settingsCard: {
-    margin: 15,
     borderWidth: 1,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 4,
+    backgroundColor: BORDER_COLOR,
   },
   logoutButton: {
-    margin: 15,
-    borderColor: PRIMARY,
+    margin: 16,
+    marginTop: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
+  versionContainer: {
+    alignItems: 'center',
+    padding: 16,
+  },
+  versionText: {
+    fontSize: 12,
+  }
 });

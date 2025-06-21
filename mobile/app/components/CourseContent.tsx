@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Card, ProgressBar, IconButton, Divider } from 'react-native-paper';
+import { Text, Card, ProgressBar, IconButton, Divider, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
 
@@ -26,10 +26,13 @@ interface CourseContentProps {
     modules: Module[];
     totalProgress: number;
   };
+  isEnrolled: boolean;
   onLessonPress: (lessonId: string) => void;
+  onEnroll: () => Promise<void>;
+  onContinue: () => void;
 }
 
-export default function CourseContent({ course, onLessonPress }: CourseContentProps) {
+export default function CourseContent({ course, isEnrolled, onLessonPress, onEnroll, onContinue }: CourseContentProps) {
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({});
 
   const toggleModule = (moduleId: string) => {
@@ -137,6 +140,21 @@ export default function CourseContent({ course, onLessonPress }: CourseContentPr
           )}
         </Card>
       ))}
+
+      <Button
+        mode="contained"
+        onPress={async () => {
+          if (isEnrolled) {
+            onContinue();
+          } else {
+            await onEnroll();
+          }
+        }}
+        style={{ marginTop: 12 }}
+        buttonColor={PRIMARY}
+      >
+        {isEnrolled ? 'Continue Learning' : 'Enroll Now'}
+      </Button>
     </ScrollView>
   );
 }

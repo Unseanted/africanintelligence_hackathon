@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, Modal } from 'react-native';
-import { Text, Card, Searchbar, Avatar, ProgressBar, IconButton } from 'react-native-paper';
+import { Text, Card, Avatar, ProgressBar, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, WARNING, INFO } from '../../constants/colors';
 import { useTourLMS } from '../../../contexts/TourLMSContext';
 import { useToast } from '../../hooks/use-toast';
-import DefaultAvatar from '../../components/DefaultAvatar';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 const { width } = Dimensions.get('window');
 
@@ -60,7 +59,19 @@ interface LeaderboardStats {
   }[];
 }
 
-// Dummy data for testing
+const DefaultAvatar = ({ size, style }: { size: number; style?: any }) => (
+  <View style={[{
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    backgroundColor: '#e1e1e1',
+    justifyContent: 'center',
+    alignItems: 'center'
+  }, style]}>
+    <MaterialCommunityIcons name="account" size={size * 0.6} color="#888" />
+  </View>
+);
+
 const dummyEntries: LeaderboardEntry[] = [
   {
     _id: '1',
@@ -69,7 +80,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Alex Johnson',
       avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
       role: 'Manager',
-      department: 'Sales'
+      department: 'Sales',
     },
     points: 1250,
     xp: 8500,
@@ -84,19 +95,19 @@ const dummyEntries: LeaderboardEntry[] = [
         name: 'Course Master',
         icon: 'book',
         description: 'Completed 10 courses',
-        unlockedAt: '2023-04-20'
+        unlockedAt: '2023-04-20',
       },
       {
         name: 'Streak Champion',
         icon: 'fire',
         description: '7-day activity streak',
-        unlockedAt: '2023-05-10'
-      }
+        unlockedAt: '2023-05-10',
+      },
     ],
     level: 8,
     nextLevelXp: 10000,
     currentLevelXp: 8500,
-    progress: 85
+    progress: 85,
   },
   {
     _id: '2',
@@ -105,7 +116,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Sarah Williams',
       avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
       role: 'Developer',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     points: 1100,
     xp: 7800,
@@ -120,13 +131,13 @@ const dummyEntries: LeaderboardEntry[] = [
         name: 'Quick Learner',
         icon: 'lightning-bolt',
         description: 'Completed 5 courses in one week',
-        unlockedAt: '2023-04-15'
-      }
+        unlockedAt: '2023-04-15',
+      },
     ],
     level: 7,
     nextLevelXp: 8000,
     currentLevelXp: 7800,
-    progress: 97.5
+    progress: 97.5,
   },
   {
     _id: '3',
@@ -135,7 +146,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Michael Brown',
       avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
       role: 'Designer',
-      department: 'Creative'
+      department: 'Creative',
     },
     points: 950,
     xp: 6500,
@@ -150,13 +161,13 @@ const dummyEntries: LeaderboardEntry[] = [
         name: 'Creative Mind',
         icon: 'palette',
         description: 'Completed all design courses',
-        unlockedAt: '2023-03-28'
-      }
+        unlockedAt: '2023-03-28',
+      },
     ],
     level: 6,
     nextLevelXp: 7000,
     currentLevelXp: 6500,
-    progress: 92.8
+    progress: 92.8,
   },
   {
     _id: '4',
@@ -165,7 +176,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Emily Davis',
       avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
       role: 'Analyst',
-      department: 'Data'
+      department: 'Data',
     },
     points: 850,
     xp: 5800,
@@ -180,13 +191,13 @@ const dummyEntries: LeaderboardEntry[] = [
         name: 'Data Wizard',
         icon: 'chart-bar',
         description: 'Completed all analytics courses',
-        unlockedAt: '2023-04-05'
-      }
+        unlockedAt: '2023-04-05',
+      },
     ],
     level: 5,
     nextLevelXp: 6000,
     currentLevelXp: 5800,
-    progress: 96.7
+    progress: 96.7,
   },
   {
     _id: '5',
@@ -194,7 +205,7 @@ const dummyEntries: LeaderboardEntry[] = [
       _id: '5',
       name: 'David Wilson',
       role: 'Developer',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     points: 800,
     xp: 5200,
@@ -208,7 +219,7 @@ const dummyEntries: LeaderboardEntry[] = [
     level: 5,
     nextLevelXp: 6000,
     currentLevelXp: 5200,
-    progress: 86.7
+    progress: 86.7,
   },
   {
     _id: '6',
@@ -217,7 +228,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Jessica Lee',
       avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
       role: 'Manager',
-      department: 'Marketing'
+      department: 'Marketing',
     },
     points: 750,
     xp: 4800,
@@ -232,13 +243,13 @@ const dummyEntries: LeaderboardEntry[] = [
         name: 'Marketing Guru',
         icon: 'bullhorn',
         description: 'Completed all marketing courses',
-        unlockedAt: '2023-03-15'
-      }
+        unlockedAt: '2023-03-15',
+      },
     ],
     level: 4,
     nextLevelXp: 5000,
     currentLevelXp: 4800,
-    progress: 96
+    progress: 96,
   },
   {
     _id: '7',
@@ -247,7 +258,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Robert Garcia',
       avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
       role: 'Developer',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     points: 700,
     xp: 4200,
@@ -261,7 +272,7 @@ const dummyEntries: LeaderboardEntry[] = [
     level: 4,
     nextLevelXp: 5000,
     currentLevelXp: 4200,
-    progress: 84
+    progress: 84,
   },
   {
     _id: '8',
@@ -270,7 +281,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Olivia Martinez',
       avatar: 'https://randomuser.me/api/portraits/women/4.jpg',
       role: 'Designer',
-      department: 'Creative'
+      department: 'Creative',
     },
     points: 650,
     xp: 3800,
@@ -284,7 +295,7 @@ const dummyEntries: LeaderboardEntry[] = [
     level: 3,
     nextLevelXp: 4000,
     currentLevelXp: 3800,
-    progress: 95
+    progress: 95,
   },
   {
     _id: '9',
@@ -292,7 +303,7 @@ const dummyEntries: LeaderboardEntry[] = [
       _id: '9',
       name: 'Daniel Taylor',
       role: 'Analyst',
-      department: 'Data'
+      department: 'Data',
     },
     points: 600,
     xp: 3200,
@@ -306,7 +317,7 @@ const dummyEntries: LeaderboardEntry[] = [
     level: 3,
     nextLevelXp: 4000,
     currentLevelXp: 3200,
-    progress: 80
+    progress: 80,
   },
   {
     _id: '10',
@@ -315,7 +326,7 @@ const dummyEntries: LeaderboardEntry[] = [
       name: 'Sophia Anderson',
       avatar: 'https://randomuser.me/api/portraits/women/5.jpg',
       role: 'Developer',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     points: 550,
     xp: 2800,
@@ -329,8 +340,8 @@ const dummyEntries: LeaderboardEntry[] = [
     level: 2,
     nextLevelXp: 3000,
     currentLevelXp: 2800,
-    progress: 93.3
-  }
+    progress: 93.3,
+  },
 ];
 
 const dummyStats: LeaderboardStats = {
@@ -346,20 +357,20 @@ const dummyStats: LeaderboardStats = {
       type: 'course',
       user: 'Alex Johnson',
       points: 50,
-      timestamp: '2023-05-15T10:30:00Z'
+      timestamp: '2023-05-15T10:30:00Z',
     },
     {
       type: 'challenge',
       user: 'Sarah Williams',
       points: 100,
-      timestamp: '2023-05-15T09:15:00Z'
+      timestamp: '2023-05-15T09:15:00Z',
     },
     {
       type: 'course',
       user: 'Michael Brown',
       points: 25,
-      timestamp: '2023-05-14T14:45:00Z'
-    }
+      timestamp: '2023-05-14T14:45:00Z',
+    },
   ],
   distribution: [
     { level: 1, count: 5 },
@@ -369,8 +380,8 @@ const dummyStats: LeaderboardStats = {
     { level: 5, count: 5 },
     { level: 6, count: 2 },
     { level: 7, count: 1 },
-    { level: 8, count: 0 }
-  ]
+    { level: 8, count: 0 },
+  ],
 };
 
 export default function LeaderboardScreen() {
@@ -379,7 +390,7 @@ export default function LeaderboardScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [stats, setStats] = useState<LeaderboardStats>(dummyStats);
-  const [loading, setLoading] = useState(false); // Changed to false to use dummy data
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [timeFrame, setTimeFrame] = useState('all');
   const [category, setCategory] = useState('all');
@@ -391,13 +402,9 @@ export default function LeaderboardScreen() {
   const fetchLeaderboard = useCallback(async () => {
     try {
       setRefreshing(true);
-      // Simulate API call with timeout
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Use dummy data instead of API call
       setEntries(dummyEntries);
       setStats(dummyStats);
-      
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast({
@@ -414,6 +421,16 @@ export default function LeaderboardScreen() {
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
+
+  const getBadgeIcon = (badge: string) => {
+    const badgeIcons: Record<string, any> = {
+      medal: 'medal',
+      trophy: 'trophy',
+      star: 'star',
+      certificate: 'certificate'
+    };
+    return badgeIcons[badge] || 'star';
+  };
 
   const renderTopThree = () => {
     const topThree = entries.slice(0, 3);
@@ -452,7 +469,7 @@ export default function LeaderboardScreen() {
               {topThree[1].badges.slice(0, 3).map((badge, i) => (
                 <MaterialCommunityIcons 
                   key={i}
-                  name={badge as any} 
+                  name={getBadgeIcon(badge)} 
                   size={24} 
                   color={PRIMARY} 
                 />
@@ -497,7 +514,7 @@ export default function LeaderboardScreen() {
               {topThree[0].badges.slice(0, 3).map((badge, i) => (
                 <MaterialCommunityIcons 
                   key={i}
-                  name={badge as any} 
+                  name={getBadgeIcon(badge)} 
                   size={24} 
                   color={PRIMARY} 
                 />
@@ -539,7 +556,7 @@ export default function LeaderboardScreen() {
               {topThree[2].badges.slice(0, 3).map((badge, i) => (
                 <MaterialCommunityIcons 
                   key={i}
-                  name={badge as any} 
+                  name={getBadgeIcon(badge)} 
                   size={24} 
                   color={PRIMARY} 
                 />
@@ -550,6 +567,81 @@ export default function LeaderboardScreen() {
       </View>
     );
   };
+
+  const renderFilters = () => (
+    <View style={styles.filtersOuterContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersScrollContainer}
+        contentContainerStyle={styles.filtersContentContainer}
+      >
+        <View style={styles.filterGroup}>
+          <TouchableOpacity
+            style={[styles.filterButton, timeFrame === 'all' && styles.activeFilter]}
+            onPress={() => setTimeFrame('all')}
+          >
+            <Text style={[styles.filterText, timeFrame === 'all' && styles.activeFilterText]}>
+              All Time
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, timeFrame === 'week' && styles.activeFilter]}
+            onPress={() => setTimeFrame('week')}
+          >
+            <Text style={[styles.filterText, timeFrame === 'week' && styles.activeFilterText]}>
+              This Week
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, timeFrame === 'month' && styles.activeFilter]}
+            onPress={() => setTimeFrame('month')}
+          >
+            <Text style={[styles.filterText, timeFrame === 'month' && styles.activeFilterText]}>
+              This Month
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.filterDivider} />
+
+        <View style={styles.filterGroup}>
+          <TouchableOpacity
+            style={[styles.filterButton, category === 'all' && styles.activeFilter]}
+            onPress={() => setCategory('all')}
+          >
+            <Text style={[styles.filterText, category === 'all' && styles.activeFilterText]}>
+              All
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, category === 'engineering' && styles.activeFilter]}
+            onPress={() => setCategory('engineering')}
+          >
+            <Text style={[styles.filterText, category === 'engineering' && styles.activeFilterText]}>
+              Engineering
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, category === 'sales' && styles.activeFilter]}
+            onPress={() => setCategory('sales')}
+          >
+            <Text style={[styles.filterText, category === 'sales' && styles.activeFilterText]}>
+              Sales
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, category === 'marketing' && styles.activeFilter]}
+            onPress={() => setCategory('marketing')}
+          >
+            <Text style={[styles.filterText, category === 'marketing' && styles.activeFilterText]}>
+              Marketing
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
 
   const renderLeaderboardEntry = (entry: LeaderboardEntry, index: number) => (
     <TouchableOpacity
@@ -695,7 +787,7 @@ export default function LeaderboardScreen() {
                       {selectedUser.badges.map((badge, index) => (
                         <View key={index} style={styles.badgeItem}>
                           <MaterialCommunityIcons 
-                            name={badge as any} 
+                            name={getBadgeIcon(badge)} 
                             size={36} 
                             color={PRIMARY} 
                           />
@@ -890,77 +982,19 @@ export default function LeaderboardScreen() {
         </View>
       </View>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-      >
-        <TouchableOpacity
-          style={[styles.filterButton, timeFrame === 'all' && styles.activeFilter]}
-          onPress={() => setTimeFrame('all')}
-        >
-          <Text style={[styles.filterText, timeFrame === 'all' && styles.activeFilterText]}>
-            All Time
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, timeFrame === 'week' && styles.activeFilter]}
-          onPress={() => setTimeFrame('week')}
-        >
-          <Text style={[styles.filterText, timeFrame === 'week' && styles.activeFilterText]}>
-            This Week
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, timeFrame === 'month' && styles.activeFilter]}
-          onPress={() => setTimeFrame('month')}
-        >
-          <Text style={[styles.filterText, timeFrame === 'month' && styles.activeFilterText]}>
-            This Month
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, category === 'all' && styles.activeFilter]}
-          onPress={() => setCategory('all')}
-        >
-          <Text style={[styles.filterText, category === 'all' && styles.activeFilterText]}>
-            All Categories
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, category === 'engineering' && styles.activeFilter]}
-          onPress={() => setCategory('engineering')}
-        >
-          <Text style={[styles.filterText, category === 'engineering' && styles.activeFilterText]}>
-            Engineering
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, category === 'sales' && styles.activeFilter]}
-          onPress={() => setCategory('sales')}
-        >
-          <Text style={[styles.filterText, category === 'sales' && styles.activeFilterText]}>
-            Sales
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, category === 'marketing' && styles.activeFilter]}
-          onPress={() => setCategory('marketing')}
-        >
-          <Text style={[styles.filterText, category === 'marketing' && styles.activeFilterText]}>
-            Marketing
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+      {renderFilters()}
+      <View style={styles.filterDividerLine} />
 
+      {/* Top 3 Section */}
+      {renderTopThree()}
+
+      {/* Scrollable list for the rest */}
       <ScrollView
         style={styles.leaderboardContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={fetchLeaderboard} />
         }
       >
-        {renderTopThree()}
-        
         <View style={styles.entriesContainer}>
           {filteredEntries.slice(3).map((entry, index) => 
             renderLeaderboardEntry(entry, index + 3)
@@ -982,12 +1016,18 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 16,
   },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: TEXT_PRIMARY,
+    marginBottom: 0,
+  },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: CARD_BACKGROUND,
     marginTop: -10,
     marginHorizontal: 16,
@@ -997,6 +1037,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
+    marginBottom: 0,
   },
   statsButton: {
     flexDirection: 'row',
@@ -1023,6 +1064,21 @@ const styles = StyleSheet.create({
   activeViewToggle: {
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
+  searchBar: {
+    backgroundColor: CARD_BACKGROUND,
+    elevation: 2,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  searchInput: {
+    color: TEXT_PRIMARY,
+    fontSize: 16,
+  },
   filtersContainer: {
     paddingVertical: 12,
     backgroundColor: CARD_BACKGROUND,
@@ -1032,9 +1088,26 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    zIndex: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  filtersScrollContainer: {
+    flexGrow: 0,
+  },
+  filtersContentContainer: {
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  filterGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  filterGroupLabel: {
+    color: TEXT_SECONDARY,
+    fontSize: 12,
+    fontWeight: '600',
+    marginRight: 8,
   },
   filterButton: {
     paddingHorizontal: 12,
@@ -1044,6 +1117,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: BORDER_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 32,
   },
   activeFilter: {
     backgroundColor: PRIMARY,
@@ -1052,11 +1128,22 @@ const styles = StyleSheet.create({
   filterText: {
     color: TEXT_SECONDARY,
     fontSize: 14,
-    fontWeight: '500',
   },
   activeFilterText: {
     color: TEXT_PRIMARY,
     fontWeight: 'bold',
+  },
+  filterDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: BORDER_COLOR,
+    marginRight: 8,
+  },
+  filterDividerLine: {
+    height: 1,
+    backgroundColor: BORDER_COLOR,
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   leaderboardContainer: {
     flex: 1,
@@ -1124,7 +1211,7 @@ const styles = StyleSheet.create({
     backgroundColor: TEXT_SECONDARY,
   },
   thirdPlaceBadge: {
-    backgroundColor: '#CD7F32', // Bronze color
+    backgroundColor: '#CD7F32',
   },
   rankNumber: {
     color: TEXT_PRIMARY,
