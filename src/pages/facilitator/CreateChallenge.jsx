@@ -3,15 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, Book, FileText, AlertCircle } from 'lucide-react';
 
-const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted, onJoinWaitlist }) => {
+const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted }) => {
   const getSubmissionIcon = () => {
     switch (challenge.submissionType) {
       case 'quiz': return <FileText className="w-5 h-5 text-purple-500" />;
-      case 'timed-quiz': return <Clock className="w-5 h-5 text-red-500" />;
       case 'document': return <FileText className="w-5 h-5 text-blue-500" />;
-      case 'presentation': return <FileText className="w-5 h-5 text-pink-500" />;
-      case 'image': return <FileText className="w-5 h-5 text-green-500" />;
-      case 'video': return <FileText className="w-5 h-5 text-orange-500" />;
       case 'text': return <FileText className="w-5 h-5 text-green-500" />;
       case 'url': return <FileText className="w-5 h-5 text-red-500" />;
       case 'file': return <FileText className="w-5 h-5 text-amber-500" />;
@@ -22,11 +18,7 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
   const getSubmissionTypeName = () => {
     switch (challenge.submissionType) {
       case 'quiz': return 'Online Quiz';
-      case 'timed-quiz': return 'Timed Coding Quiz';
       case 'document': return 'Document Upload';
-      case 'presentation': return 'Presentation Upload';
-      case 'image': return 'Image Upload';
-      case 'video': return 'Video Submission';
       case 'text': return 'Text Response';
       case 'url': return 'URL Submission';
       case 'file': return 'File Upload';
@@ -101,16 +93,6 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
             {challenge.status === 'active' && !isSubmitted && (
               <Button onClick={() => onJoin(challenge.id)}>
                 Start Challenge
-              </Button>
-            )}
-            {challenge.status === 'upcoming' && !isWaitlisted && (
-              <Button onClick={() => onJoinWaitlist(challenge.id)}>
-                Join Waitlist
-              </Button>
-            )}
-            {challenge.status === 'upcoming' && isWaitlisted && (
-              <Button variant="secondary" disabled>
-                Waiting...
               </Button>
             )}
             {isSubmitted && (

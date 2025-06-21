@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY } from '../constants/colors';
+import { PRIMARY } from '../../constants/colors';
 
 export default function Events() {
   const upcomingEvents = [

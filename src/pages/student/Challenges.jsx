@@ -1,112 +1,135 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Trophy, Users, Clock, Cpu } from 'lucide-react';
+import { Trophy, Users, Clock, Book, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { wsService } from '@/services/websocket';
-import { useTourLMS } from '@/contexts/TourLMSContext';
-import { mockChallenges } from '@/data/mockChallenges';
 import ChallengeDetail from '@/components/challenge/ChallengeDetail';
 import ChallengeAttempt from '@/components/challenge/ChallengeAttempt';
+import { getMockChallenges } from '@/services/mockChallengeData';
 
 const Challenges = () => {
-  const [activeChallenges, setActiveChallenges] = useState([]);
-  const [upcomingChallenges, setUpcomingChallenges] = useState([]);
-  const [completedChallenges, setCompletedChallenges] = useState([]);
+  const [challenges, setChallenges] = useState({ active: [], upcoming: [], completed: [] });
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [attemptingChallenge, setAttemptingChallenge] = useState(null);
   const [submittedChallenges, setSubmittedChallenges] = useState(new Set());
-  const { token } = useTourLMS();
+  const [waitlistedChallengeId, setWaitlistedChallengeId] = useState(null);
   const { toast } = useToast();
 
+  // Load challenges from mockChallengeData.js
   useEffect(() => {
-    if (!token) return;
-
-    // Initialize WebSocket connection with token
-    wsService.connect(token);
-
-    // Set up event listeners for challenge updates
-    wsService.subscribe('challenge_list', (data) => {
-      setActiveChallenges(data.active || []);
-      setUpcomingChallenges(data.upcoming || []);
-      setCompletedChallenges(data.completed || []);
-    });
-
-    // For testing, use mock data
-    setActiveChallenges(mockChallenges.active);
-    setUpcomingChallenges(mockChallenges.upcoming);
-    setCompletedChallenges(mockChallenges.completed);
-
-    return () => {
-      wsService.disconnect();
-    };
-  }, [token]);
+    setChallenges(getMockChallenges());
+  }, []);
 
   const handleJoinChallenge = async (challengeId) => {
-    // Simulate joining a challenge
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "Challenge Joined!",
-      description: "You've successfully joined the challenge. Good luck!",
-    });
-    setSelectedChallenge(null);
-    setAttemptingChallenge(activeChallenges.find(c => c.id === challengeId));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const challenge = [
+        ...challenges.active,
+        ...challenges.upcoming,
+        ...challenges.completed
+      ].find(c => c.id === challengeId);
+      
+      if (challenge) {
+        setAttemptingChallenge(challenge);
+        setSelectedChallenge(null);
+        toast({
+          title: "Challenge Started!",
+          description: `You've begun the ${challenge.title} challenge.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to join challenge. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmitSolution = async (challengeId, submission) => {
-    // Simulate submitting a solution
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSubmittedChallenges(prev => new Set([...prev, challengeId]));
-    setAttemptingChallenge(null);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSubmittedChallenges(prev => {
+        const newSet = new Set(prev);
+        newSet.add(challengeId);
+        return newSet;
+      });
+      setAttemptingChallenge(null);
+      toast({
+        title: "Submission Received!",
+        description: "Your solution has been submitted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your solution.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleJoinWaitlist = async (challengeId) => {
+    setWaitlistedChallengeId(challengeId);
     toast({
-      title: "Solution Submitted!",
-      description: "Your solution has been submitted successfully.",
+      title: 'Waitlist Joined',
+      description: 'You have joined the waitlist for this challenge.',
     });
   };
 
-  const renderChallengeCard = (challenge, type) => {
+  const renderChallengeCard = (challenge) => {
     const isSubmitted = submittedChallenges.has(challenge.id);
-    const isAttempting = attemptingChallenge?.id === challenge.id;
+    const isActive = challenge.status === 'active';
+    const isCompleted = challenge.status === 'completed';
+    const isUpcoming = challenge.status === 'upcoming';
+    const isWaitlisted = isUpcoming && waitlistedChallengeId === challenge.id;
 
     return (
-      <Card key={challenge.id} className="p-6 mb-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedChallenge(challenge)}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Cpu className="w-6 h-6 text-purple-500" />
+      <Card key={challenge.id} className="p-6 mb-4 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => setSelectedChallenge(challenge)}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Book className="w-5 h-5 text-blue-500" />
+              <span className="text-sm text-gray-500">{challenge.courseTitle}</span>
+            </div>
             <h3 className="text-xl font-semibold">{challenge.title}</h3>
           </div>
-          {type === 'active' && (
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-500" />
-              <span className="text-lg font-medium">{formatTime(challenge.timeLeft)}</span>
+          {isActive && (
+            <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+              <Clock className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-600">
+                {formatTimeRemaining(challenge.endTime - Date.now())}
+              </span>
             </div>
           )}
         </div>
+
         <p className="text-gray-600 dark:text-gray-300 mb-4">{challenge.description}</p>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-500" />
-              <span>{challenge.participants} participants</span>
+              <Users className="w-4 h-4 text-blue-500" />
+              <span className="text-sm">{challenge.participants} participants</span>
             </div>
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-500" />
-              <span>{challenge.maxScore} points</span>
+              <Trophy className="w-4 h-4 text-amber-500" />
+              <span className="text-sm">{challenge.maxScore} points</span>
             </div>
           </div>
+
           <Button
-            variant={type === 'active' ? 'default' : 'outline'}
-            className={type === 'active' ? 'bg-purple-600 hover:bg-purple-700' : ''}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (type === 'active' && !isSubmitted && !isAttempting) {
-                setSelectedChallenge(challenge);
-              }
-            }}
-            disabled={isSubmitted || isAttempting}
+            variant={isActive ? 'default' : 'outline'}
+            style={isWaitlisted ? { backgroundColor: '#bbf7d0', color: '#166534', border: 'none' } : {}}
+            onClick={(e) => { e.stopPropagation(); setSelectedChallenge(challenge); }}
+            disabled={isCompleted || isSubmitted}
           >
-            {isSubmitted ? 'Submitted' : isAttempting ? 'In Progress' : type === 'active' ? 'Join Challenge' : 'View Details'}
+            {isCompleted ? 'Completed' :
+             isSubmitted ? 'Submitted' :
+             isActive ? 'Participate' :
+             'View Details'}
           </Button>
         </div>
       </Card>
@@ -115,53 +138,56 @@ const Challenges = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Challenges</h1>
+      <h1 className="text-3xl font-bold mb-8">Course Challenges</h1>
       
-      {/* Active Challenges */}
-      {activeChallenges.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Active Challenges</h2>
-          {activeChallenges.map(challenge => renderChallengeCard(challenge, 'active'))}
-        </div>
-      )}
+      {/* Active Challenges Section */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Active Challenges</h2>
+        {challenges.active.length > 0 ? (
+          challenges.active.map(renderChallengeCard)
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-gray-600">No active challenges at the moment</p>
+          </Card>
+        )}
+      </div>
 
-      {/* Upcoming Challenges */}
-      {upcomingChallenges.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Upcoming Challenges</h2>
-          {upcomingChallenges.map(challenge => renderChallengeCard(challenge, 'upcoming'))}
-        </div>
-      )}
+      {/* Upcoming Challenges Section */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Upcoming Challenges</h2>
+        {challenges.upcoming.length > 0 ? (
+          challenges.upcoming.map(renderChallengeCard)
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-gray-600">No upcoming challenges scheduled</p>
+          </Card>
+        )}
+      </div>
 
-      {/* Completed Challenges */}
-      {completedChallenges.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Completed Challenges</h2>
-          {completedChallenges.map(challenge => renderChallengeCard(challenge, 'completed'))}
-        </div>
-      )}
+      {/* Completed Challenges Section */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Completed Challenges</h2>
+        {challenges.completed.length > 0 ? (
+          challenges.completed.map(renderChallengeCard)
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-gray-600">No challenges completed yet</p>
+          </Card>
+        )}
+      </div>
 
-      {/* Empty State */}
-      {activeChallenges.length === 0 && upcomingChallenges.length === 0 && completedChallenges.length === 0 && (
-        <Card className="p-8 text-center">
-          <Cpu className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No Challenges Available</h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Check back later for new challenges and opportunities to test your skills!
-          </p>
-        </Card>
-      )}
-
-      {/* Challenge Detail Modal */}
+      {/* Modals */}
       {selectedChallenge && (
         <ChallengeDetail
           challenge={selectedChallenge}
           onClose={() => setSelectedChallenge(null)}
           onJoin={handleJoinChallenge}
+          isSubmitted={submittedChallenges.has(selectedChallenge.id)}
+          isWaitlisted={selectedChallenge.status === 'upcoming' && waitlistedChallengeId === selectedChallenge.id}
+          onJoinWaitlist={handleJoinWaitlist}
         />
       )}
 
-      {/* Challenge Attempt Modal */}
       {attemptingChallenge && (
         <ChallengeAttempt
           challenge={attemptingChallenge}
@@ -173,15 +199,14 @@ const Challenges = () => {
   );
 };
 
-const formatTime = (ms) => {
-  const hours = Math.floor(ms / 3600000);
-  const minutes = Math.floor((ms % 3600000) / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
+const formatTimeRemaining = (ms) => {
+  if (ms <= 0) return 'Expired';
   
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-  return `${minutes}m ${seconds}s`;
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (hours > 0) return `${hours}h ${minutes}m remaining`;
+  return `${minutes}m remaining`;
 };
 
-export default Challenges; 
+export default Challenges;

@@ -111,11 +111,31 @@ router.get(
       if (difficulty) query.difficulty = difficulty;
       if (status) query.status = status;
 
+      // Only filter for students
+      if (req.user && req.user.role === 'student') {
+        const db = req.app.locals.db;
+        // Get all enrollments for this student
+        const enrollments = await db.collection('enrollments').find({ studentId: req.user.userId }).toArray();
+        const courseIds = enrollments.map(e => e.courseId);
+        if (courseIds.length === 0) {
+          return res.json([]);
+        }
+        query.course = { $in: courseIds.map(id => typeof id === 'string' ? new require('mongodb').ObjectId(id) : id) };
+      }
+
       const challenges = await Challenge.find(query)
         .populate("participants", "name email")
+        .populate("course", "title")
         .sort({ createdAt: -1 });
 
-      res.json(challenges);
+      // Add courseTitle to each challenge
+      const challengesWithCourseTitle = challenges.map(challenge => {
+        const obj = challenge.toObject();
+        obj.courseTitle = obj.course && obj.course.title ? obj.course.title : undefined;
+        return obj;
+      });
+
+      res.json(challengesWithCourseTitle);
     } catch (error) {
       console.error("Error fetching challenges:", error);
       res.status(500).json({ message: "Server error" });
@@ -240,9 +260,17 @@ router.get(
 router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
   try {
     // Remove participants and _id from request body
-    const { participants, _id, ...challengeData } = req.body;
-
-    const challenge = new Challenge(challengeData);
+    const { participants, _id, course, ...challengeData } = req.body;
+    if (!course) {
+      return res.status(400).json({ message: "Course is required for a challenge." });
+    }
+    const db = req.app.locals.db;
+    // Validate course exists
+    const courseObj = await db.collection('courses').findOne({ _id: new require('mongodb').ObjectId(course) });
+    if (!courseObj) {
+      return res.status(400).json({ message: "Invalid course selected." });
+    }
+    const challenge = new Challenge({ ...challengeData, course });
     await challenge.save();
     res.status(201).json(challenge);
   } catch (error) {
