@@ -1,6 +1,6 @@
 // Leaderboard.jsx (enhanced)
 import React from "react";
-import { Badge } from "../ui/Badge";
+import { Badge } from "./Badges";
 
 export const Leaderboard = ({ 
   data, 
