@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button, ProgressBar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY } from '../constants/colors';
+import { PRIMARY } from '../../constants/colors';
 
 export default function Challenges() {
   const activeChallenges = [
@@ -96,7 +96,7 @@ export default function Challenges() {
             <Card.Content>
               <View style={styles.challengeHeader}>
                 <View style={styles.challengeIcon}>
-                  <MaterialCommunityIcons name="trophy-check" size={24} color="#666666" />
+                  <MaterialCommunityIcons name="trophy-award" size={24} color="#666666" />
                 </View>
                 <View style={styles.challengeInfo}>
                   <Text style={styles.challengeTitle}>{challenge.title}</Text>

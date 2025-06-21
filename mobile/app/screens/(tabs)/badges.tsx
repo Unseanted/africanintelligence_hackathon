@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card } from 'react-native-paper';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
+import { Card, Button } from 'react-native-paper';
+import { ThemedView } from '../../../components/ThemedView';
+import { ThemedText } from '../../../components/ThemedText';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function BadgesPage() {
+export default function Badges() {
   const badges = [
     { id: 1, name: 'Python Master', icon: 'language-python', color: '#3b82f6', progress: 100 },
     { id: 2, name: 'Data Science', icon: 'chart-bar', color: '#6366f1', progress: 75 },
@@ -14,8 +14,9 @@ export default function BadgesPage() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      <ThemedView style={styles.content}>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">Badges</ThemedText>
+      <ScrollView style={styles.content}>
         <ThemedText style={styles.title}>Your Badges</ThemedText>
         
         <View style={styles.badgesGrid}>
@@ -41,15 +42,15 @@ export default function BadgesPage() {
             </Card>
           ))}
         </View>
-      </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    padding: 16,
   },
   content: {
     flex: 1,

@@ -1,9 +1,8 @@
-import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TouchableRipple, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname, Tabs } from 'expo-router';
-import AIAssistant from '../components/AIAssistant';
+import AIAssistant from '../../components/AIAssistant';
 
 // Color Constants
 const PRIMARY = '#FFBF00';
@@ -25,35 +24,35 @@ const navItems: NavItem[] = [
   {
     icon: 'home',
     label: 'Home',
-    route: '/student',
+    route: '/screens/(tabs)/student',
     inactiveColor: TEXT_INACTIVE,
     activeColor: PRIMARY,
   },
   {
     icon: 'book',
     label: 'Courses',
-    route: '/courses',
+    route: '/screens/(tabs)/courses',
     inactiveColor: TEXT_INACTIVE,
     activeColor: PRIMARY,
   },
   {
     icon: 'forum',
     label: 'Forum',
-    route: '/forum',
+    route: '/screens/(tabs)/forum',
     inactiveColor: TEXT_INACTIVE,
     activeColor: PRIMARY,
   },
   {
     icon: 'trophy',
     label: 'Leaderboard',
-    route: '/leaderboard',
+    route: '/screens/(tabs)/leaderboard',
     inactiveColor: TEXT_INACTIVE,
     activeColor: PRIMARY,
   },
   {
     icon: 'account',
     label: 'Profile',
-    route: '/profile',
+    route: '/screens/(tabs)/profile',
     inactiveColor: TEXT_INACTIVE,
     activeColor: PRIMARY,
   },
