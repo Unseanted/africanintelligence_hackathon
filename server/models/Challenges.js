@@ -34,6 +34,11 @@ const challengeSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  course: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+    required: true,
+  },
   submissionFormat: {
     type: String,
     required: true,
