@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const roleAuth = require("../middleware/roleAuth");
 const Challenge = require("../models/Challenges");
+const User = require("../models/User");
 
 /**
  * @swagger
@@ -389,13 +390,15 @@ router.post(
         return res.status(404).json({ message: "Challenge not found" });
       }
 
-      if (challenge.participants.includes(req.user.userId)) {
+      const user = await User.findById(req.user.userId);
+
+      if (challenge.participants.includes(user.roleData._id)) {
         return res
           .status(400)
           .json({ message: "Already participating in this challenge" });
       }
 
-      challenge.participants.push(req.user.userId);
+      challenge.participants.push(user.roleData._id);
       await challenge.save();
 
       res.json({ message: "Successfully participated in challenge" });

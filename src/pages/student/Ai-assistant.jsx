@@ -427,7 +427,7 @@ const AIAssistantPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <MessageSquare className="w-5 h-5" />
-                      Chat Assistant
+                      Chat Assistant Boo
                     </CardTitle>
                     <CardDescription>
                       Ask me anything about your courses, concepts, or get help with assignments

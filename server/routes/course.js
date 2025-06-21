@@ -513,34 +513,33 @@ const Course = require("../models/Course");
  *               title:
  *                 type: string
  *                 example: "Introduction to Web Development"
- *               description:
+ *               shortDescription:
  *                 type: string
  *                 example: "Learn the basics of web development"
+ *               fullDescription:
+ *                 type: string
+ *                 example: "This course covers HTML, CSS, and JavaScript."
  *               status:
  *                 type: string
  *                 example: "published"
- *               modules:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     title:
- *                       type: string
- *                       example: "HTML Basics"
- *                     content:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           title:
- *                             type: string
- *                             example: "Introduction to HTML"
- *                           type:
- *                             type: string
- *                             example: "video"
- *                           url:
- *                             type: string
- *                             example: "https://example.com/video.mp4"
+ *               category:
+ *                 type: string
+ *                 example: "Web Development"
+ *               difficulty:
+ *                 type: string
+ *                 enum: [beginner, intermediate, advanced]
+ *               duration:
+ *                 type: string
+ *                 example: "4 weeks"
+ *               learningOutcomes:
+ *                 type: string
+ *                 example: "By the end of this course, you will be able to build a simple website."
+ *               prerequisites:
+ *                 type: string
+ *                 example: "Basic computer skills"
+ *               thumbnail:
+ *                 type: string
+ *                 example: "https://example.com/thumbnail.jpg"
  *     responses:
  *       201:
  *         description: Course created successfully
@@ -1274,7 +1273,7 @@ router.get("/:id/full", auth, async (req, res) => {
     if (course.facilitator) {
       try {
         let facilitator = await db
-          .collection("users")
+          .collection("courses")
           .findOne(
             { _id: new ObjectId(course.facilitator) },
             { projection: { name: 1, email: 1 } }
@@ -1313,20 +1312,11 @@ router.get("/:id/full", auth, async (req, res) => {
 router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
   try {
     let db = req.app.locals.db;
-    let dt = datemap();
 
     let courseData = {
       ...req.body,
       courseId: uuidv4(),
-      enrolledStudents: [],
       facilitator: req.user.userId,
-      enrolled: 0,
-      rating: 0,
-      students: [],
-      reviews: [],
-      key: `course-${dt.key}`,
-      createdAt: dt,
-      updatedAt: dt,
     };
     let pluged = await db
       .collection("courses")
@@ -1348,7 +1338,7 @@ router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
 
     let insertedCourse = await db
       .collection("courses")
-      .findOne({ _id: result.insertedId });
+      .findOne({ _id: result.insertedId }, { _id: 0 });
 
     res.status(201).json(insertedCourse);
   } catch (error) {

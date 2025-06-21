@@ -5,47 +5,57 @@ const student = require("../models/Student");
 const user = require("../models/User");
 
 const writeData = (res, timeRange) => {
-  let section = {};
-  let failsafeCounter = 0;
-  while (section && failsafeCounter < 50) {
-    section = student.getLeaderboard(20, timeRange);
-    res.write(`data: ${JSON.stringify(section)}\n\n`);
-    failsafeCounter++;
-    break; // Remove this line if you want to keep trying until you get data
-  }
+  const students = student.getLeaderboard(20, timeRange);
+
+  const section = student.map((student) => {
+    const userData = user
+      .findById(student.user._id)
+      .populate("user", "name avatar");
+    return {
+      id: student.user._id,
+      name: userData.name,
+      avatar: userData.avatar,
+      xp: student[`xp.${timeRange}`],
+      level: student.level, // Assuming level is calculated in the model
+    };
+  });
+  res.write(`data: ${JSON.stringify(section)}\n\n`);
+  failsafeCounter++;
 };
 
 const writeFriendsData = (res, userId) => {
-  let section = {};
-  let failsafeCounter = 0;
-  while (section && failsafeCounter < 50) {
-    const students = student.getFriendsLeaderboard(20, userId);
-    section = students.map((student) => {
-      const userData = user
-        .findById(student.userId)
-        .populate("user", "name avatar");
-      return {
-        id: student.userId,
-        name: student.userData.name,
-        avatar: student.userData.avatar,
-        xp: student.xp.allTime,
-        level: student.level, // Assuming level is calculated in the model
-      };
-    });
-    res.write(`data: ${JSON.stringify(section)}\n\n`);
-    failsafeCounter++;
-    break; // Remove this line if you want to keep trying until you get data
-  }
+  const students = student.getFriendsLeaderboard(20, userId);
+  const section = students.map((student) => {
+    const userData = user
+      .findById(student.user._id)
+      .populate("user", "name avatar");
+    return {
+      id: student.user._id,
+      name: userData.name,
+      avatar: userData.avatar,
+      xp: student.xp.allTime,
+      level: student.level, // Assuming level is calculated in the model
+    };
+  });
+  res.write(`data: ${JSON.stringify(section)}\n\n`);
 };
 
 const writeCourseData = (res, courseId) => {
-  let section = {};
-  let failsafeCounter = 0;
-  while (section && failsafeCounter < 50) {
-    section = student.getCourseLeaderboard(20, courseId);
-    res.write(`data: ${JSON.stringify(section)}\n\n`);
-    failsafeCounter++;
-  }
+  const students = student.getCourseLeaderboard(20, courseId);
+
+  const section = student.map((student) => {
+    const userData = user
+      .findById(student.user._id)
+      .populate("user", "name avatar");
+    return {
+      id: student.user._id,
+      name: userData.name,
+      avatar: userData.avatar,
+      xp: student.xp.allTime,
+      level: student.level, // Assuming level is calculated in the model
+    };
+  });
+  res.write(`data: ${JSON.stringify(section)}\n\n`);
 };
 
 router.get("/leaderboard/allTime", auth, (req, res) => {

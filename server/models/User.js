@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const studentSchema = require("./Student");
-const adminSchema = require("./Admin");
-const facilitatorSchema = require("./Facilitator");
+// const studentSchema = require("./Student");
+// const adminSchema = require("./Admin");
+// const facilitatorSchema = require("./Facilitator");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -35,10 +35,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  badges: [{
-    type: String,
-    default: ''
-  }],// ["1 day streak", "5 courses completed"]
+  badges: [
+    {
+      type: String,
+      default: "",
+    },
+  ], // ["1 day streak", "5 courses completed"]
   bio: {
     type: String,
     default: "",
@@ -54,7 +56,6 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
 
 // api/student/badges
 // Post api/badges
@@ -74,10 +75,14 @@ userSchema.pre("save", async function (next) {
   if (this.isNew) {
     switch (this.role) {
       case "admin":
-        this.roleData = await mongoose.model("Admin", adminSchema).create({ user: this._id });
+        this.roleData = await mongoose
+          .model("Admin", adminSchema)
+          .create({ user: this._id });
         break;
       case "learner":
-        this.roleData = await mongoose.model("Student", studentSchema).create({ user: this._id });
+        this.roleData = await mongoose
+          .model("Student", studentSchema)
+          .create({ user: this._id });
         break;
       case "facilitator":
         this.roleData = await facilitatorSchema.create({ user: this._id });

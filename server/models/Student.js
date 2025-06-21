@@ -121,7 +121,7 @@ studentSchema.static.getLeaderboard = async function (
   return this.find(query)
     .sort({ [`xp.${timeRange}`]: -1 })
     .limit(limit)
-    .populate("student", "user xp");
+    .populate("student", "user xp level");
 };
 
 studentSchema.static.getFriendsLeaderboard = async function (
@@ -143,7 +143,7 @@ studentSchema.static.getCourseLeaderboard = async function (
   limit = 10,
   courseId
 ) {
-  const students = await this.find({ enrollments: courseId })
+  const students = await this.find({ enrollments: courseId })// doesn't work currently
     .sort({ "xp.allTime": -1 })
     .limit(limit)
     .populate("user", "name avatar");
