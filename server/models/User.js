@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const Student = require("./Student");
+// const Admin = require("./Admin");
+// const Facilitator = require("./Facilitator");
 // const studentSchema = require("./Student");
 // const adminSchema = require("./Admin");
 // const facilitatorSchema = require("./Facilitator");
@@ -28,8 +31,7 @@ const userSchema = new mongoose.Schema({
     default: "student",
   },
   roleData: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
+    type: mongoose.Schema.Types.ObjectId,
   },
   profilePicture: {
     type: String,
@@ -42,6 +44,10 @@ const userSchema = new mongoose.Schema({
     },
   ], // ["1 day streak", "5 courses completed"]
   bio: {
+    type: String,
+    default: "",
+  },
+  authProvider: {
     type: String,
     default: "",
   },
@@ -71,22 +77,32 @@ userSchema.pre("save", async function (next) {
   } catch (error) {
     next(error);
   }
+});
 
-  if (this.isNew) {
-    switch (this.role) {
-      case "admin":
-        this.roleData = await mongoose
-          .model("Admin", adminSchema)
-          .create({ user: this._id });
-        break;
-      case "learner":
-        this.roleData = await mongoose
-          .model("Student", studentSchema)
-          .create({ user: this._id });
-        break;
-      case "facilitator":
-        this.roleData = await facilitatorSchema.create({ user: this._id });
+userSchema.post("save", async function () {
+  try {
+    if (!this.roleData) {
+      let roleData;
+      switch (this.role) {
+        case "admin":
+          // roleData = await Admin.create({ user: this._id });
+          break;
+        case "student":
+          roleData = await Student.create({ user: this._id });
+          break;
+        case "facilitator":
+          // roleData = await Facilitator.create({ user: this._id });
+          break;
+      }
+
+      // Update the user's roleData field if a role document was created
+      if (roleData) {
+        await User.findByIdAndUpdate(this._id, { roleData: roleData._id });
+      }
     }
+  } catch (error) {
+    console.error("Error in post-save hook:", error);
+    throw error; // Re-throw to ensure the error is handled by Mongoose
   }
 });
 
