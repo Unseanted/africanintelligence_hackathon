@@ -23,10 +23,28 @@ const moduleProgressSchema = new mongoose.Schema({
 });
 
 const enrollmentSchema = new mongoose.Schema({
-  learner: {
+  student: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Student',
     required: true
+  },
+  courseXp:  {
+    allTime: {
+      type: Number,
+      default: 0,
+    },
+    thisWeek: {
+      type: Number,
+      default: 0,
+    },
+    thisMonth: {
+      type: Number,
+      default: 0,
+    },
+    thisYear: {
+      type: Number,
+      default: 0,
+    },
   },
   course: {
     type: mongoose.Schema.Types.ObjectId,
@@ -34,11 +52,11 @@ const enrollmentSchema = new mongoose.Schema({
     required: true
   },
   enrolledAt: {
-    type: Date,
+    type: Number,
     default: Date.now
   },
   completedAt: {
-    type: Date
+    type: Number
   },
   progress: {
     type: Number,
@@ -56,7 +74,7 @@ const enrollmentSchema = new mongoose.Schema({
 });
 
 // Composite index to prevent duplicate enrollments
-enrollmentSchema.index({ learner: 1, course: 1 }, { unique: true });
+enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
 
 const Enrollment = mongoose.model('Enrollment', enrollmentSchema);
 

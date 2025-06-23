@@ -91,6 +91,12 @@ const moduleSchema = new mongoose.Schema({
 
 const courseSchema = new mongoose.Schema(
   {
+    courseId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
     title: {
       type: String,
       required: true,
@@ -156,6 +162,10 @@ const courseSchema = new mongoose.Schema(
         ref: "Enrollment",
       },
     ],
+    enrollmentCount: {
+      type: Number,
+      default: 0,
+    },
     announcements: [
       {
         type: String,
@@ -204,8 +214,10 @@ const courseSchema = new mongoose.Schema(
 );
 
 courseSchema.pre("save", function (next) {
+  this.enrollmentCount = this.enrollments.length;
   next();
 });
+
 
 courseSchema.methods.getEnrollmentCount = async function () {
   return this.enrollments.length;
