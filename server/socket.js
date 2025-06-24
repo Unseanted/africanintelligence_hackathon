@@ -165,7 +165,7 @@ const setupSocket = (server, db) => {
 
     socket.on("ai:message", async (data) => {
       const { message, context } = data;
-      const { conversationId, role, content, timestamp } = context;
+      const { conversationId, role, timestamp } = context;
 
       const conversation = await db
         .collection("AIConversation")
@@ -175,7 +175,7 @@ const setupSocket = (server, db) => {
         conversation.addMessage({
           conversationId: conversation._id,
           role,
-          content,
+          content: message,
           tokenCount: 0,
           timestamp,
         });
@@ -183,8 +183,7 @@ const setupSocket = (server, db) => {
 
       socket.emit("ai:typing", true);
       const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
-      const response = await llmContext.generateResponse(content);
-      console.log(response);
+      const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,
         role: "assistant",
@@ -196,6 +195,7 @@ const setupSocket = (server, db) => {
       socket.emit("ai:response", {
         message: aiMessage,
       });
+      console.log(aiMessage);
       socket.emit("ai:typing", false);
 
       // Store the conversation in the database
@@ -322,6 +322,14 @@ const setupSocket = (server, db) => {
     // Ping-pong handler for connection testing
     socket.on("ping", (data) => {
       socket.emit("pong");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err.message);
+      socket.emit("error", {
+        message: "Connection error",
+        code: "CONNECTION_ERROR",
+      });
     });
   });
 

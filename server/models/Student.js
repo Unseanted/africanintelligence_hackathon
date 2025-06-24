@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const Enrollment = require("./Enrollment");
 
 const studentSchema = new Schema(
   {
@@ -143,11 +144,8 @@ studentSchema.static.getCourseLeaderboard = async function (
   limit = 10,
   courseId
 ) {
-  const students = await this.find({ enrollments: courseId })// doesn't work currently
-    .sort({ "xp.allTime": -1 })
-    .limit(limit)
-    .populate("user", "name avatar");
-
+  const enrollments = await Enrollment.find({course: courseId}, "student courseXp").sort({"courseXp.allTime": -1}.limit(limit));
+  const students = enrollments.map(async (enrollment) => {const student = await this.find({_id: enrollment.student}, "user"); return {courseXp: enrollment.courseXp, user: student.user}});
   return students;
 };
 

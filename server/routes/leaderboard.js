@@ -51,8 +51,7 @@ const writeCourseData = (res, courseId) => {
       id: student.user._id,
       name: userData.name,
       avatar: userData.avatar,
-      xp: student.xp.allTime,
-      level: student.level, // Assuming level is calculated in the model
+      xp: student.courseXp.allTime,
     };
   });
   res.write(`data: ${JSON.stringify(section)}\n\n`);
