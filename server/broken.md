@@ -2,7 +2,6 @@
 ## Models
 - Chat.js
 - Forum.js
-- schemas.js
 
 ## Routes
 - admin.js
