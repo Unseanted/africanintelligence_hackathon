@@ -82,6 +82,11 @@ const eventSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  status: {
+    type: String,
+    enum: ["upcoming", "ongoing", "completed"],
+    default: "upcoming",
+  },
   participants: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -89,15 +94,7 @@ const eventSchema = new mongoose.Schema({
     },
   ],
   teams: [teamSchema],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+}, {timestamps: true});
 
 eventSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
@@ -105,5 +102,6 @@ eventSchema.pre("save", function (next) {
 });
 
 const Event = mongoose.model("Event", eventSchema);
+const Team = mongoose.model("Team", teamSchema);
 
-module.exports = Event;
+module.exports = {Event, Team};

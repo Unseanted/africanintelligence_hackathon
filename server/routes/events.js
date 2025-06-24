@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const roleAuth = require("../middleware/roleAuth");
-const Event = require("../models/Event");
+const {Event, Team} = require("../models/Event");
 
 /**
  * @swagger
@@ -115,7 +115,7 @@ const Event = require("../models/Event");
  *         name: status
  *         schema:
  *           type: string
- *           enum: [draft, published, archived]
+ *           enum: [upcoming, ongoing, completed]
  *         description: Filter by status
  *     responses:
  *       200:
@@ -222,7 +222,49 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Event'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: The title of the event
+ *               description:
+ *                 type: string
+ *                 description: The description of the event
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *                 description: The date of the event
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *                 description: The registration deadline for the event
+ *               guidelines:
+ *                 type: string
+ *                 description: The guidelines for the event
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of media URLs related to the event
+ *               location:
+ *                 type: string
+ *                 description: The location of the event
+ *               category:
+ *                 type: string
+ *                 description: The category of the event
+ *               mentorship:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of mentorship opportunities
+ *               prizes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of prizes for the event
+ *               duration:
+ *                 type: string
+ *                 description: The duration of the event
  *     responses:
  *       201:
  *         description: Event created successfully
@@ -266,7 +308,49 @@ router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Event'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: The title of the event
+ *               description:
+ *                 type: string
+ *                 description: The description of the event
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *                 description: The date of the event
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *                 description: The registration deadline for the event
+ *               guidelines:
+ *                 type: string
+ *                 description: The guidelines for the event
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of media URLs related to the event
+ *               location:
+ *                 type: string
+ *                 description: The location of the event
+ *               category:
+ *                 type: string
+ *                 description: The category of the event
+ *               mentorship:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of mentorship opportunities
+ *               prizes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of prizes for the event
+ *               duration:
+ *                 type: string
+ *                 description: The duration of the event
  *     responses:
  *       200:
  *         description: Event updated successfully
@@ -372,13 +456,13 @@ router.post("/:id/register", auth, roleAuth(["student"]), async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    if (event.participants.includes(req.user._id)) {
+    if (event.participants.includes(req.user.userId)) {
       return res
         .status(400)
         .json({ message: "Already registered for this event" });
     }
 
-    event.participants.push(req.user._id);
+    event.participants.push(req.user.userId);
     await event.save();
 
     res.json({ message: "Successfully registered for event" });
@@ -438,11 +522,11 @@ router.post("/:id/teams", auth, roleAuth(["student"]), async (req, res) => {
     const team = {
       title: req.body.title,
       description: req.body.description,
-      leader: req.user._id,
-      members: [req.user._id],
+      leader: req.user.userId,
+      members: [req.user.userId],
     };
 
-    event.teams.push(team);
+    event.teams.push(await Team.create(team));
     await event.save();
 
     res.status(201).json({ message: "Team created successfully", team });
