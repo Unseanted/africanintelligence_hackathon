@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const student = require("./Student");
 
 const challengeSchema = new mongoose.Schema({
   title: {
@@ -15,7 +16,7 @@ const challengeSchema = new mongoose.Schema({
   participants: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Student",
     },
   ],
   points: {
@@ -67,6 +68,15 @@ challengeSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
+
+challengeSchema.static.getParticipants = async function (challengeId) {
+  const challenge = await this.findById(challengeId).populate("participants");
+  const students = student.find({
+    _id: { $in: challenge.participants.map((participant) => participant._id) },}).populate("student", "user");
+  const participants = user.find({
+    _id: { $in: students.map((student) => student.user._id)}});
+  return participants ;
+}
 
 const Challenge = mongoose.model("Challenge", challengeSchema);
 

@@ -12,12 +12,33 @@ import { offlineStorage } from '@/utils/offlineStorage';
 import { notificationService } from '@/utils/notificationService';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+/*
+  Setup:
+  - Set default model state
 
+  Creating Conversation:
+  - Clicking "New Chat" button
+  - Sending a message when no chat is selected
+
+  Clicking new chat:
+  - Call create conversation api and update current conversation and model state
+  
+  Opening conversation:
+  - Update current conversation state
+
+  Delete conversation: 
+  - call delete endpoint
+
+  Archive conversation:
+  - mark as archived
+
+ */
 const AIAssistantPage = () => {
   const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([]);
+  const [chat, setChat] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gpt-4');
+  const [selectedModel, setSelectedModel] = useState('mistral-large-latest');
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -36,10 +57,11 @@ const AIAssistantPage = () => {
     { id: 'gpt-4', name: 'GPT-4'},
     { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo'},
     { id: 'claude-3', name: 'Claude 3'},
-    { id: 'gemini-pro', name: 'Gemini Pro' }
+    { id: 'gemini-pro', name: 'Gemini Pro' },
+    { id: 'mistral-large-latest', name: 'Mistral Large' }
   ];
 
-  const suggestedQuestions = [
+  const oldSuggestedQuestions = [
     "Explain the current lesson concepts",
     "Create a practice quiz for me",
     "Help me debug my code",
@@ -48,86 +70,78 @@ const AIAssistantPage = () => {
     "Give me related resources"
   ];
 
-  // Initialize WebSocket connection
+  const suggestedQuestions = [
+    "Create a practice quiz for me",
+    "Help me debug my code",
+  ]
+
+  // Fetch all conversations and their messages on mount
   useEffect(() => {
     if (!token) return;
+    const fetchChats = async () => {
+      try {
+        const res = await axios.get('http://localhost:3031/api/assistant/conversations', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const conversations = Array.isArray(res.data) ? res.data : [];
+        // Fetch messages for each conversation
+        const chatsWithMessages = await Promise.all(conversations.map(async (conv) => {
+          const msgRes = await axios.get(`/api/assistant/conversations/${conv._id}/messages`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          return { ...conv, id: conv._id, messages: Array.isArray(msgRes.data) ? msgRes.data : [] };
+        }));
+        setChatHistory(chatsWithMessages);
+        if (chatsWithMessages.length > 0) {
+          setCurrentChatId(chatsWithMessages[0].id);
+          setChat(chatsWithMessages[0]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat history:', err);
+      }
+    };
+    fetchChats();
+  }, [token]);
 
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3031', {
+  // Update current chat when currentChatId changes
+  useEffect(() => {
+    if (!currentChatId) { setChat(null); return; }
+    const found = chatHistory.find(c => c.id === currentChatId);
+    setChat(found || null);
+  }, [currentChatId, chatHistory]);
+
+  // WebSocket connection
+  useEffect(() => {
+    if (!token) return;
+    const newSocket = io('http://localhost:3031', {
+      transports: ['websocket'],
       auth: { token }
     });
-    newSocket.on('connect', () => {
-      console.log('Connected to WebSocket');
-      setIsOnline(true);
-    });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket');
-      setIsOnline(false);
+    newSocket.on('connect', () => { setIsOnline(true); console.log('connected to wss'); });
+    newSocket.on('disconnect', () => setIsOnline(false));
+    newSocket.on('pong', (data) => {
+      console.log('pong');
     });
-
     newSocket.on('ai:response', (data) => {
-      const aiResponse = {
-        role: 'assistant',
-        content: data.message,
-        timestamp: new Date(data.timestamp),
-        model: selectedModel
-      };
-
-      setChat(prev => [...prev, aiResponse]);
-      setIsTyping(false);
-
-      // Save AI response to offline storage
-      offlineStorage.saveChat({
-        id: Date.now(),
-        messages: [...chat, aiResponse],
-        model: selectedModel,
-        timestamp: new Date()
-      });
-
-      // Show notification for new message
-      notificationService.showNotification('New AI Response', {
-        body: aiResponse.content.substring(0, 100) + '...',
-        tag: 'ai-response'
-      });
-    });
-
-    newSocket.on('ai:typing', (typing) => {
-      setIsTyping(typing);
-    });
-
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
-      
-      let errorMessage = "I apologize, but I'm having trouble connecting right now. Please try again.";
-      
-      if (error.code === 'RATE_LIMIT_EXCEEDED') {
-        errorMessage = "You've reached the message limit. Please wait a moment before sending more messages.";
-      } else if (error.code === 'OPENAI_RATE_LIMIT') {
-        errorMessage = "The AI service is currently busy. Please try again in a few moments.";
+      const aiMsg = data.message;
+      setChatHistory(prev => prev.map(c =>
+        c.id === aiMsg.conversationId
+          ? { ...c, messages: [...c.messages, aiMsg] }
+          : c
+      ));
+      if (chat && chat.id === aiMsg.conversationId) {
+        setChat(prev => ({ ...prev, messages: [...prev.messages, aiMsg] }));
       }
-
-      setChat(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage,
-        timestamp: new Date(),
-        model: selectedModel,
-        isError: true
-      }]);
       setIsTyping(false);
-
-      // Show error notification
-      notificationService.showNotification('Error', {
-        body: errorMessage,
-        tag: 'ai-error',
-        type: 'error'
-      });
     });
-
+    newSocket.on('ai:typing', (typing) => setIsTyping(typing));
+    newSocket.on('error', (error) => {
+      setIsTyping(false);
+      // Optionally show notification
+    });
     setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
-    };
+    return () => { newSocket.close(); };
   }, [token]);
 
   useEffect(() => {
@@ -136,54 +150,70 @@ const AIAssistantPage = () => {
     }
   }, [chat]);
 
-  useEffect(() => {
-    // Load chat history from offline storage
-    const loadChatHistory = async () => {
-      try {
-        const savedChats = await offlineStorage.getAllChats();
-        if (savedChats.length > 0) {
-          setChatHistory(savedChats);
-        }
-      } catch (error) {
-        console.error('Failed to load chat history:', error);
+  // Create new chat
+  const createNewChat = async () => {
+    try {
+      const newChatReq = { title: 'New Conversation', aiModel: selectedModel };
+      const res = await axios.post('http://localhost:3031/api/assistant/conversations', newChatReq, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        const conv = res.data.conversation;
+        const chatObj = { ...conv, id: conv.id, messages: [] };
+        setChatHistory(prev => [chatObj, ...prev]);
+        setCurrentChatId(chatObj.id);
+        setChat(chatObj);
+        setMessage('');
+        setAttachedFiles([]);
       }
-    };
+    } catch (err) {
+      // Optionally show notification
+    }
+  };
 
-    loadChatHistory();
-  }, []);
+  // Delete chat
+  const deleteChat = async (chatId) => {
+    try {
+      await axios.delete(`/api/assistant/conversations/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setChatHistory(prev => prev.filter(c => c.id !== chatId));
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setChat(null);
+        setMessage('');
+        setAttachedFiles([]);
+      }
+    } catch (err) {
+      // Optionally show notification
+    }
+  };
 
+  // Send message
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() || isTyping || !socket) return;
-
+    
+    if (!message.trim() || isTyping || !socket || !chat) return;
     const userMessage = message.trim();
     setMessage('');
-    
-    const newChat = {
+    const newMsg = {
+      conversationId: chat.id,
       role: 'user',
       content: userMessage,
       timestamp: new Date(),
-      files: attachedFiles,
       model: selectedModel
     };
-
-    setChat(prev => [...prev, newChat]);
-    setAttachedFiles([]);
+    setChat(prev => ({ ...prev, messages: [...prev.messages, newMsg] }));
+    console.log("chat", chat);
+    setChatHistory(prev => prev.map(c =>
+      c.id === chat.id ? { ...c, messages: [...c.messages, newMsg] } : c
+    ));
     setIsTyping(true);
-
-    // Save to offline storage
     try {
-      await offlineStorage.saveChat({
-        id: Date.now(),
-        messages: [...chat, newChat],
-        model: selectedModel,
-        timestamp: new Date()
-      });
-
-      // Send message through WebSocket
-      socket.emit('ai:message', userMessage);
-    } catch (error) {
-      console.error('Failed to save chat:', error);
+      console.log('sending message');
+      socket.emit('ai:message', { message: userMessage, context: { conversationId: chat.id, aiModel: selectedModel, role: 'user', tokenCount: 0, timestamp: Date.now() } });
+      console.log('message sent');
+    } catch (err) {
       setIsTyping(false);
     }
   };
@@ -218,30 +248,6 @@ const AIAssistantPage = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const createNewChat = () => {
-    const newChat = {
-      id: Date.now(),
-      title: "New Chat",
-      timestamp: new Date(),
-      model: selectedModel
-    };
-    setChatHistory(prev => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
-    setChat([]);
-    setMessage('');
-    setAttachedFiles([]);
-  };
-
-  const deleteChat = (chatId) => {
-    setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
-    if (currentChatId === chatId) {
-      setCurrentChatId(null);
-      setChat([]);
-      setMessage('');
-      setAttachedFiles([]);
-    }
   };
 
   const formatChatTime = (timestamp) => {
@@ -386,7 +392,7 @@ const AIAssistantPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <MessageSquare className="w-5 h-5" />
-                      Chat Assistant
+                      Chat Assistant Boo
                     </CardTitle>
                     <CardDescription>
                       Ask me anything about your courses, concepts, or get help with assignments
@@ -404,7 +410,7 @@ const AIAssistantPage = () => {
               <CardContent className="flex flex-col flex-1 p-0">
                 {/* Chat Messages */}
                 <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
-                  {chat.length === 0 ? (
+                  {!chat || !chat.messages || chat.messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center py-12">
                       <div className="p-4 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full mb-4">
                         <Bot className="w-12 h-12 text-purple-500" />
@@ -413,7 +419,6 @@ const AIAssistantPage = () => {
                       <p className="text-muted-foreground mb-6 max-w-md">
                         I can help with explanations, practice questions, code debugging, and more.
                       </p>
-                      
                       {/* Suggested Questions */}
                       <div className="w-full max-w-2xl">
                         <p className="text-sm font-medium mb-3">Try asking:</p>
@@ -434,7 +439,7 @@ const AIAssistantPage = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 py-4">
-                      {chat.map((msg, index) => (
+                      {chat.messages.map((msg, index) => (
                         <div
                           key={index}
                           className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -468,7 +473,7 @@ const AIAssistantPage = () => {
                               <p className="text-sm">{msg.content}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <p className={`text-xs opacity-70 ${msg.role === 'user' ? 'text-purple-100' : 'text-muted-foreground'}`}>
-                                  {formatTime(msg.timestamp)}
+                                  {formatTime(new Date(msg.timestamp))}
                                 </p>
                                 {msg.model && (
                                   <Badge variant="outline" className="text-xs">

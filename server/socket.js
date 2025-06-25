@@ -5,6 +5,7 @@ const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 const { vapid_private_key, mistral_api_key } = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
+const Student = require("./models/Student");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -164,7 +165,7 @@ const setupSocket = (server, db) => {
 
     socket.on("ai:message", async (data) => {
       const { message, context } = data;
-      const { conversationId, role, content, timestamp } = context;
+      const { conversationId, role, timestamp } = context;
 
       const conversation = await db
         .collection("AIConversation")
@@ -174,7 +175,7 @@ const setupSocket = (server, db) => {
         conversation.addMessage({
           conversationId: conversation._id,
           role,
-          content,
+          content: message,
           tokenCount: 0,
           timestamp,
         });
@@ -182,8 +183,7 @@ const setupSocket = (server, db) => {
 
       socket.emit("ai:typing", true);
       const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
-      const response = await llmContext.generateResponse(content);
-      console.log(response);
+      const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,
         role: "assistant",
@@ -195,6 +195,7 @@ const setupSocket = (server, db) => {
       socket.emit("ai:response", {
         message: aiMessage,
       });
+      console.log(aiMessage);
       socket.emit("ai:typing", false);
 
       // Store the conversation in the database
@@ -309,12 +310,26 @@ const setupSocket = (server, db) => {
 
     // Handle disconnection
     socket.on("disconnect", () => {
+      // Clean up subscriptions
+      if (socket.leaderboardSubscription) {
+        const { type, timeRange } = socket.leaderboardSubscription;
+        const subscriptionKey = `${socket.id}-${type}-${timeRange}`;
+        activeSubscriptions.delete(subscriptionKey);
+      }
       console.log(`User disconnected: ${socket.user._id}`);
     });
 
     // Ping-pong handler for connection testing
     socket.on("ping", (data) => {
       socket.emit("pong");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err.message);
+      socket.emit("error", {
+        message: "Connection error",
+        code: "CONNECTION_ERROR",
+      });
     });
   });
 

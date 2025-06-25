@@ -4,7 +4,6 @@ import { Leaderboard } from "../../components/challenge/Leaderboard";
 import { useTourLMS } from "../../contexts/TourLMSContext";
 import { useSocket } from "../../services/socketService";
 import { XPProgress } from "../../components/challenge/XPProgress";
-import { Badge } from "../../components/ui/Badge";
 
 const TABS = [
   { key: "global", label: "Global", icon: "🌍" },

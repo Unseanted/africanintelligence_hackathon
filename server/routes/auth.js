@@ -9,6 +9,7 @@ const { sendWelcomeEmail } = require("../utils/mailer");
 const { vapid_private_key, clientID } = require("../configs/config");
 const { clg } = require("./basics");
 const { body, validationResult } = require("express-validator");
+const User = require("../models/User");
 
 const googleClient = new OAuth2Client(clientID);
 
@@ -288,8 +289,7 @@ const googleClient = new OAuth2Client(clientID);
 
 router.get("/", async (req, res) => {
   try {
-    const db = req.app.locals.db;
-    const users = await db.collection("users").find().toArray();
+    const users = await User.find().select("-password");
     res.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -348,53 +348,44 @@ router.get("/", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const db = req.app.locals.db;
     const { name, email, password, role } = req.body;
 
     // Check if user already exists
-    const existingUser = await db.collection("users").findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
         .status(400)
         .json({ message: "User already exists with this email" });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user
-    const newUser = {
+    // Create new user using Mongoose model (this will trigger pre and post hooks)
+    const newUser = new User({
       name,
       email,
-      password: hashedPassword,
+      password, // Will be hashed by pre-save hook
       role: role || "student",
-      profilePicture: "",
-      bio: "",
-      enrolledCourses: [],
-      createdCourses: [],
-      createdAt: new Date(),
-    };
+    });
 
-    // Insert user into database
-    const result = await db.collection("users").insertOne(newUser);
+    // Save user (this triggers the post hook that creates Student document)
+    await newUser.save();
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: result.insertedId.toString(), role: newUser.role },
+      { userId: newUser._id.toString(), role: newUser.role },
       vapid_private_key,
       { expiresIn: "7d" }
     );
 
     // Return user data and token (without password)
     const userData = {
-      id: result.insertedId,
+      id: newUser._id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
     };
 
     // Get popular courses for welcome email
+    const db = req.app.locals.db;
     const popularCourses = await db
       .collection("courses")
       .find({ status: "published" })
@@ -484,11 +475,10 @@ router.post("/register", async (req, res) => {
  */
 router.post("/login", async (req, res) => {
   try {
-    const db = req.app.locals.db;
     const { email, password, role } = req.body;
 
-    // Find user by email
-    const user = await db.collection("users").findOne({ email });
+    // Find user by email using Mongoose model
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -498,8 +488,8 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Invalid credentials or role" });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Check password using Mongoose method
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -603,7 +593,6 @@ router.post("/login", async (req, res) => {
 // Google OAuth login/signup
 router.post("/google", async (req, res) => {
   try {
-    const db = req.app.locals.db;
     const { token, role } = req.body;
     clg("google body -- ", { role });
 
@@ -627,8 +616,8 @@ router.post("/google", async (req, res) => {
         .json({ message: "Invalid Google token: Email not found" });
     }
 
-    // Check if user exists
-    let user = await db.collection("users").findOne({ email });
+    // Check if user exists using Mongoose model
+    let user = await User.findOne({ email });
 
     if (user) {
       // User exists - verify role and log them in
@@ -638,24 +627,22 @@ router.post("/google", async (req, res) => {
           .json({ message: "Invalid role for existing user" });
       }
     } else {
-      // User doesn't exist - register them
-      const newUser = {
+      // User doesn't exist - register them using Mongoose model
+      const newUser = new User({
         name,
         email,
-        password: "", // No password for Google users
+        password: "google-auth-no-password", // Placeholder password for Google users
         role: role || "student",
         profilePicture: payload.picture || "",
-        bio: "",
-        enrolledCourses: [],
-        createdCourses: [],
-        createdAt: new Date(),
         authProvider: "google", // Indicate the user signed up via Google
-      };
+      });
 
-      const result = await db.collection("users").insertOne(newUser);
-      user = { ...newUser, _id: result.insertedId };
+      // Save user (this triggers the post hook that creates Student document)
+      await newUser.save();
+      user = newUser;
 
       // Get popular courses for welcome email
+      const db = req.app.locals.db;
       const popularCourses = await db
         .collection("courses")
         .find({ status: "published" })
@@ -748,13 +735,10 @@ router.post("/google", async (req, res) => {
 // Get current user
 router.get("/me", auth, async (req, res) => {
   try {
-    const db = req.app.locals.db;
-    const userId = new ObjectId(req.user.userId);
+    const userId = req.user.userId;
 
-    // Get user from database (excluding password)
-    const user = await db
-      .collection("users")
-      .findOne({ _id: userId }, { projection: { password: 0 } });
+    // Get user from database using Mongoose model (excluding password)
+    const user = await User.findById(userId).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -767,11 +751,11 @@ router.get("/me", auth, async (req, res) => {
       role: user.role,
       profilePicture: user.profilePicture,
       bio: user.bio,
-      enrolledCourses: user.enrolledCourses,
-      createdCourses: user.createdCourses,
+      enrolledCourses: user.enrolledCourses || [],
+      createdCourses: user.createdCourses || [],
       createdAt: user.createdAt,
       authProvider: user.authProvider || "local",
-      phone: user.phone || "+234 000 000 0000",
+      phone: user.phone || "",
       occupation: user.occupation || "unknown",
       address: user.address || "unknown",
       specialization: user.specialization || "unknown",
@@ -949,11 +933,10 @@ router.post(
     } = req.body;
 
     try {
-      const db = req.app.locals.db;
-      const userId = new ObjectId(req.user.userId);
+      const userId = req.user.userId;
 
-      // Find the user by ID
-      const user = await db.collection("users").findOne({ _id: userId });
+      // Find the user by ID using Mongoose model
+      const user = await User.findById(userId);
       if (!user) {
         return res
           .status(404)
@@ -962,7 +945,7 @@ router.post(
 
       // Check if the email is already used by another user
       if (email !== user.email) {
-        const existingUser = await db.collection("users").findOne({ email });
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
           return res
             .status(400)
@@ -971,29 +954,23 @@ router.post(
       }
 
       // Update user fields
-      const updatedUser = {
-        name,
-        email: email || user.email,
-        phone: phone || user.phone,
-        bio: bio || user.bio,
-        occupation: occupation || user.occupation,
-        address: address || user.address,
-        specialization: specialization || user.specialization,
-        experience: experience || user.experience,
-        profilePicture: profilePicture || user.profilePicture,
-        certifications: certifications || user.certifications,
-        education: education || user.education,
-      };
+      user.name = name;
+      user.email = email || user.email;
+      user.phone = phone || user.phone;
+      user.bio = bio || user.bio;
+      user.occupation = occupation || user.occupation;
+      user.address = address || user.address;
+      user.specialization = specialization || user.specialization;
+      user.experience = experience || user.experience;
+      user.profilePicture = profilePicture || user.profilePicture;
+      user.certifications = certifications || user.certifications;
+      user.education = education || user.education;
 
-      // Update the user in the database
-      await db
-        .collection("users")
-        .updateOne({ _id: userId }, { $set: updatedUser });
+      // Save the updated user
+      await user.save();
 
       // Fetch the updated user (excluding password)
-      const updatedUserData = await db
-        .collection("users")
-        .findOne({ _id: userId }, { projection: { password: 0 } });
+      const updatedUserData = await User.findById(userId).select("-password");
 
       res.status(200).json({
         success: true,
@@ -1118,11 +1095,10 @@ router.post(
     const { profilePicture } = req.body;
 
     try {
-      const db = req.app.locals.db;
-      const userId = new ObjectId(req.user.userId);
+      const userId = req.user.userId;
 
-      // Find the user by ID
-      const user = await db.collection("users").findOne({ _id: userId });
+      // Find the user by ID using Mongoose model
+      const user = await User.findById(userId);
       if (!user) {
         return res
           .status(404)
@@ -1130,14 +1106,11 @@ router.post(
       }
 
       // Update the profile picture
-      await db
-        .collection("users")
-        .updateOne({ _id: userId }, { $set: { profilePicture } });
+      user.profilePicture = profilePicture;
+      await user.save();
 
       // Fetch the updated user (excluding password)
-      const updatedUser = await db
-        .collection("users")
-        .findOne({ _id: userId }, { projection: { password: 0 } });
+      const updatedUser = await User.findById(userId).select("-password");
 
       res.status(200).json({
         success: true,

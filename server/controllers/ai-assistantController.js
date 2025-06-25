@@ -7,7 +7,7 @@ const Joi = require("joi");
 
 const createConversationSchema = Joi.object({
   title: Joi.string().max(100).optional(),
-  aiModel: Joi.string().valid("gpt-3.5-turbo", "gpt-4").optional(),
+  aiModel: Joi.string().valid("gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku", "mistral-large-latest").optional(),
 });
 
 async function createConversation(req, res) {
@@ -41,6 +41,8 @@ async function createConversation(req, res) {
         aiModel: conversation.aiModel,
         createdAt: conversation.createdAt,
         metadata: conversation.metadata,
+        isArchived: conversation.isArchived,
+        messages: conversation.messages,
       },
     });
   } catch (error) {

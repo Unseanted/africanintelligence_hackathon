@@ -16,31 +16,19 @@ const badgeSchema = new mongoose.Schema({
   category: { 
     type: String,
     required: true,
-    enum: ['achievement', 'participation', 'excellence', 'milestone', 'special'],
+    enum: ['streak', 'course', 'xp', 'rank', 'special', 'quiz', 'achievement', 'community', 'certification'],
     default: 'achievement'
   },
   criteria: {
     type: String,
     required: true,
-
   },
   points: {
     type: Number,
     default: 0
   },
-  user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  awardedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
   awardedAt: {
-    type: Date,
-    default: Date.now
+    type: Number,
   },
   status: {
     type: String,
@@ -48,14 +36,14 @@ const badgeSchema = new mongoose.Schema({
     default: 'active'
   },
   expiryDate: {
-    type: Date,
+    type: Number,
     required: false
   },
-  metadata: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    default: {}
-  }
+  // metadata: {
+  //   type: Map,
+  //   of: mongoose.Schema.Types.Mixed,
+  //   default: {}
+  // }
 }, {
   timestamps: true // Adds createdAt and updatedAt fields
 });
@@ -75,6 +63,6 @@ badgeSchema.methods.isValid = function () {
   return this.status === 'active' && !this.isExpired;
 };
 
-const Badges = mongoose.model('Badges', badgeSchema);
+const Badge = mongoose.model('Badges', badgeSchema);
 
-module.exports = Badges;
+module.exports = Badge;
