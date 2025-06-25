@@ -22,13 +22,14 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerOptions = require("./swagger");
 const dbConnection = require("./configs/database");
+const { port, jwt_secret, vapid_public_key, vapid_private_key, isProduction } = require("./configs/config");
 
 // Configure the environment
 require("dotenv").config();
 
 // Create Express application
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = port || 8080;
 
 // Middleware
 app.use(cors());
@@ -36,11 +37,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configure Web Push
-if (process.env.PUBLIC_VAPID_KEY && process.env.PRIVATE_VAPID_KEY) {
+if (vapid_public_key && vapid_private_key) {
   webpush.setVapidDetails(
     "mailto:test@example.com",
-    process.env.PUBLIC_VAPID_KEY,
-    process.env.PRIVATE_VAPID_KEY
+    vapid_public_key,
+    vapid_private_key
   );
   app.set("webpush", webpush);
   console.log("Web Push configured successfully");
@@ -80,7 +81,7 @@ async function startServer() {
     app.use("/api/badges", badgeRoutes);
 
     // Serve static files in production
-    if (process.env.NODE_ENV === "production") {
+    if (isProduction) {
       app.use(express.static(path.join(__dirname, "../build")));
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
