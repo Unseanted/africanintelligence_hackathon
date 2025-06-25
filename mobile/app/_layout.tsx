@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Platform, View, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
+import ThemeProvider from './context/ThemeContext';
 
 // Color Constants
 const BACKGROUND = '#111827';
@@ -78,9 +79,11 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <TourLMSProvider>
-      <RootLayoutNav />
-    </TourLMSProvider>
+    <ThemeProvider>
+      <TourLMSProvider>
+        <RootLayoutNav />
+      </TourLMSProvider>
+    </ThemeProvider>
   );
 }
 

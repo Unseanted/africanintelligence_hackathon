@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, TextInput } from 'react-native';
 import { Text, Card, Searchbar, Button, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR, SUCCESS, WARNING } from '../constants/colors';
@@ -216,279 +216,6 @@ const HARDCODED_STATS: ForumStats = {
   onlineNow: 23,
   newToday: 12
 };
-
-export default function ForumScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categories] = useState<Category[]>(HARDCODED_CATEGORIES);
-  const [posts, setPosts] = useState<Post[]>(HARDCODED_POSTS);
-  const [stats] = useState<ForumStats>(HARDCODED_STATS);
-  const [loading] = useState(false);
-  const [activeTab, setActiveTab] = useState('recent');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Simulate refresh with timeout
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
-
-  const handleLikePost = (postId: string) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post._id === postId
-          ? {
-              ...post,
-              likes: post.likes.includes('currentUser')
-                ? post.likes.filter(id => id !== 'currentUser')
-                : [...post.likes, 'currentUser']
-            }
-          : post
-      )
-    );
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'categories':
-        return (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                mode={selectedCategory === category.id ? 'contained' : 'outlined'}
-                onPress={() => setSelectedCategory(category.id)}
-                style={[
-                  styles.categoryButton,
-                  {
-                    backgroundColor: selectedCategory === category.id ? PRIMARY : 'transparent',
-                    borderColor: BORDER_COLOR,
-                  },
-                ]}
-                textColor={selectedCategory === category.id ? TEXT_PRIMARY : TEXT_SECONDARY}
-                icon={category.icon}
-              >
-                {category.name} {category.count ? `(${category.count})` : ''}
-              </Button>
-            ))}
-          </ScrollView>
-        );
-      case 'recent':
-        return renderTopics(posts);
-      case 'popular':
-        return renderTopics([...posts].sort((a, b) => b.likes.length - a.likes.length));
-      case 'unanswered':
-        return renderTopics(posts.filter(post => post.comments.length === 0));
-      default:
-        return null;
-    }
-  };
-
-  const renderTopics = (topics: Post[]) => {
-    const filteredTopics = topics.filter(post => {
-      const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          post.content.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-
-    const sortedTopics = [...filteredTopics].sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      if (a.isFeatured && !b.isFeatured) return -1;
-      if (!a.isFeatured && b.isFeatured) return 1;
-      
-      switch (activeTab) {
-        case 'recent':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'popular':
-          return b.likes.length - a.likes.length;
-        case 'unanswered':
-          return (a.comments.length === 0 ? 1 : 0) - (b.comments.length === 0 ? 1 : 0);
-        default:
-          return 0;
-      }
-    });
-
-    return (
-      <View style={styles.topicsContainer}>
-        {sortedTopics.map((post) => (
-          <Card 
-            key={post._id} 
-            style={[
-              styles.topicCard, 
-              { 
-                backgroundColor: CARD_BACKGROUND, 
-                borderColor: BORDER_COLOR,
-                borderLeftWidth: post.isFeatured ? 4 : 1,
-                borderLeftColor: post.isFeatured ? WARNING : BORDER_COLOR
-              }
-            ]}
-          >
-            <Card.Content>
-              {post.isPinned && (
-                <View style={styles.pinnedBadge}>
-                  <MaterialCommunityIcons name="pin" size={16} color={TEXT_SECONDARY} />
-                  <Text style={styles.pinnedText}>Pinned</Text>
-                </View>
-              )}
-              <View style={styles.topicHeader}>
-                {post.author.avatar ? (
-                  <Avatar.Image size={36} source={{ uri: post.author.avatar }} />
-                ) : (
-                  <MaterialCommunityIcons name="account-circle" size={36} color={PRIMARY} />
-                )}
-                <View style={styles.topicInfo}>
-                  <Text style={[styles.topicTitle, { color: TEXT_PRIMARY }]}>{post.title}</Text>
-                  <Text style={[styles.topicMeta, { color: TEXT_SECONDARY }]}>
-                    Posted by {post.author.name} • {new Date(post.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[styles.topicPreview, { color: TEXT_SECONDARY }]} numberOfLines={2}>
-                {post.content}
-              </Text>
-              {post.tags && post.tags.length > 0 && (
-                <View style={styles.tagsContainer}>
-                  {post.tags.map((tag, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>#{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-              <View style={styles.topicStats}>
-                <TouchableOpacity style={styles.stat} onPress={() => handleLikePost(post._id)}>
-                  <MaterialCommunityIcons 
-                    name={post.likes.includes('currentUser') ? 'heart' : 'heart-outline'} 
-                    size={16} 
-                    color={post.likes.includes('currentUser') ? PRIMARY : TEXT_SECONDARY} 
-                  />
-                  <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.likes.length}</Text>
-                </TouchableOpacity>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="comment" size={16} color={TEXT_SECONDARY} />
-                  <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.comments.length} replies</Text>
-                </View>
-                <View style={styles.stat}>
-                  <MaterialCommunityIcons name="eye" size={16} color={TEXT_SECONDARY} />
-                  <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.views} views</Text>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
-      </View>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color={PRIMARY} />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={[styles.header, { backgroundColor: PRIMARY }]}>
-        <Text style={[styles.headerTitle, { color: TEXT_PRIMARY }]}>Community Forum</Text>
-        <Text style={[styles.headerSubtitle, { color: TEXT_PRIMARY }]}>Connect, learn and share</Text>
-      </View>
-
-      <ScrollView 
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.searchContainer}>
-          <Searchbar
-            placeholder="Search discussions..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={[styles.searchBar, { backgroundColor: CARD_BACKGROUND }]}
-            inputStyle={{ color: TEXT_PRIMARY }}
-            iconColor={TEXT_SECONDARY}
-            placeholderTextColor={TEXT_SECONDARY}
-          />
-        </View>
-
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
-            <Card.Content>
-              <View style={styles.statsHeader}>
-                <Text style={[styles.statsTitle, { color: TEXT_PRIMARY }]}>Community Stats</Text>
-                <View style={styles.onlineIndicator}>
-                  <View style={[styles.onlineDot, { backgroundColor: SUCCESS }]} />
-                  <Text style={[styles.onlineText, { color: TEXT_SECONDARY }]}>{stats.onlineNow} online</Text>
-                </View>
-              </View>
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <MaterialCommunityIcons name="forum" size={24} color={PRIMARY} />
-                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Topics</Text>
-                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalTopics}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <MaterialCommunityIcons name="comment" size={24} color={PRIMARY} />
-                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Posts</Text>
-                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalPosts}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <MaterialCommunityIcons name="account-group" size={24} color={PRIMARY} />
-                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Users</Text>
-                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.activeUsers}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <MaterialCommunityIcons name="calendar-today" size={24} color={PRIMARY} />
-                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>New Today</Text>
-                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.newToday}</Text>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        </View>
-
-        <View style={styles.tabsContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
-            {['categories', 'recent', 'popular', 'unanswered'].map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.tab,
-                  activeTab === tab && { borderBottomColor: PRIMARY, borderBottomWidth: 2 }
-                ]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text style={[
-                  styles.tabText,
-                  { color: activeTab === tab ? PRIMARY : TEXT_SECONDARY }
-                ]}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {renderTabContent()}
-      </ScrollView>
-
-      <Button
-        mode="contained"
-        onPress={() => {}}
-        style={[styles.newDiscussionButton, { backgroundColor: PRIMARY }]}
-        icon="plus"
-        labelStyle={{ color: TEXT_PRIMARY }}
-      >
-        New Discussion
-      </Button>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -707,3 +434,446 @@ const styles = StyleSheet.create({
     right: 12,
   },
 });
+
+export default function ForumScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categories] = useState<Category[]>(HARDCODED_CATEGORIES);
+  const [posts, setPosts] = useState<Post[]>(HARDCODED_POSTS);
+  const [stats] = useState<ForumStats>(HARDCODED_STATS);
+  const [loading] = useState(false);
+  const [activeTab, setActiveTab] = useState('recent');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Modal and form state
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPost, setNewPost] = useState({
+    title: '',
+    content: '',
+    category: categories[0]?.id || '',
+  });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simulate refresh with timeout
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
+  const handleLikePost = (postId: string) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post._id === postId
+          ? {
+              ...post,
+              likes: post.likes.includes('currentUser')
+                ? post.likes.filter(id => id !== 'currentUser')
+                : [...post.likes, 'currentUser']
+            }
+          : post
+      )
+    );
+  };
+
+  // Handle opening post details and incrementing view count
+  const openPostDetails = (post: Post) => {
+    setSelectedPost({ ...post, views: post.views + 1 });
+    setShowDetailModal(true);
+    // Increment view count in posts array
+    setPosts(prevPosts => prevPosts.map(p =>
+      p._id === post._id ? { ...p, views: p.views + 1 } : p
+    ));
+  };
+
+  // Handle reply
+  const handleReply = () => {
+    if (!replyText.trim() || !selectedPost) return;
+    const newComment: Comment = {
+      id: `c${Date.now()}`,
+      content: replyText,
+      author: {
+        _id: 'currentUser',
+        name: 'You',
+        avatar: undefined,
+      },
+      createdAt: new Date().toISOString(),
+      likes: [],
+    };
+    setPosts(prevPosts => prevPosts.map(post =>
+      post._id === selectedPost._id
+        ? { ...post, comments: [...post.comments, newComment] }
+        : post
+    ));
+    setSelectedPost({ ...selectedPost, comments: [...selectedPost.comments, newComment] });
+    setReplyText('');
+  };
+
+  // Handle new post creation
+  const handleCreatePost = () => {
+    if (!newPost.title.trim() || !newPost.content.trim()) return;
+    const created: Post = {
+      _id: `${Date.now()}`,
+      title: newPost.title,
+      content: newPost.content,
+      author: {
+        _id: 'currentUser',
+        name: 'You',
+        avatar: undefined,
+      },
+      createdAt: new Date().toISOString(),
+      likes: [],
+      comments: [],
+      views: 0,
+      category: newPost.category,
+      tags: [],
+    };
+    setPosts([created, ...posts]);
+    setShowCreateModal(false);
+    setNewPost({ title: '', content: '', category: categories[0]?.id || '' });
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'categories':
+        return (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                mode={selectedCategory === category.id ? 'contained' : 'outlined'}
+                onPress={() => setSelectedCategory(category.id)}
+                style={[
+                  styles.categoryButton,
+                  {
+                    backgroundColor: selectedCategory === category.id ? PRIMARY : 'transparent',
+                    borderColor: BORDER_COLOR,
+                  },
+                ]}
+                textColor={selectedCategory === category.id ? TEXT_PRIMARY : TEXT_SECONDARY}
+                icon={category.icon}
+              >
+                {category.name} {category.count ? `(${category.count})` : ''}
+              </Button>
+            ))}
+          </ScrollView>
+        );
+      case 'recent':
+        return renderTopics(posts);
+      case 'popular':
+        return renderTopics([...posts].sort((a, b) => b.likes.length - a.likes.length));
+      case 'unanswered':
+        return renderTopics(posts.filter(post => post.comments.length === 0));
+      default:
+        return null;
+    }
+  };
+
+  const renderTopics = (topics: Post[]) => {
+    const filteredTopics = topics.filter(post => {
+      const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    const sortedTopics = [...filteredTopics].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      
+      switch (activeTab) {
+        case 'recent':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'popular':
+          return b.likes.length - a.likes.length;
+        case 'unanswered':
+          return (a.comments.length === 0 ? 1 : 0) - (b.comments.length === 0 ? 1 : 0);
+        default:
+          return 0;
+      }
+    });
+
+    return (
+      <View style={styles.topicsContainer}>
+        {sortedTopics.map((post) => (
+          <TouchableOpacity key={post._id} onPress={() => openPostDetails(post)}>
+            <Card 
+              style={[
+                styles.topicCard, 
+                { 
+                  backgroundColor: CARD_BACKGROUND, 
+                  borderColor: BORDER_COLOR,
+                  borderLeftWidth: post.isFeatured ? 4 : 1,
+                  borderLeftColor: post.isFeatured ? WARNING : BORDER_COLOR
+                }
+              ]}
+            >
+              <Card.Content>
+                {post.isPinned && (
+                  <View style={styles.pinnedBadge}>
+                    <MaterialCommunityIcons name="pin" size={16} color={TEXT_SECONDARY} />
+                    <Text style={styles.pinnedText}>Pinned</Text>
+                  </View>
+                )}
+                <View style={styles.topicHeader}>
+                  {post.author.avatar ? (
+                    <Avatar.Image size={36} source={{ uri: post.author.avatar }} />
+                  ) : (
+                    <MaterialCommunityIcons name="account-circle" size={36} color={PRIMARY} />
+                  )}
+                  <View style={styles.topicInfo}>
+                    <Text style={[styles.topicTitle, { color: TEXT_PRIMARY }]}>{post.title}</Text>
+                    <Text style={[styles.topicMeta, { color: TEXT_SECONDARY }]}>
+                      Posted by {post.author.name} • {new Date(post.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.topicPreview, { color: TEXT_SECONDARY }]} numberOfLines={2}>
+                  {post.content}
+                </Text>
+                {post.tags && post.tags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    {post.tags.map((tag, index) => (
+                      <View key={index} style={styles.tag}>
+                        <Text style={styles.tagText}>#{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                <View style={styles.topicStats}>
+                  <TouchableOpacity style={styles.stat} onPress={() => handleLikePost(post._id)}>
+                    <MaterialCommunityIcons 
+                      name={post.likes.includes('currentUser') ? 'heart' : 'heart-outline'} 
+                      size={16} 
+                      color={post.likes.includes('currentUser') ? PRIMARY : TEXT_SECONDARY} 
+                    />
+                    <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.likes.length}</Text>
+                  </TouchableOpacity>
+                  <View style={styles.stat}>
+                    <MaterialCommunityIcons name="comment" size={16} color={TEXT_SECONDARY} />
+                    <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.comments.length} replies</Text>
+                  </View>
+                  <View style={styles.stat}>
+                    <MaterialCommunityIcons name="eye" size={16} color={TEXT_SECONDARY} />
+                    <Text style={[styles.statText, { color: TEXT_SECONDARY }]}>{post.views} views</Text>
+                  </View>
+                </View>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  // Forum detail modal
+  const renderDetailModal = () => (
+    <Modal
+      visible={showDetailModal}
+      animationType="slide"
+      onRequestClose={() => setShowDetailModal(false)}
+      transparent={false}
+    >
+      <View style={{ flex: 1, backgroundColor: BACKGROUND }}>
+        {selectedPost && (
+          <ScrollView style={{ flex: 1 }}>
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: TEXT_PRIMARY }}>{selectedPost.title}</Text>
+              <Text style={{ color: TEXT_SECONDARY, marginBottom: 8 }}>By {selectedPost.author.name} • {new Date(selectedPost.createdAt).toLocaleString()}</Text>
+              <Text style={{ color: TEXT_PRIMARY, marginBottom: 16 }}>{selectedPost.content}</Text>
+              <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                <Text style={{ marginRight: 16, color: TEXT_SECONDARY }}>Views: {selectedPost.views}</Text>
+                <Text style={{ marginRight: 16, color: TEXT_SECONDARY }}>Likes: {selectedPost.likes.length}</Text>
+                <Text style={{ color: TEXT_SECONDARY }}>Replies: {selectedPost.comments.length}</Text>
+              </View>
+              <Text style={{ fontWeight: 'bold', color: TEXT_PRIMARY, marginBottom: 8 }}>Replies</Text>
+              {selectedPost.comments.length === 0 && <Text style={{ color: TEXT_SECONDARY }}>No replies yet.</Text>}
+              {selectedPost.comments.map(comment => (
+                <View key={comment.id} style={{ marginBottom: 12, padding: 8, backgroundColor: CARD_BACKGROUND, borderRadius: 8 }}>
+                  <Text style={{ fontWeight: 'bold', color: TEXT_PRIMARY }}>{comment.author.name}</Text>
+                  <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString()}</Text>
+                  <Text style={{ color: TEXT_PRIMARY }}>{comment.content}</Text>
+                </View>
+              ))}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                <TextInput
+                  style={{ flex: 1, borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 8, padding: 8, color: TEXT_PRIMARY, backgroundColor: CARD_BACKGROUND }}
+                  placeholder="Write a reply..."
+                  placeholderTextColor={TEXT_SECONDARY}
+                  value={replyText}
+                  onChangeText={setReplyText}
+                />
+                <Button mode="contained" onPress={handleReply} style={{ marginLeft: 8 }}>
+                  Reply
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
+        )}
+        <Button mode="outlined" onPress={() => setShowDetailModal(false)} style={{ margin: 16 }}>
+          Close
+        </Button>
+      </View>
+    </Modal>
+  );
+
+  // Create forum modal
+  const renderCreateModal = () => (
+    <Modal
+      visible={showCreateModal}
+      animationType="slide"
+      onRequestClose={() => setShowCreateModal(false)}
+      transparent={false}
+    >
+      <View style={{ flex: 1, backgroundColor: BACKGROUND, padding: 16 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: TEXT_PRIMARY, marginBottom: 16 }}>New Discussion</Text>
+        <TextInput
+          style={{ borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 8, padding: 8, color: TEXT_PRIMARY, backgroundColor: CARD_BACKGROUND, marginBottom: 12 }}
+          placeholder="Title"
+          placeholderTextColor={TEXT_SECONDARY}
+          value={newPost.title}
+          onChangeText={text => setNewPost({ ...newPost, title: text })}
+        />
+        <TextInput
+          style={{ borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 8, padding: 8, color: TEXT_PRIMARY, backgroundColor: CARD_BACKGROUND, marginBottom: 12, minHeight: 80 }}
+          placeholder="Content"
+          placeholderTextColor={TEXT_SECONDARY}
+          value={newPost.content}
+          onChangeText={text => setNewPost({ ...newPost, content: text })}
+          multiline
+        />
+        <Text style={{ color: TEXT_SECONDARY, marginBottom: 4 }}>Category</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+          {categories.map(category => (
+            <Button
+              key={category.id}
+              mode={newPost.category === category.id ? 'contained' : 'outlined'}
+              onPress={() => setNewPost({ ...newPost, category: category.id })}
+              style={{ marginRight: 8 }}
+            >
+              {category.name}
+            </Button>
+          ))}
+        </ScrollView>
+        <Button mode="contained" onPress={handleCreatePost} style={{ marginBottom: 12 }}>
+          Create
+        </Button>
+        <Button mode="outlined" onPress={() => setShowCreateModal(false)}>
+          Cancel
+        </Button>
+      </View>
+    </Modal>
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={PRIMARY} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, { backgroundColor: PRIMARY }]}>
+        <Text style={[styles.headerTitle, { color: TEXT_PRIMARY }]}>Community Forum</Text>
+        <Text style={[styles.headerSubtitle, { color: TEXT_PRIMARY }]}>Connect, learn and share</Text>
+      </View>
+
+      <ScrollView 
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.searchContainer}>
+          <Searchbar
+            placeholder="Search discussions..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={[styles.searchBar, { backgroundColor: CARD_BACKGROUND }]}
+            inputStyle={{ color: TEXT_PRIMARY }}
+            iconColor={TEXT_SECONDARY}
+            placeholderTextColor={TEXT_SECONDARY}
+          />
+        </View>
+
+        <View style={styles.statsContainer}>
+          <Card style={[styles.statsCard, { backgroundColor: CARD_BACKGROUND, borderColor: BORDER_COLOR }]}>
+            <Card.Content>
+              <View style={styles.statsHeader}>
+                <Text style={[styles.statsTitle, { color: TEXT_PRIMARY }]}>Community Stats</Text>
+                <View style={styles.onlineIndicator}>
+                  <View style={[styles.onlineDot, { backgroundColor: SUCCESS }]} />
+                  <Text style={[styles.onlineText, { color: TEXT_SECONDARY }]}>{stats.onlineNow} online</Text>
+                </View>
+              </View>
+              <View style={styles.statsGrid}>
+                <View style={styles.statItem}>
+                  <MaterialCommunityIcons name="forum" size={24} color={PRIMARY} />
+                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Topics</Text>
+                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalTopics}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <MaterialCommunityIcons name="comment" size={24} color={PRIMARY} />
+                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Posts</Text>
+                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.totalPosts}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <MaterialCommunityIcons name="account-group" size={24} color={PRIMARY} />
+                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>Users</Text>
+                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.activeUsers}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <MaterialCommunityIcons name="calendar-today" size={24} color={PRIMARY} />
+                  <Text style={[styles.statLabel, { color: TEXT_SECONDARY }]}>New Today</Text>
+                  <Text style={[styles.statValue, { color: TEXT_PRIMARY }]}>{stats.newToday}</Text>
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+        </View>
+
+        <View style={styles.tabsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+            {['categories', 'recent', 'popular', 'unanswered'].map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tab,
+                  activeTab === tab && { borderBottomColor: PRIMARY, borderBottomWidth: 2 }
+                ]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[
+                  styles.tabText,
+                  { color: activeTab === tab ? PRIMARY : TEXT_SECONDARY }
+                ]}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {renderTabContent()}
+      </ScrollView>
+
+      {renderDetailModal()}
+      {renderCreateModal()}
+      <Button
+        mode="contained"
+        onPress={() => setShowCreateModal(true)}
+        style={[styles.newDiscussionButton, { backgroundColor: PRIMARY }]}
+        icon="plus"
+        labelStyle={{ color: TEXT_PRIMARY }}
+      >
+        New Discussion
+      </Button>
+    </View>
+  );
+}

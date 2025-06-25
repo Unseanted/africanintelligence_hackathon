@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Image } from 'react-native';
-import { Card, ActivityIndicator, Searchbar, Button, Text } from 'react-native-paper';
+import { Card, ActivityIndicator, Searchbar } from 'react-native-paper';
 import { useTourLMS } from '../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
 import { router } from 'expo-router';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
 import type { Course } from '../../contexts/TourLMSContext';
+import CourseContent from '../../components/CourseContent';
+
 
 export default function CoursesScreen() {
-  const { CoursesHub, loading: contextLoading, getCoursesHub } = useTourLMS();
+  const { CoursesHub, loading: contextLoading, getCoursesHub, enrolledCourses, enrollInCourse } = useTourLMS();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+ 
 
   useEffect(() => {
     if (CoursesHub.length > 0) {
@@ -84,50 +87,63 @@ export default function CoursesScreen() {
         }
       >
         <View style={styles.coursesGrid}>
-          {filteredCourses.length === 0 ? (
+          {Array.isArray(filteredCourses) && filteredCourses.length === 0 ? (
             <ThemedText type="secondary" style={styles.noCourses}>
               No courses found
             </ThemedText>
           ) : (
-            filteredCourses.map((course) => (
-              <Card
-                key={course._id}
-                style={styles.courseCard}
-                onPress={() => handleCoursePress(course._id)}
-              >
-                <View style={styles.imageContainer}>
-                  {course.thumbnail ? (
-                    <Image
-                      source={{ uri: course.thumbnail }}
-                      style={styles.courseImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={[styles.courseImage, styles.placeholderImage]}>
-                      <ThemedText type="secondary" style={styles.placeholderText}>
-                        {course.title.charAt(0)}
+            (filteredCourses || []).map((course) => {
+              const isEnrolled = enrolledCourses?.some(c => c._id === course._id);
+              return (
+                <Card
+                  key={course._id}
+                  style={styles.courseCard}
+                  onPress={() => handleCoursePress(course._id)}
+                >
+                  <View style={styles.imageContainer}>
+                    {course.thumbnail ? (
+                      <Image
+                        source={{ uri: course.thumbnail }}
+                        style={styles.courseImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.courseImage, styles.placeholderImage]}>
+                        <ThemedText type="secondary" style={styles.placeholderText}>
+                          {course.title.charAt(0)}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                  <Card.Content style={styles.cardContent}>
+                    <ThemedText type="primary" style={styles.courseTitle}>
+                      {course.title}
+                    </ThemedText>
+                    <ThemedText type="secondary" style={styles.courseDescription}>
+                      {course.description}
+                    </ThemedText>
+                    <View style={styles.courseMeta}>
+                      <ThemedText type="secondary" style={styles.metaText}>
+                        {course.category || 'Uncategorized'}
+                      </ThemedText>
+                      <ThemedText type="secondary" style={styles.metaText}>
+                        {course.totalStudents || 0} students
                       </ThemedText>
                     </View>
-                  )}
-                </View>
-                <Card.Content style={styles.cardContent}>
-                  <ThemedText type="primary" style={styles.courseTitle}>
-                    {course.title}
-                  </ThemedText>
-                  <ThemedText type="secondary" style={styles.courseDescription}>
-                    {course.description}
-                  </ThemedText>
-                  <View style={styles.courseMeta}>
-                    <ThemedText type="secondary" style={styles.metaText}>
-                      {course.category || 'Uncategorized'}
-                    </ThemedText>
-                    <ThemedText type="secondary" style={styles.metaText}>
-                      {course.totalStudents || 0} students
-                    </ThemedText>
-                  </View>
-                </Card.Content>
-              </Card>
-            ))
+                    <CourseContent
+                      course={{
+                        modules: course.modules || [],
+                        totalProgress: course.progress ?? 0
+                      }}
+                      isEnrolled={isEnrolled}
+                      onLessonPress={handleCoursePress}
+                      onEnroll={async () => { await enrollInCourse(course._id); }}
+                      onContinue={() => handleCoursePress(course._id)}
+                    />
+                  </Card.Content>
+                </Card>
+              );
+            })
           )}
         </View>
       </ScrollView>
