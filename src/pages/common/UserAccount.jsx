@@ -12,6 +12,9 @@ import { useTourLMS } from '../../contexts/TourLMSContext';
 import { useToast } from "@/hooks/use-toast";
 import { ocn } from '../../lib/basic';
 
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
+
 // For demo purposes - replace with your Mapbox token
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoia2FybGR3b3JsZCIsImEiOiJjbTl5cjd5azUwZGtzMmpzaG56YXVwaWt6In0.9VykK-o_WVHRnHj-G67yDQ'; // Replace with your Mapbox token
 
@@ -30,7 +33,7 @@ const UserAccount = ({ userType }) => {
     address: user?.address,
     specialization: user?.specialization,
     experience: user?.experience,
-    profilePicture: user?.profilePicture || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
+    profilePicture: user?.profilePicture || `${AVATAR_URL}?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
     certifications: user?.certifications || [],
     education: user?.education || [],
   });
@@ -111,7 +114,7 @@ const UserAccount = ({ userType }) => {
       address: user?.address,
       specialization: user?.specialization,
       experience: user?.experience,
-      profilePicture: user?.profilePicture || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
+      profilePicture: user?.profilePicture || `${AVATAR_URL}?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
       certifications: user?.certifications || [],
       education: user?.education || [],
     })
@@ -221,7 +224,7 @@ const UserAccount = ({ userType }) => {
       address: user?.address || '123 Main Street, Anytown, CA 94123',
       specialization: user?.specialization || 'Electrical Engineering',
       experience: user?.experience || '10 years',
-      profilePicture: user?.profilePicture || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
+      profilePicture: user?.profilePicture || `${AVATAR_URL}?name=${user?.name || 'User'}&background=f59e0b&color=fff`,
       certifications: user?.certifications || [
         { title: 'Master Electrician License', verified: true },
         { title: 'Safety Training Certification', verified: true },

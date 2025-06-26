@@ -8,6 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useToast } from '@/hooks/use-toast';
 
+// Required env: VITE_SOCKET_URL
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://africanapi.onrender.com';
+
 const AIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -23,7 +26,7 @@ const AIChatbot = () => {
   useEffect(() => {
     if (!token || !isOpen) return;
 
-    const newSocket = io('https://africanapi.onrender.com', {
+    const newSocket = io(SOCKET_URL, {
       path: '/socket.io',
       auth: { token },
       transports: ['websocket', 'polling'],

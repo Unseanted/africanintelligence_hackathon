@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/button';
 import { image_01, image_02 } from '../js/Data';
 import { useTourLMS } from "../contexts/TourLMSContext";
 
+// Required env: VITE_UNSPLASH_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2784&q=80';
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
@@ -301,7 +304,7 @@ const Index = () => {
                 >
                   <div className="aspect-video relative overflow-hidden">
                     <img 
-                      src={course.thumbnail || 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2784&q=80'} 
+                      src={course.thumbnail || UNSPLASH_URL} 
                       alt={course.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

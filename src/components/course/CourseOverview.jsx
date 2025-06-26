@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast"; // Added useToast for notifications
 
+// Suggestion: WhatsApp share base URL could be made configurable via environment variables if needed.
+
 const CourseOverview = ({ course, isEnrolled }) => {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const { toast } = useToast();

@@ -1,13 +1,13 @@
-
-import axios from 'axios';
+// Required env: VITE_API_URL
+import axios from "axios";
 
 // API base URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Configure axios defaults
 const configureAxios = (token) => {
   if (token) {
-    axios.defaults.headers.common['x-auth-token'] = token;
+    axios.defaults.headers.common["x-auth-token"] = token;
   }
 };
 
@@ -18,7 +18,7 @@ export const getUserChats = async (token) => {
     const response = await axios.get(`${API_URL}/chat`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching user chats:', error);
+    console.error("Error fetching user chats:", error);
     throw error;
   }
 };
@@ -42,7 +42,7 @@ export const createChat = async (chatData, token) => {
     const response = await axios.post(`${API_URL}/chat`, chatData);
     return response.data;
   } catch (error) {
-    console.error('Error creating chat:', error);
+    console.error("Error creating chat:", error);
     throw error;
   }
 };
@@ -51,7 +51,9 @@ export const createChat = async (chatData, token) => {
 export const sendMessage = async (chatId, content, token) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/chat/${chatId}/messages`, { content });
+    const response = await axios.post(`${API_URL}/chat/${chatId}/messages`, {
+      content,
+    });
     return response.data;
   } catch (error) {
     console.error(`Error sending message to chat ${chatId}:`, error);
@@ -66,7 +68,7 @@ export const getAvailableUsers = async (token) => {
     const response = await axios.get(`${API_URL}/chat/users/available`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching available users:', error);
+    console.error("Error fetching available users:", error);
     throw error;
   }
 };
