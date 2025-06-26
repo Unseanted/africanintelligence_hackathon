@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
+// Required env: VITE_UNSPLASH_URL, VITE_AVATAR_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1564648351416-3eec9f3e85de?auto=format&fit=crop&w=800&q=80';
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
+
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -173,7 +177,7 @@ const CourseDetail = () => {
         <div className="md:col-span-2">
           <div className="aspect-video rounded-xl overflow-hidden bg-slate-200">
             <img 
-              src={course.thumbnail ? course.thumbnail : `https://images.unsplash.com/photo-1564648351416-3eec9f3e85de?auto=format&fit=crop&w=800&q=80`}
+              src={course.thumbnail ? course.thumbnail : UNSPLASH_URL}
               alt={course.title}
               className="w-full h-full object-cover"
             />

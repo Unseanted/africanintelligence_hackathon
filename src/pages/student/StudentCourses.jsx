@@ -8,6 +8,9 @@ import { getLearnerCourses } from '@/api/courseService';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
+// Required env: VITE_UNSPLASH_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80';
+
 const EnrolledCourseCard = ({ course }) => {
   const completedPercent = course.progress || 0;
   
@@ -15,7 +18,7 @@ const EnrolledCourseCard = ({ course }) => {
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative">
         <img 
-          src={course.thumbnail || "https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80"} 
+          src={course.thumbnail || UNSPLASH_URL} 
           alt={course.title}
           className="h-40 w-full object-cover"
         />

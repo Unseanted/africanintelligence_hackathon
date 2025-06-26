@@ -3,6 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Upload, CheckCircle, Clock } from 'lucide-react';
 
+// Suggestion: YouTube and example.com base URLs could be made configurable via environment variables if needed.
+
 const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
   const [submission, setSubmission] = useState({
     answer: '',

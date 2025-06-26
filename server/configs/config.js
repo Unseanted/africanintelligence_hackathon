@@ -1,16 +1,18 @@
-const mongo_user = "MONGO-USER";
-const mongo_pass = "MONGO-PASS";
-const mongo_uri = "mongodb://localhost:27017/africanintelligence-lms";
-const mongo_uri2 = "YOUR-MONGODB-URL";
-const email_user = "EMAIL";
-const email_pass = "EMAIL-APP-PASSWORD";
-const vapid_public_key =
-  "BFjOfkQtzJot8TuKYyNUXMlKMfhAiuEeO2D9CLUnBY6MVFWZ-ASIybJbylG0DuLzyf-FOk9UcHszXiuxg0uQgTg";
-const vapid_private_key = "5QADIObIQ50gSRI5K4GbdAiHE2uECclF7XE4erVVwhA";
-const clientID =
-  "188551786189-lqiup6tmh71d75ci6foenmu343enkv60.apps.googleusercontent.com";
-const port = 3031;
-const mistral_api_key = "joEyjk3bE2iC6gSJ9Nu7wA5Pp9x2sSEm";
+const dotenv = require("dotenv");
+dotenv.config({path: process.env.NODE_ENV === "production" ? ".env.production" : ".env" });
+
+const mongo_user = process.env.MONGO_USER;
+const mongo_pass = process.env.MONGO_PASS;
+const mongo_uri = process.env.MONGO_URI;
+const mongo_uri2 = process.env.MONGO_URI2;
+const email_user = process.env.EMAIL_USER;
+const email_pass = process.env.EMAIL_PASS;
+const vapid_public_key = process.env.VAPID_PUBLIC_KEY;
+const vapid_private_key = process.env.VAPID_PRIVATE_KEY;
+const clientID = process.env.CLIENT_ID;
+const port = process.env.PORT;
+const mistral_api_key = process.env.MISTRAL_API_KEY;
+const jwt_secret = process.env.JWT_SECRET;
 
 module.exports = {
   mongo_uri2,
@@ -24,4 +26,8 @@ module.exports = {
   clientID,
   port,
   mistral_api_key,
+  jwt_secret,
+  email_user,
+  email_pass,
+  isProduction: process.env.NODE_ENV === "production",
 };

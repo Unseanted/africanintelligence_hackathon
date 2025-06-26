@@ -1,13 +1,14 @@
-import axios from 'axios';
-import { clg } from '../lib/basic';
+// Required env: VITE_API_URL
+import axios from "axios";
+import { clg } from "../lib/basic";
 
 // API base URL
-const API_URL = 'https://africanapi.onrender.com/api'//'http://localhost:7000/api'//;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:7000/api";
 
 // Configure axios defaults
 const configureAxios = (token) => {
   if (token) {
-    axios.defaults.headers.common['x-auth-token'] = token;
+    axios.defaults.headers.common["x-auth-token"] = token;
   }
 };
 
@@ -18,7 +19,7 @@ export const getAllCourses = async (token) => {
     const response = await axios.get(`${API_URL}/courses`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching courses:', error);
+    console.error("Error fetching courses:", error);
     throw error;
   }
 };
@@ -30,7 +31,7 @@ export const getFacilitatorCourses = async (token) => {
     const response = await axios.get(`${API_URL}/facilitator/courses`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching facilitator courses:', error);
+    console.error("Error fetching facilitator courses:", error);
     throw error;
   }
 };
@@ -42,7 +43,7 @@ export const getFacilitatorDraftCourses = async (token) => {
     const response = await axios.get(`${API_URL}/facilitator/courses/drafts`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching facilitator draft courses:', error);
+    console.error("Error fetching facilitator draft courses:", error);
     throw error;
   }
 };
@@ -70,12 +71,12 @@ export const createCourse = async (courseData, token) => {
   try {
     const response = await axios.post(`${API_URL}/courses`, courseData, {
       headers: {
-        'x-auth-token': token
-      }
+        "x-auth-token": token,
+      },
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating course:', error);
+    console.error("Error creating course:", error);
     throw error;
   }
 };
@@ -84,11 +85,15 @@ export const createCourse = async (courseData, token) => {
 export const updateCourse = async (courseId, courseData, token) => {
   configureAxios(token);
   try {
-    const response = await axios.put(`${API_URL}/courses/${courseId}`, courseData, {
-      headers: {
-        'x-auth-token': token
+    const response = await axios.put(
+      `${API_URL}/courses/${courseId}`,
+      courseData,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
     console.error(`Error updating course ${courseId}:`, error);
@@ -100,11 +105,14 @@ export const updateCourse = async (courseId, courseData, token) => {
 export const deleteCourse = async (courseId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.delete(`${API_URL}/facilitator/courses/${courseId}`, {
-      headers: {
-        'x-auth-token': token
+    const response = await axios.delete(
+      `${API_URL}/facilitator/courses/${courseId}`,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
     console.error(`Error deleting course ${courseId}:`, error);
@@ -116,7 +124,9 @@ export const deleteCourse = async (courseId, token) => {
 export const getCourseAnalytics = async (courseId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/facilitator/courses/${courseId}/analytics`);
+    const response = await axios.get(
+      `${API_URL}/facilitator/courses/${courseId}/analytics`
+    );
     return response.data;
   } catch (error) {
     console.error(`Error fetching analytics for course ${courseId}:`, error);
@@ -128,7 +138,9 @@ export const getCourseAnalytics = async (courseId, token) => {
 export const getCourseStudents = async (courseId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/facilitator/courses/${courseId}/students`);
+    const response = await axios.get(
+      `${API_URL}/facilitator/courses/${courseId}/students`
+    );
     return response.data;
   } catch (error) {
     console.error(`Error fetching students for course ${courseId}:`, error);
@@ -143,31 +155,41 @@ export const getLearnerCourses = async (token) => {
     const response = await axios.get(`${API_URL}/learner/courses`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching learner courses:', error);
+    console.error("Error fetching learner courses:", error);
     throw error;
   }
 };
 
 // Update module progress - renamed to updateCourseProgress to match backend API
-export const updateCourseProgress = async (courseId, moduleId, contentId, completed, token) => {
+export const updateCourseProgress = async (
+  courseId,
+  moduleId,
+  contentId,
+  completed,
+  token
+) => {
   configureAxios(token);
   try {
     // Make sure we're sending proper data
     if (!courseId || !moduleId || !contentId) {
-      console.error('Missing required parameters for updateCourseProgress');
-      throw new Error('Missing required parameters');
+      console.error("Missing required parameters for updateCourseProgress");
+      throw new Error("Missing required parameters");
     }
-    
-    const response = await axios.put(`${API_URL}/learner/courses/${courseId}/progress`, {
-      moduleId,
-      contentId,
-      completed
-    }, {
-      headers: {
-        'x-auth-token': token
+
+    const response = await axios.put(
+      `${API_URL}/learner/courses/${courseId}/progress`,
+      {
+        moduleId,
+        contentId,
+        completed,
+      },
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       }
-    });
-    
+    );
+
     return response.data;
   } catch (error) {
     console.error(`Error updating progress for module ${moduleId}:`, error);
@@ -176,8 +198,16 @@ export const updateCourseProgress = async (courseId, moduleId, contentId, comple
 };
 
 // For compatibility with previous code - this will be deprecated
-export const updateModuleProgress = (courseId, moduleId, contentId, completed, token) => {
-  console.warn('updateModuleProgress is deprecated, use updateCourseProgress instead');
+export const updateModuleProgress = (
+  courseId,
+  moduleId,
+  contentId,
+  completed,
+  token
+) => {
+  console.warn(
+    "updateModuleProgress is deprecated, use updateCourseProgress instead"
+  );
   return updateCourseProgress(courseId, moduleId, contentId, completed, token);
 };
 
@@ -185,9 +215,12 @@ export const updateModuleProgress = (courseId, moduleId, contentId, completed, t
 export const submitQuiz = async (courseId, moduleId, answers, token) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/courses/${courseId}/modules/${moduleId}/quiz`, {
-      answers
-    });
+    const response = await axios.post(
+      `${API_URL}/courses/${courseId}/modules/${moduleId}/quiz`,
+      {
+        answers,
+      }
+    );
     return response.data;
   } catch (error) {
     console.error(`Error submitting quiz for module ${moduleId}:`, error);
@@ -199,12 +232,16 @@ export const submitQuiz = async (courseId, moduleId, answers, token) => {
 export const enrollInCourse = async (courseId, token) => {
   configureAxios(token);
   try {
-clg('enroll id - ',courseId);    
-    const response = await axios.post(`${API_URL}/learner/courses/${courseId}/enroll`, {courseId}, {
-      headers: {
-        'x-auth-token': token
+    clg("enroll id - ", courseId);
+    const response = await axios.post(
+      `${API_URL}/learner/courses/${courseId}/enroll`,
+      { courseId },
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
     console.error(`Error enrolling in course ${courseId}:`, error);
@@ -215,13 +252,18 @@ clg('enroll id - ',courseId);
 // Check if enrolled in a course
 export const checkEnrollmentStatus = async (courseId, token) => {
   if (!courseId || !token) return false;
-  
+
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/courses/${courseId}/status`);
+    const response = await axios.get(
+      `${API_URL}/learner/courses/${courseId}/status`
+    );
     return response.data.isEnrolled;
   } catch (error) {
-    console.error(`Error checking enrollment status for course ${courseId}:`, error);
+    console.error(
+      `Error checking enrollment status for course ${courseId}:`,
+      error
+    );
     return false;
   }
 };
@@ -233,7 +275,10 @@ export const getEnrolledCourseWithProgress = async (courseId, token) => {
     const response = await axios.get(`${API_URL}/learner/courses/${courseId}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching enrolled course with progress ${courseId}:`, error);
+    console.error(
+      `Error fetching enrolled course with progress ${courseId}:`,
+      error
+    );
     throw error;
   }
 };
@@ -245,10 +290,13 @@ export const getStudentCourseProgress = async (courseId, token) => {
     const enrolledCourse = await getEnrolledCourseWithProgress(courseId, token);
     return {
       progress: enrolledCourse.progress || 0,
-      moduleProgress: enrolledCourse.moduleProgress || []
+      moduleProgress: enrolledCourse.moduleProgress || [],
     };
   } catch (error) {
-    console.error(`Error fetching student course progress for ${courseId}:`, error);
+    console.error(
+      `Error fetching student course progress for ${courseId}:`,
+      error
+    );
     throw error;
   }
 };
@@ -260,7 +308,7 @@ export const getStudentLearningMaterials = async (token) => {
     const response = await axios.get(`${API_URL}/learner/courses`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching student learning materials:', error);
+    console.error("Error fetching student learning materials:", error);
     throw error;
   }
 };
@@ -269,14 +317,18 @@ export const getStudentLearningMaterials = async (token) => {
 export const syncEnrollmentData = async (token) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/learner/sync-enrollments`, {}, {
-      headers: {
-        'x-auth-token': token
+    const response = await axios.post(
+      `${API_URL}/learner/sync-enrollments`,
+      {},
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
-    console.error('Error syncing enrollment data:', error);
+    console.error("Error syncing enrollment data:", error);
     throw error;
   }
 };
@@ -300,7 +352,7 @@ export const createForumPost = async (postData, token) => {
     const response = await axios.post(`${API_URL}/forum`, postData);
     return response.data;
   } catch (error) {
-    console.error('Error creating forum post:', error);
+    console.error("Error creating forum post:", error);
     throw error;
   }
 };
@@ -309,7 +361,9 @@ export const createForumPost = async (postData, token) => {
 export const addCommentToPost = async (postId, content, token) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/forum/${postId}/comments`, { content });
+    const response = await axios.post(`${API_URL}/forum/${postId}/comments`, {
+      content,
+    });
     return response.data;
   } catch (error) {
     console.error(`Error adding comment to post ${postId}:`, error);
@@ -321,10 +375,15 @@ export const addCommentToPost = async (postId, content, token) => {
 export const subscribeToCourseNotifications = async (courseId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/notifications/subscribe/course/${courseId}`);
+    const response = await axios.post(
+      `${API_URL}/notifications/subscribe/course/${courseId}`
+    );
     return response.data;
   } catch (error) {
-    console.error(`Error subscribing to course notifications for ${courseId}:`, error);
+    console.error(
+      `Error subscribing to course notifications for ${courseId}:`,
+      error
+    );
     throw error;
   }
 };
@@ -336,7 +395,7 @@ export const getLearningStats = async (token) => {
     const response = await axios.get(`${API_URL}/learner/stats`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching learning stats:', error);
+    console.error("Error fetching learning stats:", error);
     throw error;
   }
 };
@@ -348,7 +407,7 @@ export const getFacilitatorDashboardStats = async (token) => {
     const response = await axios.get(`${API_URL}/facilitator/dashboard`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching facilitator dashboard stats:', error);
+    console.error("Error fetching facilitator dashboard stats:", error);
     throw error;
   }
 };
@@ -360,24 +419,34 @@ export const getFacilitatorStudents = async (token) => {
     const response = await axios.get(`${API_URL}/facilitator/students`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching facilitator students:', error);
+    console.error("Error fetching facilitator students:", error);
     throw error;
   }
 };
 
 // Track video watch time
-export const trackVideoWatchTime = async (courseId, moduleId, contentId, watchTime, duration, token) => {
+export const trackVideoWatchTime = async (
+  courseId,
+  moduleId,
+  contentId,
+  watchTime,
+  duration,
+  token
+) => {
   configureAxios(token);
   try {
-    const response = await axios.post(`${API_URL}/learner/courses/${courseId}/watch-time`, {
-      moduleId,
-      contentId,
-      watchTime,
-      duration
-    });
+    const response = await axios.post(
+      `${API_URL}/learner/courses/${courseId}/watch-time`,
+      {
+        moduleId,
+        contentId,
+        watchTime,
+        duration,
+      }
+    );
     return response.data;
   } catch (error) {
-    console.error('Error tracking video watch time:', error);
+    console.error("Error tracking video watch time:", error);
     throw error;
   }
 };
@@ -386,10 +455,12 @@ export const trackVideoWatchTime = async (courseId, moduleId, contentId, watchTi
 export const checkModuleCompletion = async (courseId, moduleId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/courses/${courseId}/modules/${moduleId}/check-completion`);
+    const response = await axios.get(
+      `${API_URL}/learner/courses/${courseId}/modules/${moduleId}/check-completion`
+    );
     return response.data;
   } catch (error) {
-    console.error('Error checking module completion:', error);
+    console.error("Error checking module completion:", error);
     throw error;
   }
 };
@@ -400,7 +471,7 @@ export const rateCourse = async (courseId, rating, comment, token) => {
   try {
     const response = await axios.post(`${API_URL}/courses/${courseId}/rate`, {
       rating,
-      comment
+      comment,
     });
     return response.data;
   } catch (error) {

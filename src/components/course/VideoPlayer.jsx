@@ -5,6 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
 import { clg } from '../../lib/basic';
 
+// Suggestion: YouTube and Google Drive base URLs could be made configurable via environment variables if needed.
+
 // Utility function for exponential backoff retry
 const retryWithBackoff = async (fn, maxRetries = 3, initialDelay = 1000) => {
   let attempt = 0;

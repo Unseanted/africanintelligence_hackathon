@@ -1,4 +1,6 @@
 // swaggerOptions.js (or directly in app.js)
+
+const { port } = require('./configs/config.js'); // Ensure PORT is defined
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0", // Specify the OpenAPI version
@@ -9,7 +11,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3031/api",
+        url: `http://localhost:${port}/api`,
         description: "Development server",
       },
       // You can add more server URLs for production, staging, etc.

@@ -1,9 +1,15 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import axios from "axios";
 
 // API base URL
-const API_URL = 'http://194.164.76.213:7000/api';
+// const API_URL = 'http://194.164.76.213:7000/api';
+const API_URL = "http://localhost:3031/api";
 
 interface User {
   id: number | string;
@@ -33,7 +39,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -50,40 +56,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Set up axios defaults
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['x-auth-token'] = token;
+      axios.defaults.headers.common["x-auth-token"] = token;
     } else {
-      delete axios.defaults.headers.common['x-auth-token'];
+      delete axios.defaults.headers.common["x-auth-token"];
     }
   }, [token]);
 
   useEffect(() => {
     // Check for user and token in localStorage
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
-      axios.defaults.headers.common['x-auth-token'] = storedToken;
+      axios.defaults.headers.common["x-auth-token"] = storedToken;
     }
-    
+
     setLoading(false);
   }, []);
 
   const register = async (credentials: AuthCredentials): Promise<User> => {
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, credentials);
+      const response = await axios.post(
+        `${API_URL}/auth/register`,
+        credentials
+      );
       const { user, token } = response.data;
-      
+
       // Store user data and token
       setUser(user);
       setToken(token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', token);
-      
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
+
       return user;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       throw error;
     }
   };
@@ -92,16 +101,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await axios.post(`${API_URL}/auth/login`, credentials);
       const { user, token } = response.data;
-      
+
       // Store user data and token
       setUser(user);
       setToken(token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', token);
-      
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
+
       return user;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   };
@@ -110,8 +119,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Clean up local storage and state
     setUser(null);
     setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   const value = {
@@ -120,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     login,
     register,
     logout,
-    token
+    token,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

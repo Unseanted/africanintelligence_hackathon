@@ -1,3 +1,5 @@
+// Required env: VITE_UNSPLASH_SOURCE_URL
+const UNSPLASH_SOURCE_URL = import.meta.env.VITE_UNSPLASH_SOURCE_URL || 'https://source.unsplash.com/';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
@@ -93,7 +95,7 @@ const DraftCourses = () => {
             <Card key={course.key} className="overflow-hidden flex flex-col">
               <div className="aspect-video bg-gray-100 relative">
                 <img 
-                  src={`https://source.unsplash.com/${course.thumbnail || 'photo-1516321318423-f06f85e504b3'}`} 
+                  src={`${UNSPLASH_SOURCE_URL}${course.thumbnail || 'photo-1516321318423-f06f85e504b3'}`} 
                   alt={course.title} 
                   className="w-full h-full object-cover"
                 />

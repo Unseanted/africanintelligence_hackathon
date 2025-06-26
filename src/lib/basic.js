@@ -1,5 +1,6 @@
-
-const clientID='188551786189-lqiup6tmh71d75ci6foenmu343enkv60.apps.googleusercontent.com';
+// Required env: VITE_GOOGLE_CLIENT_ID
+const clientID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-fallback-client-id";
 
 var INC = {},
   UB;
@@ -21,7 +22,8 @@ function datemap(dm = "") {
     m = date("m", dm),
     d = date("dt", dm),
     o = {
-      ls:date('ls'),is:date('is'),
+      ls: date("ls"),
+      is: date("is"),
       f: date("f", dm),
       y: y,
       m: m,
@@ -32,7 +34,7 @@ function datemap(dm = "") {
       s: date("s", dm),
       ms: date("ms", dm),
       t: date("f", dm).split(" ")[4],
-      key:date('v')
+      key: date("v"),
     };
   return o;
 }
@@ -49,11 +51,11 @@ function date(r, dm) {
   if (r === "mn") v = o.getMinutes();
   if (r === "s") v = o.getSeconds();
   if (r === "ms") v = o.getMilliseconds();
-  if(r=='is')v=o.toISOString();
-  if(r=='st')v=o.toString();
-  if(r=='ls')v=o.toLocaleString();
-  if(r=='st')v=o.toString();
-  if(r=='v')v=o.valueOf();
+  if (r == "is") v = o.toISOString();
+  if (r == "st") v = o.toString();
+  if (r == "ls") v = o.toLocaleString();
+  if (r == "st") v = o.toString();
+  if (r == "v") v = o.valueOf();
   return v;
 }
 function $$$(e, i, c, at, y) {
@@ -89,8 +91,8 @@ function APP(p, c) {
 var iso = (el) => {
   return typeof el === "object";
 };
-function clg(t,ex) {
-  console.log(t,ex);
+function clg(t, ex) {
+  console.log(t, ex);
 }
 function ocn(o) {
   var c = 0;
@@ -498,23 +500,23 @@ function redtxt(el, tx) {
   //feedme(el,[icon('alerti','red'),span(tx,'red','',{color:'red'})]);
   el.style.color = "red";
 }
-function validate(ul,sk) {
-  var vali = '';
+function validate(ul, sk) {
+  var vali = "";
   for (var i in ul) {
     if (!ul[i].value && (!sk || !sk[i])) {
-      vali = ( "Enter " + i);
-      break
+      vali = "Enter " + i;
+      break;
     } else if (ul[i].type == "email") {
       if (!ebmail(ul[i].value)) {
-        vali = ("invalid email");
-        break
+        vali = "invalid email";
+        break;
       }
     } else if (
       ul[i].placeholder &&
       ul[i].placeholder.toLowerCase() == "gender"
     ) {
       if (!isgender(ul[i].value)) {
-        vali = ('gender must either be "male" or "female"');
+        vali = 'gender must either be "male" or "female"';
         break;
       }
     }
@@ -761,7 +763,7 @@ function jp(s) {
   }
 }
 function Js(o) {
-  return !jp(o)?o:JSON.stringify(o);
+  return !jp(o) ? o : JSON.stringify(o);
 }
 function js(o) {
   return JSON.stringify(o);
@@ -1799,50 +1801,64 @@ var uploadbox = (v) => {
     pb.f1({ c: "bpurple", p: o.p });
   }
 };
-function myhost(c){
-  return c?window.location.hostname=='localhost':window.location.hostname;
+function myhost(c) {
+  return c ? window.location.hostname == "localhost" : window.location.hostname;
 }
-function readme(t){
-  let a=window.localStorage.getItem(t);
+function readme(t) {
+  let a = window.localStorage.getItem(t);
   return jp(a);
 }
-function removeme(t){
+function removeme(t) {
   return window.localStorage.removeItem(t);
 }
-function storeme(t,o){if(!o)return;
-  window.localStorage.setItem(t,Js(o));
+function storeme(t, o) {
+  if (!o) return;
+  window.localStorage.setItem(t, Js(o));
 }
-function noscores(o){
-  var x=cto(['ass1','ass2','ca1','ca2','ex']),a=true;for(var i in o)for(var v in x)if(o[i][v]){a=false;break;};return a;
-}
-function mrgscores(o){
-  var a={},b=cto(['ass1','ass2','ca1','ca2','ex','ttl']),c=ocn(o);
-  for(var i in o)for(var v in o[i]){
-    if(!a[v]){
-      a[v]={};for(var r in b)a[v][r]=(o[i][v][r])?parse(o[i][v][r]):0;
-    }else{
-      for(var r in b)if(o[i][v][r])a[v][r]+=parse(o[i][v][r]);
-    }
-    
-  }
-  for(var i in a)for(var v in a[i])a[i][v]=rnd((a[i][v]/c),2);
+function noscores(o) {
+  var x = cto(["ass1", "ass2", "ca1", "ca2", "ex"]),
+    a = true;
+  for (var i in o)
+    for (var v in x)
+      if (o[i][v]) {
+        a = false;
+        break;
+      }
   return a;
-  
 }
-function mysiblin(o,e,f){clg(o);clg(e);
-  var a=cta(o),b='',c;
-  for(var i=0;i<ocn(a);i++){
-    if(a[i]==e){
-      if(f){
-        b=(i==(ocn(a)-1))?0:(i+1);
-      }else{
-        b=(i==0)?(ocn(a)-1):(i-1);
+function mrgscores(o) {
+  var a = {},
+    b = cto(["ass1", "ass2", "ca1", "ca2", "ex", "ttl"]),
+    c = ocn(o);
+  for (var i in o)
+    for (var v in o[i]) {
+      if (!a[v]) {
+        a[v] = {};
+        for (var r in b) a[v][r] = o[i][v][r] ? parse(o[i][v][r]) : 0;
+      } else {
+        for (var r in b) if (o[i][v][r]) a[v][r] += parse(o[i][v][r]);
+      }
+    }
+  for (var i in a) for (var v in a[i]) a[i][v] = rnd(a[i][v] / c, 2);
+  return a;
+}
+function mysiblin(o, e, f) {
+  clg(o);
+  clg(e);
+  var a = cta(o),
+    b = "",
+    c;
+  for (var i = 0; i < ocn(a); i++) {
+    if (a[i] == e) {
+      if (f) {
+        b = i == ocn(a) - 1 ? 0 : i + 1;
+      } else {
+        b = i == 0 ? ocn(a) - 1 : i - 1;
       }
     }
   }
-  c=(b||b.toString()=='0')?a[b]:e;
+  c = b || b.toString() == "0" ? a[b] : e;
   return c;
-  
 }
 function windowsize() {
   return {
@@ -1850,29 +1866,55 @@ function windowsize() {
     height: window.innerHeight,
   };
 }
-function nopikin(o){
-  var a=false;
-  for(var i in o)if(!o[i]){a=i;break;}
+function nopikin(o) {
+  var a = false;
+  for (var i in o)
+    if (!o[i]) {
+      a = i;
+      break;
+    }
   return a;
 }
-var mrgob=(a,b)=>{
-  var o={};
-  for(var i in a)o[i]=a[i];
-  for(var i in b)o[i]=b[i];
+var mrgob = (a, b) => {
+  var o = {};
+  for (var i in a) o[i] = a[i];
+  for (var i in b) o[i] = b[i];
   return o;
-}
-function rio(o,a,b){
-  var c={};for(var i in o)if(i!=a){c[i]=o[i]}else{if(typeof b=='object'){for(var v in b)c[v]=b[v];}else{c[b]=o[i];}};return c;
+};
+function rio(o, a, b) {
+  var c = {};
+  for (var i in o)
+    if (i != a) {
+      c[i] = o[i];
+    } else {
+      if (typeof b == "object") {
+        for (var v in b) c[v] = b[v];
+      } else {
+        c[b] = o[i];
+      }
+    }
+  return c;
 }
 function myage(dt) {
   let x = dt.split("-")[0];
   return parse(datemap().y) - parse(x);
 }
 
-
 export {
-  datemap,mysiblin,myhost,mrgscores,readme,storeme,removeme,windowsize,rio,
-  uploadpercent,nopikin,mrgob,myage,clientID,
+  datemap,
+  mysiblin,
+  myhost,
+  mrgscores,
+  readme,
+  storeme,
+  removeme,
+  windowsize,
+  rio,
+  uploadpercent,
+  nopikin,
+  mrgob,
+  myage,
+  clientID,
   fileinfo,
   percent,
   percentage,
@@ -1921,7 +1963,8 @@ export {
   clonetxt,
   jp,
   js,
-  Js,X,
+  Js,
+  X,
   mrgarrays,
   modal,
   phul2,
@@ -1935,7 +1978,9 @@ export {
   DIV,
   stotal,
   grade,
-  gradepoint,parseup,noscores,
+  gradepoint,
+  parseup,
+  noscores,
   postus,
   rnd,
   par,

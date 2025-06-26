@@ -1,3 +1,5 @@
+// Required env: VITE_UNSPLASH_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80';
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -34,7 +36,7 @@ const LandingPage = () => {
     <Card className="overflow-hidden transition-all hover:shadow-lg">
       <div className="aspect-video overflow-hidden">
         <img 
-          src={course.thumbnail || "https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80"} 
+          src={course.thumbnail || UNSPLASH_URL} 
           alt={course.title} 
           className="w-full h-full object-cover transition-transform hover:scale-105"
         />

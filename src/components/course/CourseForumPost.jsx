@@ -1,3 +1,5 @@
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
@@ -41,7 +43,7 @@ const CourseForumPost = ({ post, onLike, onComment, currentUserId }) => {
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={post.author?.profilePicture || `https://ui-avatars.com/api/?name=${post.author?.name || 'User'}&background=random`} />
+            <AvatarImage src={post.author?.profilePicture || `${AVATAR_URL}?name=${post.author?.name || 'User'}&background=random`} />
             <AvatarFallback>{(post.author?.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
@@ -91,7 +93,7 @@ const CourseForumPost = ({ post, onLike, onComment, currentUserId }) => {
               post.comments.map((comment, index) => (
                 <div key={index} className="flex gap-3 py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.author?.profilePicture || `https://ui-avatars.com/api/?name=${comment.author?.name || 'User'}&background=random`} />
+                    <AvatarImage src={comment.author?.profilePicture || `${AVATAR_URL}?name=${comment.author?.name || 'User'}&background=random`} />
                     <AvatarFallback>{(comment.author?.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="space-y-1 flex-1 overflow-hidden">

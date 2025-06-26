@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { forumCategories } from '../../data/forumData';
 
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
+
 const ModerationTools = ({ thread, onModerate }) => {
   const [action, setAction] = useState('');
   const [reason, setReason] = useState('');
