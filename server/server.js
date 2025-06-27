@@ -22,7 +22,14 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerOptions = require("./swagger");
 const dbConnection = require("./configs/database");
-const { port, jwt_secret, vapid_public_key, vapid_private_key, isProduction } = require("./configs/config");
+const {
+  port,
+  jwt_secret,
+  vapid_public_key,
+  vapid_private_key,
+  isProduction,
+} = require("./configs/config");
+const analyticsRoutes = require("./routes/analytics");
 
 // Configure the environment
 require("dotenv").config();
@@ -79,6 +86,7 @@ async function startServer() {
     app.use("/api/challenges", challengesRoutes);
     app.use("/api/events", eventsRoutes);
     app.use("/api/badges", badgeRoutes);
+    app.use("/api/analytics", analyticsRoutes);
 
     // Serve static files in production
     if (isProduction) {
@@ -86,7 +94,7 @@ async function startServer() {
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
       });
-    } 
+    }
 
     // Start the server
     const server = app.listen(PORT, () => {
