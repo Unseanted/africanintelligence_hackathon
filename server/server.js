@@ -30,6 +30,7 @@ const {
   isProduction,
 } = require("./configs/config");
 const analyticsRoutes = require("./routes/analytics");
+const contentRoutes = require("./routes/content");
 
 // Configure the environment
 require("dotenv").config();
@@ -87,6 +88,7 @@ async function startServer() {
     app.use("/api/events", eventsRoutes);
     app.use("/api/badges", badgeRoutes);
     app.use("/api/analytics", analyticsRoutes);
+    app.use("/api/content", contentRoutes);
 
     // Serve static files in production
     if (isProduction) {

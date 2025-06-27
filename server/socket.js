@@ -6,6 +6,7 @@ const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 const { vapid_private_key, mistral_api_key } = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
 const Student = require("./models/Student");
+const ForumPost = require("./models/Forum");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -331,6 +332,106 @@ const setupSocket = (server, db) => {
         code: "CONNECTION_ERROR",
       });
     });
+
+    // --- FORUM SOCKET EVENTS ---
+    // Helper: calculate forum stats
+    async function getForumStats(posts) {
+      const totalTopics = posts.length;
+      const totalPosts = posts.reduce(
+        (acc, post) => acc + (post.comments ? post.comments.length : 0),
+        0
+      );
+      const activeUsers = new Set(posts.map((post) => post.authorId.toString()))
+        .size;
+      const onlineNow = 42; // Dummy value
+      return { totalTopics, totalPosts, activeUsers, onlineNow };
+    }
+
+    // forum:get_data - send all posts and stats
+    socket.on("forum:get_data", async () => {
+      try {
+        const posts = await ForumPost.find({}).lean();
+        const categories = [...new Set(posts.map((post) => post.category))];
+        const stats = await getForumStats(posts);
+        socket.emit("forum:data", { posts, categories, stats });
+      } catch (err) {
+        socket.emit("error", { message: "Failed to fetch forum data." });
+      }
+    });
+
+    // forum:create_post - create a new post
+    socket.on("forum:create_post", async (data) => {
+      try {
+        const { title, content, category } = data;
+        const post = await ForumPost.create({
+          title,
+          content,
+          category,
+          authorId: socket.user._id,
+          comments: [],
+          likes: 0,
+          likedBy: [],
+        });
+        const postObj = post.toObject();
+        io.emit("forum:new_post", postObj);
+        // Optionally, update stats for all
+        const posts = await ForumPost.find({}).lean();
+        const stats = await getForumStats(posts);
+        io.emit("forum:stats", stats);
+      } catch (err) {
+        socket.emit("error", { message: "Failed to create post." });
+      }
+    });
+
+    // forum:create_comment - add a comment to a post
+    socket.on("forum:create_comment", async (data) => {
+      try {
+        const { postId, content } = data;
+        const comment = {
+          authorId: socket.user._id,
+          content,
+          createdAt: new Date(),
+        };
+        const post = await ForumPost.findByIdAndUpdate(
+          postId,
+          { $push: { comments: comment } },
+          { new: true }
+        );
+        if (post) {
+          io.emit("forum:new_comment", { postId, comment });
+          // Optionally, update stats for all
+          const posts = await ForumPost.find({}).lean();
+          const stats = await getForumStats(posts);
+          io.emit("forum:stats", stats);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to add comment." });
+      }
+    });
+
+    // forum:toggle_like - like/unlike a post (idempotent)
+    socket.on("forum:toggle_like", async (data) => {
+      try {
+        const { postId } = data;
+        const userId = socket.user._id;
+        const post = await ForumPost.findById(postId);
+        if (!post) return socket.emit("error", { message: "Post not found." });
+        const likedIdx = post.likedBy.findIndex(
+          (id) => id.toString() === userId.toString()
+        );
+        if (likedIdx === -1) {
+          post.likedBy.push(userId);
+        } else {
+          post.likedBy.splice(likedIdx, 1);
+        }
+        post.likes = post.likedBy.length;
+        await post.save();
+        io.emit("forum:post_updated", { _id: post._id, likes: post.likes });
+      } catch (err) {
+        socket.emit("error", { message: "Failed to toggle like." });
+      }
+    });
+    // --- END FORUM SOCKET EVENTS ---
   });
 
   return io;
