@@ -8,7 +8,6 @@ const adminRoutes = require("./routes/adminRoutes");
 const facilitatorRoutes = require("./routes/facilitatorRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const courseRoutes = require("./routes/course");
-const forumRoutes = require("./routes/forum");
 const notificationRoutes = require("./routes/notification");
 const assistantConvoRoutes = require("./routes/assistantconvo");
 const eventsRoutes = require("./routes/events");
@@ -80,7 +79,6 @@ async function startServer() {
     app.use("/api/facilitator", facilitatorRoutes);
     app.use("/api/learner", studentRoutes);
     app.use("/api/courses", courseRoutes);
-    app.use("/api/forum", forumRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);
     app.use("/api/assistant", assistantConvoRoutes);

@@ -14,8 +14,8 @@ import { io } from 'socket.io-client';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 
-// Required env: VITE_AI_ASSISTANT_URL
-const AI_ASSISTANT_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 /*
   Setup:
@@ -84,13 +84,13 @@ const AIAssistantPage = () => {
     if (!token) return;
     const fetchChats = async () => {
       try {
-        const res = await axios.get(`${AI_ASSISTANT_URL}/assistant/conversations`, {
+        const res = await axios.get(`${API_URL}/assistant/conversations`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const conversations = Array.isArray(res.data) ? res.data : [];
         // Fetch messages for each conversation
         const chatsWithMessages = await Promise.all(conversations.map(async (conv) => {
-          const msgRes = await axios.get(`${AI_ASSISTANT_URL}/assistant/conversations/${conv._id}/messages`, {
+          const msgRes = await axios.get(`${API_URL}/assistant/conversations/${conv._id}/messages`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           return { ...conv, id: conv._id, messages: Array.isArray(msgRes.data) ? msgRes.data : [] };
@@ -117,7 +117,7 @@ const AIAssistantPage = () => {
   // WebSocket connection
   useEffect(() => {
     if (!token) return;
-    const newSocket = io(AI_ASSISTANT_URL, {
+    const newSocket = io(SOCKET_URL, {
       transports: ['websocket'],
       auth: { token }
     });
@@ -158,7 +158,7 @@ const AIAssistantPage = () => {
   const createNewChat = async () => {
     try {
       const newChatReq = { title: 'New Conversation', aiModel: selectedModel };
-      const res = await axios.post(`${AI_ASSISTANT_URL}/assistant/conversations`, newChatReq, {
+      const res = await axios.post(`${API_URL}/assistant/conversations`, newChatReq, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -178,7 +178,7 @@ const AIAssistantPage = () => {
   // Delete chat
   const deleteChat = async (chatId) => {
     try {
-      await axios.delete(`${AI_ASSISTANT_URL}/assistant/conversations/${chatId}`, {
+      await axios.delete(`${API_URL}/assistant/conversations/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setChatHistory(prev => prev.filter(c => c.id !== chatId));

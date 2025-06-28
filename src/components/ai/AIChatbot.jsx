@@ -8,8 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useToast } from '@/hooks/use-toast';
 
-// Required env: VITE_SOCKET_URL
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://africanapi.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+const API_URL = import.meta.env.VITE_API_URL;
+const DEFAULT_MODEL = 'mistral-large-latest';
 
 const AIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,21 +19,45 @@ const AIChatbot = () => {
   const [chat, setChat] = useState([]);
   const [socket, setSocket] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const { currentCourse, currentLesson, token, API_URL } = useTourLMS();
+  const [conversationId, setConversationId] = useState(null);
+  const { currentCourse, currentLesson, token } = useTourLMS();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // On open, create a new conversation
+  useEffect(() => {
+    if (!isOpen || conversationId || !token) return;
+    const createConversation = async () => {
+      try {
+        const res = await fetch(`${API_URL}/assistant/conversations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: 'Popup Chat',
+            aiModel: DEFAULT_MODEL
+          })
+        });
+        const data = await res.json();
+        if (data && data.conversation && data.conversation.id) {
+          setConversationId(data.conversation.id);
+        }
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to start chat', variant: 'destructive' });
+      }
+    };
+    createConversation();
+  }, [isOpen, conversationId, token, API_URL, toast]);
 
   // Initialize WebSocket connection
   useEffect(() => {
     if (!token || !isOpen) return;
 
     const newSocket = io(SOCKET_URL, {
-      path: '/socket.io',
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      transports: ['websocket'],
+      auth: { token }
     });
 
     newSocket.on('connect', () => {
@@ -40,9 +65,11 @@ const AIChatbot = () => {
     });
 
     newSocket.on('ai:response', (data) => {
+      const aiMsg = data.message;
+      if (aiMsg.conversationId !== conversationId) return;
       setChat(prev => [...prev, { 
         role: 'assistant', 
-        content: data.message,
+        content: aiMsg.content,
         timestamp: new Date(data.timestamp)
       }]);
       setIsTyping(false);
@@ -83,11 +110,11 @@ const AIChatbot = () => {
     return () => {
       newSocket.close();
     };
-  }, [token, isOpen]);
+  }, [token, isOpen, SOCKET_URL, toast]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() || isTyping || !socket) return;
+    if (!message.trim() || isTyping || !socket || !conversationId) return;
 
     // Add user message to chat
     const userMessage = {
@@ -104,6 +131,11 @@ const AIChatbot = () => {
     socket.emit('ai:message', {
       message: userMessage.content,
       context: {
+        conversationId,
+        aiModel: DEFAULT_MODEL,
+        role: 'user',
+        tokenCount: 0,
+        timestamp: Date.now(),
         courseId: currentCourse?.id,
         lessonId: currentLesson?.id
       }

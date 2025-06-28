@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, SendHorizonal, BookOpen, Sparkles, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTourLMS } from '@/contexts/TourLMSContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { io } from 'socket.io-client';
 
 const AI_ASSISTANT_URL = import.meta.env.VITE_API_URL;
@@ -20,7 +20,7 @@ const AIAssistant = ({ courseId, currentLesson }) => {
   const messagesEndRef = useRef(null);
   const [conversationId, setConversationId] = useState(null);
   const [socket, setSocket] = useState(null);
-  const { token } = useTourLMS();
+  const { token } = useAuth();
   const { toast } = useToast();
 
   // Initial system message with context
@@ -136,7 +136,7 @@ const AIAssistant = ({ courseId, currentLesson }) => {
       )}
 
       {/* Assistant Panel */}
-      {isOpen && (
+      {!isOpen && (
         <Card className="fixed bottom-8 right-8 w-96 h-[32rem] flex flex-col shadow-xl">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
