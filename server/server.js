@@ -8,7 +8,6 @@ const adminRoutes = require("./routes/adminRoutes");
 const facilitatorRoutes = require("./routes/facilitatorRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const courseRoutes = require("./routes/course");
-const forumRoutes = require("./routes/forum");
 const notificationRoutes = require("./routes/notification");
 const assistantConvoRoutes = require("./routes/assistantconvo");
 const eventsRoutes = require("./routes/events");
@@ -22,7 +21,15 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerOptions = require("./swagger");
 const dbConnection = require("./configs/database");
-const { port, jwt_secret, vapid_public_key, vapid_private_key, isProduction } = require("./configs/config");
+const {
+  port,
+  jwt_secret,
+  vapid_public_key,
+  vapid_private_key,
+  isProduction,
+} = require("./configs/config");
+const analyticsRoutes = require("./routes/analytics");
+const contentRoutes = require("./routes/content");
 
 // Configure the environment
 require("dotenv").config();
@@ -72,13 +79,14 @@ async function startServer() {
     app.use("/api/facilitator", facilitatorRoutes);
     app.use("/api/learner", studentRoutes);
     app.use("/api/courses", courseRoutes);
-    app.use("/api/forum", forumRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);
     app.use("/api/assistant", assistantConvoRoutes);
     app.use("/api/challenges", challengesRoutes);
     app.use("/api/events", eventsRoutes);
     app.use("/api/badges", badgeRoutes);
+    app.use("/api/analytics", analyticsRoutes);
+    app.use("/api/content", contentRoutes);
 
     // Serve static files in production
     if (isProduction) {
@@ -86,7 +94,7 @@ async function startServer() {
       app.get("*", (req, res) => {
         res.sendFile(path.resolve(__dirname, "../build", "index.html"));
       });
-    } 
+    }
 
     // Start the server
     const server = app.listen(PORT, () => {

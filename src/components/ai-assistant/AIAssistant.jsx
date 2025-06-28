@@ -5,7 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, SendHorizonal, BookOpen, Sparkles, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTourLMS } from '@/contexts/TourLMSContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { io } from 'socket.io-client';
+
+const AI_ASSISTANT_URL = import.meta.env.VITE_API_URL;
+
+const DEFAULT_MODEL = 'mistral-large-latest';
 
 const AIAssistant = ({ courseId, currentLesson }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +18,9 @@ const AIAssistant = ({ courseId, currentLesson }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
-  const { token } = useTourLMS();
+  const [conversationId, setConversationId] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const { token } = useAuth();
   const { toast } = useToast();
 
   // Initial system message with context
@@ -43,41 +50,72 @@ const AIAssistant = ({ courseId, currentLesson }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // On open, create a new conversation
+  useEffect(() => {
+    if (!isOpen || conversationId || !token) return;
+    const createConversation = async () => {
+      try {
+        const res = await fetch(`${AI_ASSISTANT_URL}/assistant/conversations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: 'Popup Chat',
+            aiModel: DEFAULT_MODEL
+          })
+        });
+        const data = await res.json();
+        if (data && data.conversation && data.conversation.id) {
+          setConversationId(data.conversation.id);
+        }
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to start chat', variant: 'destructive' });
+      }
+    };
+    createConversation();
+  }, [isOpen, conversationId, token]);
+
+  // WebSocket connection
+  useEffect(() => {
+    if (!token || !isOpen) return;
+    const newSocket = io(AI_ASSISTANT_URL, {
+      transports: ['websocket'],
+      auth: { token }
+    });
+    newSocket.on('ai:response', (data) => {
+      const aiMsg = data.message;
+      setMessages(prev => [...prev, { role: 'assistant', content: aiMsg.content }]);
+      setIsLoading(false);
+    });
+    newSocket.on('ai:typing', (typing) => setIsLoading(typing));
+    setSocket(newSocket);
+    return () => { newSocket.close(); };
+  }, [token, isOpen]);
+
+  // Message send handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage = { role: "user", content: input };
+    if (!input.trim() || isLoading || !socket || !conversationId) return;
+    const userMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-
     try {
-      const response = await fetch('/api/ai/assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          messages: [systemMessage, ...messages, userMessage],
-          courseId,
-          lessonId: currentLesson?.id
-        })
+      socket.emit('ai:message', {
+        message: input,
+        context: {
+          conversationId,
+          aiModel: DEFAULT_MODEL,
+          role: 'user',
+          tokenCount: 0,
+          timestamp: Date.now()
+        }
       });
-
-      if (!response.ok) throw new Error('Failed to get AI response');
-
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: "assistant", content: data.response }]);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to get response from AI assistant",
-        variant: "destructive"
-      });
-    } finally {
+    } catch (err) {
       setIsLoading(false);
+      toast({ title: 'Error', description: 'Failed to send message', variant: 'destructive' });
     }
   };
 
@@ -98,7 +136,7 @@ const AIAssistant = ({ courseId, currentLesson }) => {
       )}
 
       {/* Assistant Panel */}
-      {isOpen && (
+      {!isOpen && (
         <Card className="fixed bottom-8 right-8 w-96 h-[32rem] flex flex-col shadow-xl">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">

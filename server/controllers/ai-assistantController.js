@@ -20,7 +20,7 @@ async function createConversation(req, res) {
       });
     }
 
-    const { title = "New Conversation", aiModel = "gpt-3.5-turbo" } = value;
+    const { title = "New Conversation", aiModel = "mistral-large-latest" } = value;
     const userId = req.user.userId;
 
     const conversation = new AIConversation({

@@ -17,7 +17,7 @@ router.use(auth);
 
 /**
  * @swagger
- * /api/assistant/conversations:
+ * /assistant/conversations:
  *   post:
  *     summary: Create a new conversation
  *     tags: [Chat]
@@ -50,7 +50,7 @@ router.post(
 
 /**
  * @swagger
- * /api/assistant/conversations:
+ * /assistant/conversations:
  *   get:
  *     summary: Get all conversations
  *     tags: [Chat]
@@ -64,7 +64,7 @@ router.get("/conversations", getConversations);
 
 /**
  * @swagger
- * /api/assistant/conversations/{conversationId}/messages:
+ * /assistant/conversations/{conversationId}/messages:
  *   get:
  *     summary: Get messages in a conversation
  *     tags: [Chat]
@@ -86,7 +86,7 @@ router.get("/conversations/:conversationId/messages", getMessages);
 
 /**
  * @swagger
- * /api/assistant/conversations/{conversationId}:
+ * /assistant/conversations/{conversationId}:
  *   delete:
  *     summary: Delete a conversation
  *     tags: [Chat]
