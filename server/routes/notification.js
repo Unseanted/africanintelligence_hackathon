@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const { ObjectId } = require("mongodb");
 const webpush = require("web-push");
+const ForumPost = require("../models/Forum");
 
 /**
  * @swagger
@@ -606,12 +607,10 @@ router.post("/test", auth, async (req, res) => {
     if (result.success) {
       res.json({ message: "Test notification sent successfully" });
     } else {
-      res
-        .status(400)
-        .json({
-          message: "Failed to send test notification",
-          details: result.message,
-        });
+      res.status(400).json({
+        message: "Failed to send test notification",
+        details: result.message,
+      });
     }
   } catch (error) {
     console.error("Error sending test notification:", error);
@@ -719,10 +718,8 @@ const sendForumNotification = async (
   isReply = false
 ) => {
   try {
-    // Get post details
-    const post = await db
-      .collection("forum_posts")
-      .findOne({ _id: new ObjectId(postId) });
+    // Get post details using Mongoose model
+    const post = await ForumPost.findById(postId);
     const author = await db
       .collection("users")
       .findOne({ _id: new ObjectId(authorId) });
@@ -771,6 +768,53 @@ const sendForumNotification = async (
     return { success: false, error };
   }
 };
+
+// Test forum notification (for debugging)
+router.post("/test-forum", auth, async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { postId, authorId, courseId, isReply = false } = req.body;
+
+    if (!postId || !authorId) {
+      return res.status(400).json({
+        message: "postId and authorId are required",
+      });
+    }
+
+    // Get all users to notify
+    const allUsers = await db
+      .collection("users")
+      .find({
+        role: { $in: ["student", "facilitator"] },
+      })
+      .toArray();
+    const recipientIds = allUsers.map((user) => user._id.toString());
+
+    const result = await sendForumNotification(
+      db,
+      postId,
+      authorId,
+      courseId || null,
+      recipientIds,
+      isReply
+    );
+
+    if (result.success) {
+      res.json({
+        message: "Forum notification test sent successfully",
+        results: result.results,
+      });
+    } else {
+      res.status(400).json({
+        message: "Failed to send forum notification test",
+        details: result.message,
+      });
+    }
+  } catch (error) {
+    console.error("Error sending forum notification test:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // Export router and notification functions
 module.exports = router;

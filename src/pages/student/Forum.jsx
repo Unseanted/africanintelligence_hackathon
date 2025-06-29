@@ -9,6 +9,7 @@ import { Search, MessageCircle, Users, TrendingUp } from 'lucide-react';
 import ForumCategories from '@/components/forum/ForumCategories';
 import ForumTopics from '@/components/forum/ForumTopics';
 import ForumGuidelinesModal from '@/components/forum/ForumGuidelinesModal';
+import NotificationTest from '@/components/forum/NotificationTest';
 import { getCommunityForum, getForumCategories, togglePostLike } from '@/api/forumService';
 import { useTourLMS } from '@/contexts/TourLMSContext';
 import { useToast } from '@/hooks/use-toast';
@@ -187,32 +188,36 @@ const Forum = () => {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-red-500" />
-              Forum Stats
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Topics:</span>
-                <Badge variant="secondary">{stats.totalTopics}</Badge>
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-red-500" />
+                Forum Stats
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Topics:</span>
+                  <Badge variant="secondary">{stats.totalTopics}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Posts:</span>
+                  <Badge variant="secondary">{stats.totalPosts}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active Users:</span>
+                  <Badge variant="secondary">{stats.activeUsers}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Online Now:</span>
+                  <Badge variant="secondary">{stats.onlineNow}</Badge>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Posts:</span>
-                <Badge variant="secondary">{stats.totalPosts}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Active Users:</span>
-                <Badge variant="secondary">{stats.activeUsers}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Online Now:</span>
-                <Badge variant="secondary">{stats.onlineNow}</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          
+          <NotificationTest />
+        </div>
       </div>
 
       <Tabs defaultValue="topics" className="space-y-6">

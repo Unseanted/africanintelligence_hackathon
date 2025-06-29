@@ -15,7 +15,6 @@ const ForumPostSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   comments: [CommentSchema],
   likes: { type: Number, default: 0 },
-  likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }], // for idempotency, not exposed to frontend
 });
 
 module.exports = mongoose.model("ForumPost", ForumPostSchema);
