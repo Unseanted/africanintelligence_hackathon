@@ -6,16 +6,81 @@ import { useTourLMS } from '../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSocket } from '../../services/socketService';
-import { useXP } from '../../contexts/XPContext';
+
+// Type definitions
+interface Course {
+  _id: string;
+  title: string;
+  category?: string;
+  thumbnail?: string;
+  progress?: number;
+  nextModule?: string;
+  facilitatorName?: string;
+  instructor?: string;
+  totalLessons?: number;
+  completedLessons?: number;
+  totalQuizzes?: number;
+  completedQuizzes?: number;
+  averageScore?: number;
+  points?: number;
+  xp?: number;
+  completed?: boolean;
+  certificateIssued?: boolean;
+  lastAccessedAt?: string;
+  shortDescription?: string;
+  description?: string;
+  enrollment?: {
+    moduleProgress?: Array<{
+      contentProgress?: Array<{
+        contentId: string;
+        lastAccessedAt?: string;
+        completed?: boolean;
+      }>;
+    }>;
+  };
+}
+
+interface Activity {
+  courseTitle: string;
+  contentTitle: string;
+  lastAccessedAt: Date;
+}
+
+interface UserStats {
+  totalPoints: number;
+  rank: number;
+  completedChallenges: number;
+  activeChallenges: number;
+  currentStreak: number;
+  totalXp: number;
+  totalEnrolled: number;
+  certificatesEarned: number;
+  completedLessons: number;
+  totalLessons: number;
+  completedQuizzes: number;
+  totalQuizzes: number;
+  averageScore: number;
+  lastActive: Date;
+  streakDays: number;
+}
 
 export default function StudentDashboardScreen() {
   const router = useRouter();
-  const { enrolledCourses, CoursesHub, user, token } = useTourLMS();
-  const { userXP, awardXP } = useXP();
+  const {
+    enrolledCourses,
+    CoursesHub,
+    user,
+    token,
+    userXP,
+    awardXP,
+    fetchUserXP,
+    packLoad
+  } = useTourLMS();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [userStats, setUserStats] = useState({
+  const [userStats, setUserStats] = useState<UserStats>({
     totalPoints: 0,
     rank: 0,
     completedChallenges: 0,
@@ -32,84 +97,92 @@ export default function StudentDashboardScreen() {
     lastActive: new Date(),
     streakDays: 0,
   });
-  const [categories, setCategories] = useState([]);
-  const [relatedCourses, setRelatedCourses] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [relatedCourses, setRelatedCourses] = useState<Course[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const socket = useSocket();
 
-  useEffect(() => {
-    const fetchEnrolledCourses = async () => {
-      if (!token) return;
-      
-      try {
-        setLoading(true);
-        const courses = enrolledCourses || [];
-        
-        // Extract unique categories from enrolled courses
-        const uniqueCategories = [...new Set(courses.map(course => (course.category || "").toLowerCase()).filter(cat => cat))];
-        setCategories(uniqueCategories);
+  const fetchEnrolledCourses = async () => {
+    if (!token) return;
 
-        // Update user stats
-        setUserStats({
-          totalPoints: courses.reduce((sum, course) => sum + (course.points || 0), 0),
-          rank: Math.floor(Math.random() * 100) + 1, // Placeholder for actual rank
-          completedChallenges: courses.filter(c => c.completed).length,
-          activeChallenges: courses.filter(c => !c.completed).length,
-          currentStreak: calculateStreak(courses),
-          totalXp: courses.reduce((sum, course) => sum + (course.xp || 0), 0),
-          totalEnrolled: courses.length,
-          certificatesEarned: courses.filter(c => c.certificateIssued).length,
-          completedLessons: courses.reduce((sum, course) => sum + (course.completedLessons || 0), 0),
-          totalLessons: courses.reduce((sum, course) => sum + (course.totalLessons || 0), 0),
-          completedQuizzes: courses.reduce((sum, course) => sum + (course.completedQuizzes || 0), 0),
-          totalQuizzes: courses.reduce((sum, course) => sum + (course.totalQuizzes || 0), 0),
-          averageScore: courses.reduce((sum, course) => sum + (course.averageScore || 0), 0) / courses.length,
-          lastActive: new Date(courses[0]?.lastAccessedAt || new Date()),
-          streakDays: calculateStreak(courses),
-        });
+    try {
+      setLoading(true);
+      const courses: Course[] = enrolledCourses || [];
 
-        // Find related courses
-        const enrolledCourseIds = new Set(courses.map(course => course._id));
-        const related = CoursesHub.filter(course => 
-          !enrolledCourseIds.has(course._id) && 
-          uniqueCategories.includes((course.category || "").toLowerCase())
-        ).slice(0, 3);
-        setRelatedCourses(related);
+      // Extract unique categories from enrolled courses
+      const uniqueCategories: string[] = [...new Set(courses.map(course => (course.category || "").toLowerCase()).filter(cat => cat))];
+      setCategories(uniqueCategories);
 
-        // Calculate recent activities
-        const activities = [];
-        courses.forEach(course => {
-          const enrollment = course.enrollment || {};
-          const moduleProgress = enrollment.moduleProgress || [];
-          moduleProgress.forEach(module => {
-            const contentProgress = module.contentProgress || [];
-            contentProgress.forEach(content => {
-              if (content.lastAccessedAt && content.completed) {
-                activities.push({
-                  courseTitle: course.title,
-                  contentTitle: content.contentId,
-                  lastAccessedAt: new Date(content.lastAccessedAt)
-                });
-              }
-            });
+      // Update user stats
+      const totalLessons = courses.reduce((sum, course) => sum + (course.totalLessons || 0), 0);
+      const completedLessons = courses.reduce((sum, course) => sum + (course.completedLessons || 0), 0);
+      const totalQuizzes = courses.reduce((sum, course) => sum + (course.totalQuizzes || 0), 0);
+      const completedQuizzes = courses.reduce((sum, course) => sum + (course.completedQuizzes || 0), 0);
+      const averageScore = courses.length > 0
+        ? courses.reduce((sum, course) => sum + (course.averageScore || 0), 0) / courses.length
+        : 0;
+
+      setUserStats({
+        totalPoints: courses.reduce((sum, course) => sum + (course.points || 0), 0),
+        rank: Math.floor(Math.random() * 100) + 1, // Placeholder for actual rank
+        completedChallenges: courses.filter(c => c.completed).length,
+        activeChallenges: courses.filter(c => !c.completed).length,
+        currentStreak: calculateStreak(courses),
+        totalXp: courses.reduce((sum, course) => sum + (course.xp || 0), 0),
+        totalEnrolled: courses.length,
+        certificatesEarned: courses.filter(c => c.certificateIssued).length,
+        completedLessons,
+        totalLessons,
+        completedQuizzes,
+        totalQuizzes,
+        averageScore,
+        lastActive: new Date(courses[0]?.lastAccessedAt || new Date()),
+        streakDays: calculateStreak(courses),
+      });
+
+      // Find related courses
+      const enrolledCourseIds = new Set(courses.map(course => course._id));
+      const related: Course[] = (CoursesHub || []).filter(course =>
+        !enrolledCourseIds.has(course._id) &&
+        uniqueCategories.includes((course.category || "").toLowerCase())
+      ).slice(0, 3);
+      setRelatedCourses(related);
+
+      // Calculate recent activities
+      const activities: Activity[] = [];
+      courses.forEach(course => {
+        const enrollment = course.enrollment || {};
+        const moduleProgress = enrollment.moduleProgress || [];
+        moduleProgress.forEach(module => {
+          const contentProgress = module.contentProgress || [];
+          contentProgress.forEach(content => {
+            if (content.lastAccessedAt && content.completed) {
+              activities.push({
+                courseTitle: course.title,
+                contentTitle: content.contentId,
+                lastAccessedAt: new Date(content.lastAccessedAt)
+              });
+            }
           });
         });
-        activities.sort((a, b) => b.lastAccessedAt - a.lastAccessedAt);
-        setRecentActivities(activities.slice(0, 3));
-      } catch (error) {
-        console.error('Error fetching enrolled courses:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
+      });
+      activities.sort((a, b) => b.lastAccessedAt.getTime() - a.lastAccessedAt.getTime());
+      setRecentActivities(activities.slice(0, 3));
+    } catch (error) {
+      console.error('Error fetching enrolled courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchEnrolledCourses();
   }, [enrolledCourses, CoursesHub, token]);
 
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('challenge:stats', (stats) => {
+    socket.on('challenge:stats', (stats: Partial<UserStats>) => {
       setUserStats(prev => ({
         ...prev,
         ...stats
@@ -121,37 +194,37 @@ export default function StudentDashboardScreen() {
     };
   }, [socket]);
 
-  const calculateStreak = (courses) => {
+  const calculateStreak = (courses: Course[]): number => {
     if (!courses || courses.length === 0) return 0;
-    
+
     const sortedCourses = [...courses].sort((a, b) => {
       const dateA = new Date(a.lastAccessedAt || 0);
       const dateB = new Date(b.lastAccessedAt || 0);
-      return dateB - dateA;
+      return dateB.getTime() - dateA.getTime();
     });
-    
+
     const mostRecent = new Date(sortedCourses[0].lastAccessedAt || 0);
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const isToday = mostRecent.toDateString() === today.toDateString();
     const isYesterday = mostRecent.toDateString() === yesterday.toDateString();
-    
+
     if (isToday || isYesterday) {
       return Math.max(1, Math.min(courses.length * 2, 8));
     }
-    
+
     return 0;
   };
 
-  const filteredCourses = activeCategory === "all" 
-    ? enrolledCourses 
-    : enrolledCourses.filter(course => (course.category || "").toLowerCase().includes(activeCategory));
+  const filteredCourses = activeCategory === "all"
+    ? (enrolledCourses || [])
+    : (enrolledCourses || []).filter(course => (course.category || "").toLowerCase().includes(activeCategory));
 
-  const formatDate = (date) => {
+  const formatDate = (date: Date): string => {
     const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     return date.toLocaleDateString();
@@ -159,8 +232,23 @@ export default function StudentDashboardScreen() {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    fetchEnrolledCourses().finally(() => setRefreshing(false));
-  }, []);
+    Promise.all([
+      fetchEnrolledCourses(),
+      fetchUserXP()
+    ]).finally(() => setRefreshing(false));
+  }, [fetchUserXP]);
+
+  const handleCoursePress = (courseId: string) => {
+    router.push(`/course/${courseId}`);
+  };
+
+  const handleEnrollPress = async (courseId: string) => {
+    try {
+      await router.push(`/course/${courseId}`);
+    } catch (error) {
+      console.error('Error navigating to course:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -171,7 +259,7 @@ export default function StudentDashboardScreen() {
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -183,9 +271,9 @@ export default function StudentDashboardScreen() {
         <Text style={styles.welcomeSubtitle}>
           Your journey into advanced AI education continues. Track your progress, join events, and connect with fellow learners.
         </Text>
-        <Button 
+        <Button
           mode="contained"
-          onPress={() => router.push('/(tabs)/courses')}
+          onPress={() => router.replace('./courses')}
           style={styles.browseButton}
         >
           Browse More Courses
@@ -201,11 +289,14 @@ export default function StudentDashboardScreen() {
               <Text style={styles.statTitle}>Total XP</Text>
             </View>
             <Text style={styles.statValue}>{userXP?.totalXP || 0}</Text>
-            <ProgressBar 
-              progress={userXP ? (userXP.totalXP / (userXP.nextLevelXP + userXP.totalXP)) : 0} 
+            <ProgressBar
+              progress={userXP && userXP.nextLevelXP > 0 ? (userXP.currentLevelXP / userXP.nextLevelXP) : 0}
               color={PRIMARY}
               style={styles.progressBar}
             />
+            <Text style={styles.statSubtitle}>
+              Level {userXP?.level || 1} • {userXP?.currentLevelXP || 0}/{userXP?.nextLevelXP || 100} XP
+            </Text>
           </Card.Content>
         </Card>
 
@@ -216,17 +307,20 @@ export default function StudentDashboardScreen() {
               <Text style={styles.statTitle}>Progress</Text>
             </View>
             <Text style={styles.statValue}>
-              {userStats.totalLessons > 0 
+              {userStats.totalLessons > 0
                 ? Math.round((userStats.completedLessons / userStats.totalLessons) * 100)
                 : 0}%
             </Text>
-            <ProgressBar 
-              progress={userStats.totalLessons > 0 
-                ? (userStats.completedLessons / userStats.totalLessons) 
-                : 0} 
+            <ProgressBar
+              progress={userStats.totalLessons > 0
+                ? (userStats.completedLessons / userStats.totalLessons)
+                : 0}
               color={PRIMARY}
               style={styles.progressBar}
             />
+            <Text style={styles.statSubtitle}>
+              {userStats.completedLessons}/{userStats.totalLessons} lessons
+            </Text>
           </Card.Content>
         </Card>
 
@@ -236,7 +330,7 @@ export default function StudentDashboardScreen() {
               <MaterialCommunityIcons name="fire" size={24} color={PRIMARY} />
               <Text style={styles.statTitle}>Current Streak</Text>
             </View>
-            <Text style={styles.statValue}>{userStats.currentStreak} days</Text>
+            <Text style={styles.statValue}>{userXP?.streak?.current || userStats.currentStreak} days</Text>
             <Text style={styles.statSubtitle}>Keep it up!</Text>
           </Card.Content>
         </Card>
@@ -245,9 +339,9 @@ export default function StudentDashboardScreen() {
           <Card.Content>
             <View style={styles.statHeader}>
               <MaterialCommunityIcons name="target" size={24} color={PRIMARY} />
-              <Text style={styles.statTitle}>Challenges</Text>
+              <Text style={styles.statTitle}>Courses</Text>
             </View>
-            <Text style={styles.statValue}>0/1</Text>
+            <Text style={styles.statValue}>{userStats.completedChallenges}/{userStats.totalEnrolled}</Text>
             <Text style={styles.statSubtitle}>Completed</Text>
           </Card.Content>
         </Card>
@@ -260,9 +354,9 @@ export default function StudentDashboardScreen() {
             <Text style={styles.sectionTitle}>Your Learning Journey</Text>
             <Text style={styles.sectionSubtitle}>Continue where you left off</Text>
           </View>
-          
-          <ScrollView 
-            horizontal 
+
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.categoryScroll}
           >
@@ -280,7 +374,7 @@ export default function StudentDashboardScreen() {
                 onPress={() => setActiveCategory(category)}
                 style={styles.categoryChip}
               >
-                {category}
+                {category.charAt(0).toUpperCase() + category.slice(1)}
               </Chip>
             ))}
           </ScrollView>
@@ -292,13 +386,13 @@ export default function StudentDashboardScreen() {
               <MaterialCommunityIcons name="book-open" size={48} color={TEXT_SECONDARY} />
               <Text style={styles.emptyTitle}>No courses found</Text>
               <Text style={styles.emptySubtitle}>
-                {activeCategory === 'all' 
-                  ? "You haven't enrolled in any courses yet." 
+                {activeCategory === 'all'
+                  ? "You haven't enrolled in any courses yet."
                   : `You don't have any ${activeCategory} courses yet.`}
               </Text>
-              <Button 
+              <Button
                 mode="contained"
-                onPress={() => router.push('/(tabs)/courses')}
+                onPress={() => router.push('./courses')}
                 style={styles.emptyButton}
               >
                 Browse Courses
@@ -308,27 +402,27 @@ export default function StudentDashboardScreen() {
         ) : (
           <View style={styles.courseGrid}>
             {filteredCourses.map((course) => (
-              <Card 
+              <Card
                 key={course._id}
                 style={styles.courseCard}
-                onPress={() => router.push(`/course/${course._id}`)}
+                onPress={() => handleCoursePress(course._id)}
               >
-                <Card.Cover 
-                  source={{ 
+                <Card.Cover
+                  source={{
                     uri: course.thumbnail || 'https://via.placeholder.com/800x400'
-                  }} 
+                  }}
                   style={styles.courseImage}
                 />
                 <Card.Content style={styles.courseContent}>
-                  <Text style={styles.courseTitle} numberOfLines={1}>
+                  <Text style={styles.courseTitle} numberOfLines={2}>
                     {course.title}
                   </Text>
                   <View style={styles.progressContainer}>
                     <Text style={styles.progressText}>Progress</Text>
                     <Text style={styles.progressValue}>{course.progress || 0}%</Text>
                   </View>
-                  <ProgressBar 
-                    progress={(course.progress || 0) / 100} 
+                  <ProgressBar
+                    progress={(course.progress || 0) / 100}
                     color={PRIMARY}
                     style={styles.progressBar}
                   />
@@ -342,13 +436,13 @@ export default function StudentDashboardScreen() {
                     <View style={styles.metaItem}>
                       <MaterialCommunityIcons name="account" size={16} color={TEXT_SECONDARY} />
                       <Text style={styles.metaText}>
-                        {course.facilitatorName || "Unknown"}
+                        {course.facilitatorName || course.instructor || "Unknown"}
                       </Text>
                     </View>
                   </View>
-                  <Button 
+                  <Button
                     mode="contained"
-                    onPress={() => router.push(`/course/${course._id}`)}
+                    onPress={() => handleCoursePress(course._id)}
                     style={styles.continueButton}
                   >
                     Continue Learning
@@ -372,38 +466,38 @@ export default function StudentDashboardScreen() {
               </View>
             ) : (
               relatedCourses.map((course) => (
-                <Card 
+                <Card
                   key={course._id}
                   style={styles.relatedCourseCard}
-                  onPress={() => router.push(`/course/${course._id}`)}
+                  onPress={() => handleEnrollPress(course._id)}
                 >
                   <Card.Content style={styles.relatedCourseContent}>
-                    <Card.Cover 
-                      source={{ 
+                    <Card.Cover
+                      source={{
                         uri: course.thumbnail || 'https://via.placeholder.com/800x400'
-                      }} 
+                      }}
                       style={styles.relatedCourseImage}
                     />
                     <View style={styles.relatedCourseInfo}>
-                      <Text style={styles.relatedCourseTitle} numberOfLines={1}>
+                      <Text style={styles.relatedCourseTitle} numberOfLines={2}>
                         {course.title}
                       </Text>
                       <Text style={styles.relatedCourseDescription} numberOfLines={2}>
-                        {course.shortDescription || "No description available."}
+                        {course.shortDescription || course.description || "No description available."}
                       </Text>
                       <View style={styles.relatedCourseMeta}>
                         <MaterialCommunityIcons name="account" size={16} color={TEXT_SECONDARY} />
                         <Text style={styles.relatedCourseInstructor}>
-                          {course.facilitatorName || "Unknown"}
+                          {course.facilitatorName || course.instructor || "Unknown"}
                         </Text>
                       </View>
                     </View>
-                    <Button 
+                    <Button
                       mode="outlined"
-                      onPress={() => router.push(`/course/${course._id}`)}
+                      onPress={() => handleEnrollPress(course._id)}
                       style={styles.enrollButton}
                     >
-                      Enroll
+                      View
                     </Button>
                   </Card.Content>
                 </Card>
@@ -504,6 +598,7 @@ const styles = StyleSheet.create({
   statSubtitle: {
     fontSize: 12,
     color: TEXT_SECONDARY,
+    marginTop: 4,
   },
   progressBar: {
     height: 4,
@@ -614,6 +709,7 @@ const styles = StyleSheet.create({
   relatedCourseContent: {
     flexDirection: 'row',
     padding: 8,
+    alignItems: 'center',
   },
   relatedCourseImage: {
     width: 80,
@@ -682,4 +778,4 @@ const styles = StyleSheet.create({
     color: TEXT_SECONDARY,
     marginTop: 4,
   },
-}); 
+});
