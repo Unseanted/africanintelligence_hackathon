@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const contentVersionSchema = new Schema({
   content: { type: Schema.Types.ObjectId, ref: "Content", required: true },
   versionNumber: { type: Number, required: true },
+  message: { type: String, required: true },
   fullContent: { type: String, required: true },
   contributor: { type: Schema.Types.ObjectId, ref: "User", required: true },
   status: {
