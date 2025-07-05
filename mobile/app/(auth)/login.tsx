@@ -26,6 +26,17 @@ export default function LoginScreen() {
     redirectUri: 'exp://localhost:19000/--/oauth2redirect/google'
   });
 
+  // Safe navigation function
+  const navigateToApp = () => {
+    try {
+      router.replace('/' as any); // Navigate to root
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback navigation
+      router.push('/');
+    }
+  };
+
   const handleGoogleResponse = useCallback(async (token: string | undefined) => {
     if (!token) return;
     
@@ -44,12 +55,16 @@ export default function LoginScreen() {
 
       const result = await response.json();
       if (response.ok && result.user && result.token) {
+        // Store authentication data in context
         await login(result.user.email, '');
+        
         toast({
           title: "Access Granted!",
           description: `Welcome back, ${result.user.name}, to African Intelligence!`,
         });
-        router.replace('/(tabs)/student');
+        
+        // Navigate to main app
+        navigateToApp();
       } else {
         throw new Error(result.message || 'Google login failed');
       }
@@ -88,15 +103,19 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await login(email, password);
+      
       toast({
         title: "Access Granted!",
         description: "Welcome back to African Intelligence!",
       });
-      router.replace('/(tabs)/student');
+      
+      // Navigate to main app
+      navigateToApp();
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
-        description: error?.message || "Something went wrong. Please try again.",
+        description: error?.message || "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -129,6 +148,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             style={styles.input}
             theme={{ colors: { primary: PRIMARY } }}
+            disabled={loading}
           />
           <TextInput
             label="Password"
@@ -138,17 +158,22 @@ export default function LoginScreen() {
             secureTextEntry
             style={styles.input}
             theme={{ colors: { primary: PRIMARY } }}
+            disabled={loading}
           />
           
-          <SegmentedButtons
-            value={role}
-            onValueChange={setRole}
-            buttons={[
-              { value: 'student', label: 'Student' },
-              { value: 'facilitator', label: 'Facilitator' },
-            ]}
-            style={styles.roleSelector}
-          />
+          <View style={[styles.roleSelector, { opacity: loading ? 0.5 : 1 }]}>
+            <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>
+              Login as:
+            </Text>
+            <SegmentedButtons
+              value={role}
+              onValueChange={setRole}
+              buttons={[
+                { value: 'student', label: 'Student' },
+                { value: 'facilitator', label: 'Facilitator' },
+              ]}
+            />
+          </View>
 
           <Button
             mode="contained"
@@ -175,6 +200,7 @@ export default function LoginScreen() {
             mode="text"
             onPress={() => router.push('/register')}
             style={styles.registerButton}
+            disabled={loading}
           >
             Don&apos;t have an account? Register here
           </Button>
@@ -219,6 +245,11 @@ const styles = StyleSheet.create({
   roleSelector: {
     marginVertical: 8,
   },
+  roleLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
   button: {
     marginTop: 8,
   },
@@ -229,4 +260,4 @@ const styles = StyleSheet.create({
   registerButton: {
     marginTop: 16,
   },
-}); 
+});
