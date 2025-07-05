@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, FileText, Video, Edit2, Save, Trash2, Plus } from 'lucide-react';
+import { Loader2, FileText, Video, Edit2, Trash2, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
@@ -26,14 +25,35 @@ const ContentAnalyzer = () => {
     { id: 'short-answer', label: 'Short Answer' }
   ];
 
+  const analyzeContent = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/analyze-content', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Analysis failed');
+      
+      const data = await response.json();
+      return data.questions || [];
+    } catch (error) {
+      console.error('Analysis error:', error);
+      throw error;
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     setIsAnalyzing(true);
     setGenerationProgress(0);
+
     try {
-      // Simulate progress updates
+      // Real-time progress simulation (replace with actual progress updates if available)
       const progressInterval = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev >= 90) {
@@ -44,8 +64,7 @@ const ContentAnalyzer = () => {
         });
       }, 500);
 
-      // Analyze content and generate questions
-      const generatedQuestions = await contentAnalysisService.analyzeContent(file);
+      const generatedQuestions = await analyzeContent(file);
       
       clearInterval(progressInterval);
       setGenerationProgress(100);
@@ -53,18 +72,15 @@ const ContentAnalyzer = () => {
       setContent({
         type: file.type.includes('pdf') ? 'pdf' : 'video',
         name: file.name,
-        size: file.size,
-        file: file
+        size: file.size
       });
 
       setQuestions(generatedQuestions);
-      toast.success(`Generated ${generatedQuestions.length} questions successfully!`);
+      toast.success('Content analyzed successfully!');
     } catch (error) {
       toast.error('Failed to analyze content');
-      console.error('Analysis error:', error);
     } finally {
       setIsAnalyzing(false);
-      setGenerationProgress(0);
     }
   };
 
@@ -75,15 +91,11 @@ const ContentAnalyzer = () => {
       question: '',
       options: selectedQuestionType === 'mcq' ? ['', '', '', ''] : [],
       correctAnswer: selectedQuestionType === 'mcq' ? 0 : 
-                    selectedQuestionType === 'true-false' ? true : '',
+                   selectedQuestionType === 'true-false' ? true : '',
       sampleAnswer: selectedQuestionType === 'short-answer' ? '' : undefined
     };
     setQuestions([...questions, newQuestion]);
     setEditingQuestion(newQuestion.id);
-  };
-
-  const handleEditQuestion = (questionId) => {
-    setEditingQuestion(questionId);
   };
 
   const handleSaveQuestion = (questionId, updatedQuestion) => {
@@ -91,12 +103,39 @@ const ContentAnalyzer = () => {
       q.id === questionId ? { ...q, ...updatedQuestion } : q
     ));
     setEditingQuestion(null);
-    toast.success('Question saved successfully');
   };
 
   const handleDeleteQuestion = (questionId) => {
     setQuestions(questions.filter(q => q.id !== questionId));
-    toast.success('Question deleted');
+  };
+
+  const handleExportQuestions = async () => {
+    try {
+      const response = await fetch('/api/export-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          questions
+        })
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `questions-${content?.name || 'export'}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Questions exported successfully');
+    } catch (error) {
+      toast.error('Failed to export questions');
+    }
   };
 
   return (
@@ -110,7 +149,7 @@ const ContentAnalyzer = () => {
             <div className="flex items-center gap-4">
               <Input
                 type="file"
-                accept=".pdf,video/*"
+                accept=".pdf,.mp4,.webm,.mov"
                 onChange={handleFileUpload}
                 ref={fileInputRef}
                 className="hidden"
@@ -125,10 +164,7 @@ const ContentAnalyzer = () => {
                     Analyzing...
                   </>
                 ) : (
-                  <>
-                    {content?.type === 'pdf' ? <FileText className="mr-2 h-4 w-4" /> : <Video className="mr-2 h-4 w-4" />}
-                    Upload Content
-                  </>
+                  'Upload Content'
                 )}
               </Button>
               {content && (
@@ -140,7 +176,7 @@ const ContentAnalyzer = () => {
 
             {isAnalyzing && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Generating questions...</span>
                   <span>{generationProgress}%</span>
                 </div>
@@ -153,10 +189,8 @@ const ContentAnalyzer = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">Generated Questions</h3>
-                    <p className="text-sm text-gray-500">
-                      {questions.length} questions generated ({questions.filter(q => q.type === 'mcq').length} MCQ,{' '}
-                      {questions.filter(q => q.type === 'true-false').length} True/False,{' '}
-                      {questions.filter(q => q.type === 'short-answer').length} Short Answer)
+                    <p className="text-sm text-muted-foreground">
+                      {questions.length} questions
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -175,14 +209,22 @@ const ContentAnalyzer = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button onClick={handleAddQuestion}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Question
+                    <Button onClick={handleAddQuestion} size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add
+                    </Button>
+                    <Button 
+                      onClick={handleExportQuestions} 
+                      variant="secondary" 
+                      size="sm"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export
                     </Button>
                   </div>
                 </div>
 
-                <ScrollArea className="h-[600px] pr-4">
+                <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-4">
                     {questions.map(question => (
                       <Card key={question.id}>
@@ -195,8 +237,9 @@ const ContentAnalyzer = () => {
                                   ...question,
                                   question: e.target.value
                                 })}
-                                placeholder="Enter your question"
+                                placeholder="Enter question"
                               />
+                              
                               {question.type === 'mcq' && (
                                 <div className="space-y-2">
                                   {question.options.map((option, index) => (
@@ -214,13 +257,12 @@ const ContentAnalyzer = () => {
                                         placeholder={`Option ${index + 1}`}
                                       />
                                       <Button
-                                        variant="ghost"
+                                        variant={question.correctAnswer === index ? 'default' : 'outline'}
                                         size="sm"
                                         onClick={() => handleSaveQuestion(question.id, {
                                           ...question,
                                           correctAnswer: index
                                         })}
-                                        className={question.correctAnswer === index ? 'bg-green-100' : ''}
                                       >
                                         Correct
                                       </Button>
@@ -228,48 +270,28 @@ const ContentAnalyzer = () => {
                                   ))}
                                 </div>
                               )}
-                              {question.type === 'true-false' && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant={question.correctAnswer === true ? 'default' : 'outline'}
-                                    onClick={() => handleSaveQuestion(question.id, {
-                                      ...question,
-                                      correctAnswer: true
-                                    })}
-                                  >
-                                    True
-                                  </Button>
-                                  <Button
-                                    variant={question.correctAnswer === false ? 'default' : 'outline'}
-                                    onClick={() => handleSaveQuestion(question.id, {
-                                      ...question,
-                                      correctAnswer: false
-                                    })}
-                                  >
-                                    False
-                                  </Button>
-                                </div>
-                              )}
-                              {question.type === 'short-answer' && (
-                                <Textarea
-                                  value={question.sampleAnswer}
-                                  onChange={(e) => handleSaveQuestion(question.id, {
-                                    ...question,
-                                    sampleAnswer: e.target.value
-                                  })}
-                                  placeholder="Enter sample answer"
-                                />
-                              )}
+                              
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setEditingQuestion(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  onClick={() => setEditingQuestion(null)}
+                                >
+                                  Save
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <div className="space-y-2">
                               <div className="flex items-start justify-between">
-                                <div className="space-y-1">
+                                <div>
                                   <p className="font-medium">{question.question}</p>
-                                  <Badge variant="outline" className="text-xs">
-                                    {question.type === 'mcq' ? 'Multiple Choice' :
-                                     question.type === 'true-false' ? 'True/False' :
-                                     'Short Answer'}
+                                  <Badge variant="outline" className="mt-1">
+                                    {question.type}
                                   </Badge>
                                 </div>
                                 <div className="flex gap-2">
@@ -289,33 +311,6 @@ const ContentAnalyzer = () => {
                                   </Button>
                                 </div>
                               </div>
-                              {question.type === 'mcq' && (
-                                <div className="space-y-1">
-                                  {question.options.map((option, index) => (
-                                    <div
-                                      key={index}
-                                      className={`p-2 rounded ${
-                                        question.correctAnswer === index
-                                          ? 'bg-green-100 text-green-800'
-                                          : 'bg-gray-100'
-                                      }`}
-                                    >
-                                      {option}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              {question.type === 'true-false' && (
-                                <Badge variant="secondary">
-                                  Correct Answer: {question.correctAnswer ? 'True' : 'False'}
-                                </Badge>
-                              )}
-                              {question.type === 'short-answer' && (
-                                <div className="bg-gray-100 p-2 rounded">
-                                  <p className="text-sm font-medium">Sample Answer:</p>
-                                  <p className="text-sm">{question.sampleAnswer}</p>
-                                </div>
-                              )}
                             </div>
                           )}
                         </CardContent>
@@ -332,4 +327,4 @@ const ContentAnalyzer = () => {
   );
 };
 
-export default ContentAnalyzer; 
+export default ContentAnalyzer;

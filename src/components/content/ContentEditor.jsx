@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  FileText, 
-  GitBranch, 
-  GitCommit, 
-  GitPullRequest,
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import {
+  FileText,
+  GitBranch,
   Save,
   Eye,
   Code2,
@@ -23,16 +25,21 @@ import {
   AlignCenter,
   AlignRight,
   Undo,
-  Redo,
-  History
+  Redo
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 
-const ContentEditor = ({ contentId, onSave, onPreview }) => {
+const ContentEditor= ({
+  contentId,
+  initialContent,
+  onSave,
+  onPreview,
+  contentTypes = [
+    { value: 'lesson', label: 'Lesson' },
+    { value: 'exercise', label: 'Exercise' },
+    { value: 'quiz', label: 'Quiz' },
+    { value: 'resource', label: 'Resource' }
+  ]
+}) => {
   const [content, setContent] = useState({
     title: '',
     description: '',
@@ -50,24 +57,38 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
       link: null,
       image: null,
       code: false
-    }
+    },
+    ...initialContent
   });
 
   const [editorState, setEditorState] = useState({
     isDirty: false,
-    lastSaved: null,
+    lastSaved: Date,
     history: [],
-    currentHistoryIndex: -1
+    currentHistoryIndex: -1,
+    isSaving: false
   });
+
+  // Initialize with default content if provided
+  useEffect(() => {
+    if (initialContent) {
+      setContent(initialContent);
+      setEditorState(prev => ({
+        ...prev,
+        history: [initialContent],
+        currentHistoryIndex: 0
+      }));
+    }
+  }, [initialContent]);
 
   const handleContentChange = (field, value) => {
     setContent(prev => {
       const newContent = { ...prev, [field]: value };
-      setEditorState(prev => ({
-        ...prev,
+      setEditorState(prevState => ({
+        ...prevState,
         isDirty: true,
-        history: [...prev.history.slice(0, prev.currentHistoryIndex + 1), newContent],
-        currentHistoryIndex: prev.currentHistoryIndex + 1
+        history: [...prevState.history.slice(0, prevState.currentHistoryIndex + 1), newContent],
+        currentHistoryIndex: prevState.currentHistoryIndex + 1
       }));
       return newContent;
     });
@@ -91,17 +112,21 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
           newFormatting.list = prev.formatting.list === value ? null : value;
           break;
         case 'link':
-          const url = prompt('Enter URL:');
-          if (url) {
-            newFormatting.link = url;
+          {
+            const url = prompt('Enter URL:');
+            if (url) {
+              newFormatting.link = url;
+            }
+            break;
           }
-          break;
         case 'image':
-          const imageUrl = prompt('Enter image URL:');
-          if (imageUrl) {
-            newFormatting.image = imageUrl;
+          {
+            const imageUrl = prompt('Enter image URL:');
+            if (imageUrl) {
+              newFormatting.image = imageUrl;
+            }
+            break;
           }
-          break;
       }
 
       const newContent = {
@@ -109,56 +134,71 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
         formatting: newFormatting
       };
 
-      setEditorState(prev => ({
-        ...prev,
+      setEditorState(prevState => ({
+        ...prevState,
         isDirty: true,
-        history: [...prev.history.slice(0, prev.currentHistoryIndex + 1), newContent],
-        currentHistoryIndex: prev.currentHistoryIndex + 1
+        history: [...prevState.history.slice(0, prevState.currentHistoryIndex + 1), newContent],
+        currentHistoryIndex: prevState.currentHistoryIndex + 1
       }));
 
       return newContent;
     });
   };
 
-  const handleSave = () => {
-    // Create a formatted version of the content
-    const formattedContent = {
-      ...content,
-      formattedBody: {
-        text: content.body,
-        formatting: content.formatting
-      }
-    };
+  const handleSave = async () => {
+    if (editorState.isSaving) return;
+    
+    setEditorState(prev => ({ ...prev, isSaving: true }));
+    
+    try {
+      const formattedContent = {
+        ...content,
+        formattedBody: {
+          text: content.body,
+          formatting: content.formatting
+        }
+      };
 
-    // Call the onSave callback with the formatted content
-    onSave?.(formattedContent);
-    
-    setEditorState(prev => ({
-      ...prev,
-      isDirty: false,
-      lastSaved: new Date()
-    }));
-    
-    toast.success('Content saved successfully');
+      if (onSave) {
+        await onSave(formattedContent);
+      }
+
+      setEditorState(prev => ({
+        ...prev,
+        isDirty: false,
+        lastSaved: new Date(),
+        isSaving: false
+      }));
+      
+      toast.success('Content saved successfully');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save content');
+      setEditorState(prev => ({ ...prev, isSaving: false }));
+    }
   };
 
   const handleUndo = () => {
     if (editorState.currentHistoryIndex > 0) {
+      const newIndex = editorState.currentHistoryIndex - 1;
+      setContent(editorState.history[newIndex]);
       setEditorState(prev => ({
         ...prev,
-        currentHistoryIndex: prev.currentHistoryIndex - 1
+        currentHistoryIndex: newIndex,
+        isDirty: newIndex !== prev.history.length - 1
       }));
-      setContent(editorState.history[editorState.currentHistoryIndex - 1]);
     }
   };
 
   const handleRedo = () => {
     if (editorState.currentHistoryIndex < editorState.history.length - 1) {
+      const newIndex = editorState.currentHistoryIndex + 1;
+      setContent(editorState.history[newIndex]);
       setEditorState(prev => ({
         ...prev,
-        currentHistoryIndex: prev.currentHistoryIndex + 1
+        currentHistoryIndex: newIndex,
+        isDirty: newIndex !== prev.history.length - 1
       }));
-      setContent(editorState.history[editorState.currentHistoryIndex + 1]);
     }
   };
 
@@ -169,7 +209,6 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
   };
 
   const handlePreview = () => {
-    // Create a formatted version of the content for preview
     const previewContent = {
       ...content,
       formattedBody: {
@@ -178,8 +217,9 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
       }
     };
 
-    // Call the onPreview callback with the formatted content
-    onPreview?.(previewContent);
+    if (onPreview) {
+      onPreview(previewContent);
+    }
   };
 
   return (
@@ -192,35 +232,50 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleUndo} disabled={editorState.currentHistoryIndex <= 0}>
+          <Button 
+            variant="outline" 
+            onClick={handleUndo} 
+            disabled={editorState.currentHistoryIndex <= 0}
+          >
             <Undo className="w-4 h-4 mr-2" />
             Undo
           </Button>
-          <Button variant="outline" onClick={handleRedo} disabled={editorState.currentHistoryIndex >= editorState.history.length - 1}>
+          <Button 
+            variant="outline" 
+            onClick={handleRedo} 
+            disabled={editorState.currentHistoryIndex >= editorState.history.length - 1}
+          >
             <Redo className="w-4 h-4 mr-2" />
             Redo
           </Button>
           <Button 
             variant="outline" 
             onClick={handlePreview}
-            className="hover:bg-primary/10"
           >
             <Eye className="w-4 h-4 mr-2" />
             Preview
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={!editorState.isDirty}
-            className={editorState.isDirty ? "bg-primary hover:bg-primary/90" : ""}
+            disabled={!editorState.isDirty || editorState.isSaving}
           >
-            <Save className="w-4 h-4 mr-2" />
-            {editorState.isDirty ? "Save Changes" : "Saved"}
+            {editorState.isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {editorState.isDirty ? "Save Changes" : "Saved"}
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-8 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 space-y-6">
           <div className="space-y-4">
             <div>
               <Label>Title</Label>
@@ -242,9 +297,9 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <Label>Content</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 flex-wrap">
                 <Button 
                   variant={content.formatting.bold ? "default" : "ghost"} 
                   size="sm"
@@ -344,7 +399,7 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
           </div>
         </div>
 
-        <div className="col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6">
           <Card className="p-4">
             <h3 className="font-medium mb-4">Git Information</h3>
             <div className="space-y-4">
@@ -353,7 +408,12 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
                 <div className="flex items-center gap-2 mt-1">
                   <GitBranch className="w-4 h-4" />
                   <span className="font-mono">{content.branch}</span>
-                  <Button variant="ghost" size="sm" onClick={handleCreateBranch}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleCreateBranch}
+                    disabled={!content.title}
+                  >
                     <GitBranch className="w-4 h-4" />
                   </Button>
                 </div>
@@ -376,10 +436,11 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
                     <SelectValue placeholder="Select content type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lesson">Lesson</SelectItem>
-                    <SelectItem value="exercise">Exercise</SelectItem>
-                    <SelectItem value="quiz">Quiz</SelectItem>
-                    <SelectItem value="resource">Resource</SelectItem>
+                    {contentTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -390,19 +451,19 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
             <h3 className="font-medium mb-4">Editor Status</h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Last Saved</span>
+                <span className="text-sm text-muted-foreground">Last Saved</span>
                 <span className="text-sm">
-                  {editorState.lastSaved ? new Date(editorState.lastSaved).toLocaleTimeString() : 'Never'}
+                  {editorState.lastSaved ? editorState.lastSaved.toLocaleTimeString() : 'Never'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Status</span>
+                <span className="text-sm text-muted-foreground">Status</span>
                 <Badge variant={editorState.isDirty ? "destructive" : "default"}>
                   {editorState.isDirty ? "Unsaved Changes" : "Saved"}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">History</span>
+                <span className="text-sm text-muted-foreground">History</span>
                 <span className="text-sm">
                   {editorState.currentHistoryIndex + 1} / {editorState.history.length}
                 </span>
@@ -415,4 +476,4 @@ const ContentEditor = ({ contentId, onSave, onPreview }) => {
   );
 };
 
-export default ContentEditor; 
+export default ContentEditor;

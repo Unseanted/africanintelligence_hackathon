@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { Button, Text, IconButton, Card } from 'react-native-paper';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useTourLMS } from '../../../contexts/TourLMSContext';
+import { useTourLMS } from '../../../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../../../constants/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
