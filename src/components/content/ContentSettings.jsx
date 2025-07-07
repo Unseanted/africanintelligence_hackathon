@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,20 +15,28 @@ import {
   UserMinus,
   FileText,
   Zap,
-  Tag
+  Tag,
+  Loader2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
-const ContentSettings = ({ contentId, onSettingsChange }) => {
+const ContentSettings = ({ 
+  contentId, 
+  initialSettings = {},
+  initialCollaborators = [],
+  onSettingsChange,
+  onCollaboratorsChange
+}) => {
+  // Settings state with defaults
   const [settings, setSettings] = useState({
     visibility: 'private',
     notifications: true,
     autoMerge: false,
     requireReview: true,
-    allowDirectCommits: false,
     branchProtection: true,
     squashCommits: true,
     deleteBranchAfterMerge: true,
@@ -43,91 +51,166 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
     defaultBranch: 'main',
     defaultMergeStrategy: 'merge',
     commitMessageTemplate: 'feat: {title}\n\n{description}',
-    labels: ['enhancement', 'bug', 'documentation'],
-    statusChecks: ['lint', 'test', 'build']
+    labels: [],
+    statusChecks: [],
+    ...initialSettings
   });
 
-  const [collaborators, setCollaborators] = useState([
-    {
-      id: 'user1',
-      name: 'Alex Johnson',
-      avatar: '/avatars/alex.jpg',
-      role: 'admin',
-      email: 'alex@example.com',
-      permissions: ['push', 'pull', 'admin']
-    },
-    {
-      id: 'user2',
-      name: 'Sam Wilson',
-      avatar: '/avatars/sam.jpg',
-      role: 'contributor',
-      email: 'sam@example.com',
-      permissions: ['push', 'pull']
-    }
-  ]);
-
+  // Collaborators state
+  const [collaborators, setCollaborators] = useState(initialCollaborators);
   const [newCollaborator, setNewCollaborator] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newStatusCheck, setNewStatusCheck] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Handle settings changes
   const handleSettingChange = (key, value) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-    onSettingsChange?.(newSettings);
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
   };
 
-  const handleAddCollaborator = () => {
-    if (!newCollaborator) return;
-    
-    const newCollaboratorData = {
-      id: `user${collaborators.length + 1}`,
-      name: newCollaborator,
-      avatar: `/avatars/default.jpg`,
-      role: 'contributor',
-      email: `${newCollaborator.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-      permissions: ['push', 'pull']
-    };
+  // Handle adding a new collaborator
+  const handleAddCollaborator = async () => {
+    if (!newCollaborator.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
 
-    setCollaborators([...collaborators, newCollaboratorData]);
-    setNewCollaborator('');
+    setIsLoading(true);
+    try {
+      const newCollaboratorData = {
+        id: `temp-${Date.now()}`,
+        email: newCollaborator.trim(),
+        name: newCollaborator.trim().split('@')[0],
+        avatar: '',
+        role: 'contributor',
+        permissions: ['push', 'pull']
+      };
+
+      const updatedCollaborators = [...collaborators, newCollaboratorData];
+      setCollaborators(updatedCollaborators);
+      
+      if (onCollaboratorsChange) {
+        await onCollaboratorsChange(updatedCollaborators);
+      }
+
+      setNewCollaborator('');
+      toast.success('Collaborator added successfully');
+    } catch (error) {
+      toast.error('Failed to add collaborator');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRemoveCollaborator = (collaboratorId) => {
-    setCollaborators(collaborators.filter(c => c.id !== collaboratorId));
+  // Handle removing a collaborator
+  const handleRemoveCollaborator = async (collaboratorId) => {
+    setIsLoading(true);
+    try {
+      const updatedCollaborators = collaborators.filter(c => c.id !== collaboratorId);
+      setCollaborators(updatedCollaborators);
+      
+      if (onCollaboratorsChange) {
+        await onCollaboratorsChange(updatedCollaborators);
+      }
+
+      toast.success('Collaborator removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove collaborator');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRoleChange = (collaboratorId, newRole) => {
-    setCollaborators(collaborators.map(c => 
-      c.id === collaboratorId ? { 
-        ...c, 
-        role: newRole,
-        permissions: newRole === 'admin' ? ['push', 'pull', 'admin'] : ['push', 'pull']
-      } : c
-    ));
+  // Handle role change for collaborator
+  const handleRoleChange = async (collaboratorId, newRole) => {
+    setIsLoading(true);
+    try {
+      const updatedCollaborators = collaborators.map(c => 
+        c.id === collaboratorId ? { 
+          ...c, 
+          role: newRole,
+          permissions: newRole === 'admin' ? ['push', 'pull', 'admin'] : ['push', 'pull']
+        } : c
+      );
+
+      setCollaborators(updatedCollaborators);
+      
+      if (onCollaboratorsChange) {
+        await onCollaboratorsChange(updatedCollaborators);
+      }
+
+      toast.success('Role updated successfully');
+    } catch (error) {
+      toast.error('Failed to update role');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Handle adding a label
   const handleAddLabel = () => {
-    if (!newLabel) return;
-    setSettings({
-      ...settings,
-      labels: [...settings.labels, newLabel]
-    });
+    if (!newLabel.trim()) {
+      toast.error('Please enter a label name');
+      return;
+    }
+
+    const updatedLabels = [...settings.labels, newLabel.trim()];
+    const newSettings = { ...settings, labels: updatedLabels };
+    setSettings(newSettings);
     setNewLabel('');
+    
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
   };
 
+  // Handle adding a status check
   const handleAddStatusCheck = () => {
-    if (!newStatusCheck) return;
-    setSettings({
-      ...settings,
-      statusChecks: [...settings.statusChecks, newStatusCheck]
-    });
+    if (!newStatusCheck.trim()) {
+      toast.error('Please enter a status check name');
+      return;
+    }
+
+    const updatedStatusChecks = [...settings.statusChecks, newStatusCheck.trim()];
+    const newSettings = { ...settings, statusChecks: updatedStatusChecks };
+    setSettings(newSettings);
     setNewStatusCheck('');
+    
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
+  };
+
+  // Handle removing a label
+  const handleRemoveLabel = (labelToRemove) => {
+    const updatedLabels = settings.labels.filter(label => label !== labelToRemove);
+    const newSettings = { ...settings, labels: updatedLabels };
+    setSettings(newSettings);
+    
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
+  };
+
+  // Handle removing a status check
+  const handleRemoveStatusCheck = (checkToRemove) => {
+    const updatedStatusChecks = settings.statusChecks.filter(check => check !== checkToRemove);
+    const newSettings = { ...settings, statusChecks: updatedStatusChecks };
+    setSettings(newSettings);
+    
+    if (onSettingsChange) {
+      onSettingsChange(newSettings);
+    }
   };
 
   return (
     <Card className="p-6">
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl mb-8">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 w-full mb-6">
           <TabsTrigger value="general">
             <Settings className="w-4 h-4 mr-2" />
             General
@@ -156,16 +239,16 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
         <TabsContent value="general">
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
                 <Label>Content Visibility</Label>
-                <p className="text-sm text-gray-500">Control who can view this content</p>
+                <p className="text-sm text-muted-foreground">Control who can view this content</p>
               </div>
               <Select
                 value={settings.visibility}
                 onValueChange={(value) => handleSettingChange('visibility', value)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select visibility" />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,13 +261,13 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
                 <Label>Default Branch</Label>
-                <p className="text-sm text-gray-500">Set the default branch for this content</p>
+                <p className="text-sm text-muted-foreground">Set the default branch for this content</p>
               </div>
               <Input
-                className="w-[180px]"
+                className="w-full sm:w-[180px]"
                 value={settings.defaultBranch}
                 onChange={(e) => handleSettingChange('defaultBranch', e.target.value)}
               />
@@ -192,15 +275,15 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="space-y-4">
+              <div className="space-y-1">
                 <Label>Commit Message Template</Label>
-                <p className="text-sm text-gray-500">Template for commit messages</p>
+                <p className="text-sm text-muted-foreground">Template for commit messages</p>
               </div>
-              <Input
-                className="w-[300px]"
+              <Textarea
                 value={settings.commitMessageTemplate}
                 onChange={(e) => handleSettingChange('commitMessageTemplate', e.target.value)}
+                className="min-h-[100px]"
               />
             </div>
           </div>
@@ -208,14 +291,22 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
         <TabsContent value="collaborators">
           <div className="space-y-6">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="Add collaborator by email"
                 value={newCollaborator}
                 onChange={(e) => setNewCollaborator(e.target.value)}
+                type="email"
               />
-              <Button onClick={handleAddCollaborator}>
-                <UserPlus className="w-4 h-4 mr-2" />
+              <Button 
+                onClick={handleAddCollaborator}
+                disabled={isLoading || !newCollaborator.trim()}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4 mr-2" />
+                )}
                 Add
               </Button>
             </div>
@@ -223,49 +314,64 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="space-y-4">
-              {collaborators.map((collaborator) => (
-                <div key={collaborator.id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={collaborator.avatar} />
-                      <AvatarFallback>{collaborator.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{collaborator.name}</p>
-                      <p className="text-sm text-gray-500">{collaborator.email}</p>
-                      <div className="flex gap-1 mt-1">
-                        {collaborator.permissions.map(perm => (
-                          <Badge key={perm} variant="secondary" className="text-xs">
-                            {perm}
-                          </Badge>
-                        ))}
+              {collaborators.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No collaborators added yet
+                </div>
+              ) : (
+                collaborators.map((collaborator) => (
+                  <div 
+                    key={collaborator.id} 
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 hover:bg-muted/50 rounded-lg gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={collaborator.avatar} />
+                        <AvatarFallback>
+                          {collaborator.name?.charAt(0) || collaborator.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">
+                          {collaborator.name || collaborator.email.split('@')[0]}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{collaborator.email}</p>
+                        <div className="flex gap-1 mt-1">
+                          {collaborator.permissions?.map(perm => (
+                            <Badge key={perm} variant="secondary" className="text-xs capitalize">
+                              {perm}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <Select
+                        value={collaborator.role}
+                        onValueChange={(value) => handleRoleChange(collaborator.id, value)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="contributor">Contributor</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRemoveCollaborator(collaborator.id)}
+                        disabled={isLoading}
+                      >
+                        <UserMinus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={collaborator.role}
-                      onValueChange={(value) => handleRoleChange(collaborator.id, value)}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="contributor">Contributor</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRemoveCollaborator(collaborator.id)}
-                    >
-                      <UserMinus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </TabsContent>
@@ -273,9 +379,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
         <TabsContent value="branches">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Branch Protection</Label>
-                <p className="text-sm text-gray-500">Protect branches from unwanted changes</p>
+                <p className="text-sm text-muted-foreground">Protect branches from unwanted changes</p>
               </div>
               <Switch 
                 checked={settings.branchProtection}
@@ -286,9 +392,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Auto-delete Stale Branches</Label>
-                <p className="text-sm text-gray-500">Automatically delete branches after inactivity</p>
+                <p className="text-sm text-muted-foreground">Automatically delete branches after inactivity</p>
               </div>
               <Switch 
                 checked={settings.autoDeleteStaleBranches}
@@ -297,32 +403,33 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             </div>
 
             {settings.autoDeleteStaleBranches && (
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
                   <Label>Stale Branch Age (days)</Label>
-                  <p className="text-sm text-gray-500">Delete branches inactive for this many days</p>
+                  <p className="text-sm text-muted-foreground">Delete branches inactive for this many days</p>
                 </div>
                 <Input
                   type="number"
-                  className="w-[100px]"
+                  min="1"
+                  className="w-full sm:w-[100px]"
                   value={settings.staleBranchAge}
-                  onChange={(e) => handleSettingChange('staleBranchAge', parseInt(e.target.value))}
+                  onChange={(e) => handleSettingChange('staleBranchAge', parseInt(e.target.value) || 1)}
                 />
               </div>
             )}
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
                 <Label>Default Merge Strategy</Label>
-                <p className="text-sm text-gray-500">How to merge pull requests by default</p>
+                <p className="text-sm text-muted-foreground">How to merge pull requests by default</p>
               </div>
               <Select
                 value={settings.defaultMergeStrategy}
                 onValueChange={(value) => handleSettingChange('defaultMergeStrategy', value)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select strategy" />
                 </SelectTrigger>
                 <SelectContent>
@@ -338,9 +445,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
         <TabsContent value="permissions">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Require Review</Label>
-                <p className="text-sm text-gray-500">All changes must be reviewed before merging</p>
+                <p className="text-sm text-muted-foreground">All changes must be reviewed before merging</p>
               </div>
               <Switch 
                 checked={settings.requireReview}
@@ -349,16 +456,17 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             </div>
 
             {settings.requireReview && (
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
                   <Label>Required Reviewers</Label>
-                  <p className="text-sm text-gray-500">Minimum number of required reviewers</p>
+                  <p className="text-sm text-muted-foreground">Minimum number of required reviewers</p>
                 </div>
                 <Input
                   type="number"
-                  className="w-[100px]"
+                  min="1"
+                  className="w-full sm:w-[100px]"
                   value={settings.maxReviewers}
-                  onChange={(e) => handleSettingChange('maxReviewers', parseInt(e.target.value))}
+                  onChange={(e) => handleSettingChange('maxReviewers', parseInt(e.target.value) || 1)}
                 />
               </div>
             )}
@@ -366,9 +474,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Require Status Checks</Label>
-                <p className="text-sm text-gray-500">Require status checks to pass before merging</p>
+                <p className="text-sm text-muted-foreground">Require status checks to pass before merging</p>
               </div>
               <Switch 
                 checked={settings.requireStatusChecks}
@@ -378,20 +486,28 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
             {settings.requireStatusChecks && (
               <div className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     placeholder="Add status check"
                     value={newStatusCheck}
                     onChange={(e) => setNewStatusCheck(e.target.value)}
                   />
-                  <Button onClick={handleAddStatusCheck}>
+                  <Button 
+                    onClick={handleAddStatusCheck}
+                    disabled={!newStatusCheck.trim()}
+                  >
                     <FileText className="w-4 h-4 mr-2" />
                     Add
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {settings.statusChecks.map(check => (
-                    <Badge key={check} variant="secondary">
+                    <Badge 
+                      key={check} 
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleRemoveStatusCheck(check)}
+                    >
                       {check}
                     </Badge>
                   ))}
@@ -404,9 +520,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
         <TabsContent value="workflow">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Auto-merge Changes</Label>
-                <p className="text-sm text-gray-500">Automatically merge approved changes</p>
+                <p className="text-sm text-muted-foreground">Automatically merge approved changes</p>
               </div>
               <Switch 
                 checked={settings.autoMerge}
@@ -417,9 +533,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Squash Commits</Label>
-                <p className="text-sm text-gray-500">Combine all commits into one when merging</p>
+                <p className="text-sm text-muted-foreground">Combine all commits into one when merging</p>
               </div>
               <Switch 
                 checked={settings.squashCommits}
@@ -430,9 +546,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Require Linear History</Label>
-                <p className="text-sm text-gray-500">Prevent merge commits and require linear history</p>
+                <p className="text-sm text-muted-foreground">Prevent merge commits and require linear history</p>
               </div>
               <Switch 
                 checked={settings.requireLinearHistory}
@@ -443,21 +559,32 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="font-medium">Labels</h3>
-              <div className="flex gap-2">
+              <div className="space-y-1">
+                <Label>Labels</Label>
+                <p className="text-sm text-muted-foreground">Add labels to categorize your content</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   placeholder="Add label"
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
                 />
-                <Button onClick={handleAddLabel}>
+                <Button 
+                  onClick={handleAddLabel}
+                  disabled={!newLabel.trim()}
+                >
                   <Tag className="w-4 h-4 mr-2" />
                   Add
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {settings.labels.map(label => (
-                  <Badge key={label} variant="secondary">
+                  <Badge 
+                    key={label} 
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-secondary/80"
+                    onClick={() => handleRemoveLabel(label)}
+                  >
                     {label}
                   </Badge>
                 ))}
@@ -469,9 +596,9 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
         <TabsContent value="notifications">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <Label>Email Notifications</Label>
-                <p className="text-sm text-gray-500">Receive email notifications for content updates</p>
+                <p className="text-sm text-muted-foreground">Receive email notifications for content updates</p>
               </div>
               <Switch 
                 checked={settings.notifications}
@@ -483,32 +610,62 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
 
             <div className="space-y-4">
               <h3 className="font-medium">Notification Preferences</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="newCommits" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="newCommits" 
+                      className="rounded text-primary focus:ring-primary" 
+                      defaultChecked
+                    />
                     <Label htmlFor="newCommits">New commits</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="pullRequests" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="pullRequests" 
+                      className="rounded text-primary focus:ring-primary"
+                      defaultChecked
+                    />
                     <Label htmlFor="pullRequests">Pull requests</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="reviews" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="reviews" 
+                      className="rounded text-primary focus:ring-primary"
+                      defaultChecked
+                    />
                     <Label htmlFor="reviews">Review requests</Label>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="merges" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="merges" 
+                      className="rounded text-primary focus:ring-primary"
+                      defaultChecked
+                    />
                     <Label htmlFor="merges">Merged changes</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="comments" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="comments" 
+                      className="rounded text-primary focus:ring-primary"
+                      defaultChecked
+                    />
                     <Label htmlFor="comments">Comments</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="mentions" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="mentions" 
+                      className="rounded text-primary focus:ring-primary"
+                      defaultChecked
+                    />
                     <Label htmlFor="mentions">Mentions</Label>
                   </div>
                 </div>
@@ -521,4 +678,4 @@ const ContentSettings = ({ contentId, onSettingsChange }) => {
   );
 };
 
-export default ContentSettings; 
+export default ContentSettings;
