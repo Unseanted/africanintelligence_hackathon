@@ -343,6 +343,48 @@ const ForumPost = require("../models/Forum");
  *                   example: "Server error"
  */
 
+/**
+ * @swagger
+ * /notifications/course-update/{courseId}:
+ *   post:
+ *     summary: Send notification about course updates
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the course
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: Notification title
+ *               message:
+ *                 type: string
+ *                 description: Notification message
+ *     responses:
+ *       200:
+ *         description: Course update notifications sent successfully
+ *       400:
+ *         description: Title and message are required
+ *       404:
+ *         description: No students enrolled in this course or course not found
+ *       500:
+ *         description: Server error
+ */
+
 // Set VAPID keys - these should be stored in environment variables in production
 const VAPID_PUBLIC_KEY =
   "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";

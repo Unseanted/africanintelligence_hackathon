@@ -6,7 +6,7 @@ const auth = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/adminRoutes");
 const facilitatorRoutes = require("./routes/facilitatorRoutes");
-const studentRoutes = require("./routes/studentRoutes");
+const studentRoutes = require("./routes/student");
 const courseRoutes = require("./routes/course");
 const notificationRoutes = require("./routes/notification");
 const assistantConvoRoutes = require("./routes/assistantconvo");
@@ -77,7 +77,7 @@ async function startServer() {
     app.use("/api/auth", authRoutes);
     app.use("/api/admin", adminRoutes);
     app.use("/api/facilitator", facilitatorRoutes);
-    app.use("/api/learner", studentRoutes);
+    app.use("/api/students", studentRoutes);
     app.use("/api/courses", courseRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/upload", uploadRoutes);

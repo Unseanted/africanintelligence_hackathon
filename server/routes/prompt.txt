@@ -1,0 +1,2 @@
+the swagger documentation is sometimes inconsistent and doesn't match up with what the code is actually doing
+Reflect on 5 - 7 different possible sources of the problem, distill those down to 1-2 most likely sources before we move on to implementing the actual code fix. If you are unsure of how to fix any unit of documentaion simple ignore it and flag it for manual review. Ask 3 questions to clarify the task before proceeding.

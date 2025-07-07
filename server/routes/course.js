@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require("uuid");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const Enrollment = require("../models/Enrollment");
+const Student = require("../models/Student");
 
 /**
  * @swagger
@@ -1492,8 +1493,8 @@ router.post("/:courseId/enroll", auth, roleAuth(["student"]), async (req, res) =
       }
     );
 
-    await User.updateOne(
-      { _id: userId },
+    await Student.updateOne(
+      { _id: studentId },
       { $push: { enrollments: newEnrollment._id } }
     );
 

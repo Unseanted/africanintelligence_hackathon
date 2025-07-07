@@ -18,6 +18,18 @@ const auth = require("../middleware/auth");
  *     tags: [Content]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [quiz, article, lesson]
+ *         description: Filter by content type
+ *       - in: query
+ *         name: visible
+ *         schema:
+ *           type: boolean
+ *         description: Filter by visibility
  *     responses:
  *       200:
  *         description: List of content

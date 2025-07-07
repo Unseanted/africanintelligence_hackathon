@@ -40,12 +40,7 @@ class MockLLM extends LLMStrategy {
   }
 
   async generateResponse(message) {
-    return {
-      role: "assistant",
-      content: "This is a mock response",
-      model: this.model,
-      timestamp: new Date(),
-    };
+    return "This is a mock response for: " + message;
   }
 }
 
@@ -167,7 +162,7 @@ const setupSocket = (server, db) => {
 
     socket.on("ai:message", async (data) => {
       const { message, context } = data;
-      const { conversationId, role, timestamp } = context;
+      const { conversationId, role, timestamp, model } = context;
 
       const conversation = await db
         .collection("AIConversation")
@@ -184,7 +179,11 @@ const setupSocket = (server, db) => {
       }
 
       socket.emit("ai:typing", true);
-      const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      // TODO: switch between different LLM strategies based on user preference
+      // For now, we will use MistralLLM and local model as the default strategy
+
+      // const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
       const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,

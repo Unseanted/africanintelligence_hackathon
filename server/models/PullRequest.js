@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const Content = require("./Content");
+const ContentVersion = require("./ContentVersion");
 
 const pullRequestSchema = new Schema({
   content: { type: Schema.Types.ObjectId, ref: "Content", required: true },
@@ -22,6 +24,13 @@ const pullRequestSchema = new Schema({
   reviewers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+});
+
+pullRequestSchema.pre("save", async () => {
+  const contentVersions = await ContentVersion.find({content: this.content}).sort({versionNumber: -1});
+  const targetVersion = contentVersions[0];
+  this.targetVersion = targetVersion._id;
+  // to be completed
 });
 
 module.exports = mongoose.model("PullRequest", pullRequestSchema);
