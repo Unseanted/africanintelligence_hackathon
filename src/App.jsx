@@ -49,9 +49,11 @@ import AIAssistant from '@/pages/student/Ai-assistant';
 import ContentManagementPage from "./pages/student/Content-management";
 import Analytics from "./pages/student/Analytics";
 
+const VITE_GOOGLE_CLIENT = import.meta.env.VITE_GOOGLE_CLIENT;
+
 const App = () => {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={VITE_GOOGLE_CLIENT}>
       <TourLMSProvider>
         <AuthProvider>
           <NavigationProvider>
