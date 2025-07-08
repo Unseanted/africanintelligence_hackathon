@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { GitBranch, Loader2 } from 'lucide-react';
-import { useDebounce } from '@/hooks/use-debounce';
+import useDebounce from '@/hooks/use-debounce';
 
 const CreateBranchModal = ({ 
   isOpen, 
