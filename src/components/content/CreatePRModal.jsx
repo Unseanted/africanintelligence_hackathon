@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { GitPullRequest, Loader2, GitCompare, Info } from 'lucide-react';
-import { useDebounce } from '@/hooks/use-debounce';
+import useDebounce from '../../hooks/use-debounce';
 
 const CreatePRModal = ({ 
   isOpen, 
