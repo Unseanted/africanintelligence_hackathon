@@ -1,14 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useTourLMS } from '../contexts/TourLMSContext';
 import { useToast } from '../hooks/use-toast';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-
-WebBrowser.maybeCompleteAuthSession();
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -23,31 +20,43 @@ export default function Register() {
   const { register, API_URL } = useTourLMS();
   const { toast } = useToast();
 
-  const [, response, promptAsync] = Google.useAuthRequest({
-    clientId: 'YOUR_EXPO_CLIENT_ID',
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-    iosClientId: 'YOUR_IOS_CLIENT_ID',
-    scopes: ['profile', 'email'],
-    redirectUri: 'exp://localhost:19000/--/oauth2redirect/google'
-  });
+  // Configure Google Sign-In
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: 'YOUR_WEB_CLIENT_ID', // From Google Cloud Console
+      androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Optional, if you have a separate Android client ID
+      iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional, if you have a separate iOS client ID
+      scopes: ['profile', 'email'],
+      offlineAccess: true,
+      hostedDomain: '', // Optional
+      forceCodeForRefreshToken: true,
+    });
+  }, []);
 
-  const handleGoogleResponse = useCallback(async (token: string | undefined) => {
-    if (!token) return;
-    
+  const handleGoogleSignIn = useCallback(async () => {
     try {
       setIsLoading(true);
+      
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices();
+      
+      // Get the user's ID token
+      const userInfo = await GoogleSignin.signIn();
+      
+      // Send the ID token to your backend
       const response = await fetch(`${API_URL}/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token,
+          token: userInfo.idToken,
           role,
         }),
       });
 
       const result = await response.json();
+      
       if (response.ok && result.user && result.token) {
         await register({
           name: result.user.name,
@@ -64,22 +73,27 @@ export default function Register() {
         throw new Error(result.message || 'Google signup failed');
       }
     } catch (error: any) {
-      console.error("Google Signup error:", error);
+      console.error("Google Sign-In error:", error);
+      
+      let errorMessage = "Failed to signup with Google. Please try again.";
+      
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        errorMessage = "Google sign-in was cancelled.";
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        errorMessage = "Google sign-in is already in progress.";
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        errorMessage = "Google Play Services is not available or outdated.";
+      }
+      
       toast({
         title: "Entry Denied",
-        description: error.message || "Failed to signup with Google. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   }, [API_URL, role, register, toast]);
-
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      handleGoogleResponse(response.authentication?.accessToken);
-    }
-  }, [response, handleGoogleResponse]);
 
   const handleSubmit = async () => {
     if (password !== confirmPassword) {
@@ -258,7 +272,7 @@ export default function Register() {
 
             <Button
               mode="outlined"
-              onPress={() => promptAsync()}
+              onPress={handleGoogleSignIn}
               disabled={isLoading}
               style={styles.googleButton}
               icon="google"
@@ -375,4 +389,4 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     fontWeight: 'bold',
   },
-}); 
+});

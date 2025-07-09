@@ -1,14 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Text, TextInput, Button, SegmentedButtons } from 'react-native-paper';
 import { useTourLMS } from '../contexts/TourLMSContext';
 import { useToast } from '../hooks/use-toast';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { router } from 'expo-router';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,13 +15,18 @@ export default function LoginScreen() {
   const { login, API_URL } = useTourLMS();
   const { toast } = useToast();
 
-  const [, response, promptAsync] = Google.useAuthRequest({
-    clientId: 'YOUR_EXPO_CLIENT_ID',
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-    iosClientId: 'YOUR_IOS_CLIENT_ID',
-    scopes: ['profile', 'email'],
-    redirectUri: 'exp://localhost:19000/--/oauth2redirect/google'
-  });
+  // Configure Google Sign-In
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: 'YOUR_WEB_CLIENT_ID', // From Google Cloud Console
+      androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Optional
+      iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional
+      scopes: ['profile', 'email'],
+      offlineAccess: true,
+      hostedDomain: '', // Optional
+      forceCodeForRefreshToken: true,
+    });
+  }, []);
 
   // Safe navigation function
   const navigateToApp = () => {
@@ -37,23 +39,40 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleResponse = useCallback(async (token: string | undefined) => {
-    if (!token) return;
-    
+  const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices();
+      
+      // Get the user's ID token
+      const userInfo = await GoogleSignin.signIn();
+      
+      // Get the ID token
+      const tokens = await GoogleSignin.getTokens();
+      
+      // Send the ID token to your backend
       const response = await fetch(`${API_URL}/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token,
+          idToken: tokens.idToken,
+          accessToken: tokens.accessToken,
           role,
+          userInfo: {
+            id: userInfo.user.id,
+            email: userInfo.user.email,
+            name: userInfo.user.name,
+            photo: userInfo.user.photo,
+          },
         }),
       });
 
       const result = await response.json();
+      
       if (response.ok && result.user && result.token) {
         // Store authentication data in context
         await login(result.user.email, '');
@@ -70,24 +89,25 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       console.error("Google Login error:", error);
+      
+      let errorMessage = "Failed to login with Google. Please try again.";
+      
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        errorMessage = "Sign in was cancelled";
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        errorMessage = "Sign in is in progress";
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        errorMessage = "Google Play Services not available";
+      }
+      
       toast({
         title: "Access Denied",
-        description: error.message || "Failed to login with Google. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [API_URL, login, role, toast]);
-
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      handleGoogleResponse(response.authentication?.accessToken);
-    }
-  }, [response, handleGoogleResponse]);
-
-  const handleGoogleLogin = () => {
-    promptAsync();
   };
 
   const handleLogin = async () => {
