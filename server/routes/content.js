@@ -5,6 +5,77 @@ const auth = require("../middleware/auth");
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Content:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The unique identifier for the content
+ *         title:
+ *           type: string
+ *         type:
+ *           type: string
+ *           enum: [quiz, article, lesson]
+ *         owner:
+ *           type: string
+ *           description: User ID of the content owner
+ *         collaborators:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of user IDs
+ *         latestVersion:
+ *           type: string
+ *           description: The latest ContentVersion ID
+ *         versions:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of ContentVersion IDs
+ *         visible:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - title
+ *         - type
+ *         - owner
+ *     ContentVersion:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         content:
+ *           type: string
+ *           description: Content ID
+ *         versionNumber:
+ *           type: integer
+ *         message:
+ *           type: string
+ *         fullContent:
+ *           type: string
+ *         contributor:
+ *           type: string
+ *           description: User ID
+ *         status:
+ *           type: string
+ *           enum: [pending_review, approved, needs_revision, rejected]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - content
+ *         - versionNumber
+ *         - message
+ *         - fullContent
+ *         - contributor
+ */
+
+/**
+ * @swagger
  * tags:
  *   name: Content
  *   description: Content management endpoints
@@ -60,6 +131,9 @@ router.get("/", auth, contentController.listContent);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - type
  *             properties:
  *               title:
  *                 type: string
@@ -202,6 +276,8 @@ router.get(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - fullContent
  *             properties:
  *               fullContent:
  *                 type: string
@@ -243,6 +319,8 @@ router.post("/:contentId/versions", auth, contentController.createVersion);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - visible
  *             properties:
  *               visible:
  *                 type: boolean
@@ -286,6 +364,8 @@ router.put(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - collaborators
  *             properties:
  *               collaborators:
  *                 type: array
@@ -298,6 +378,8 @@ router.put(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Content'
+ *       400:
+ *         description: No collaborators provided
  *       401:
  *         description: Unauthorized
  *       404:
@@ -331,6 +413,8 @@ router.put(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - versionNumber
  *             properties:
  *               versionNumber:
  *                 type: integer
@@ -340,7 +424,7 @@ router.put(
  *         content:
  *           application/json:
  *             schema:
- *               type: string
+ *               $ref: '#/components/schemas/Content'
  *       401:
  *         description: Unauthorized
  *       404:
