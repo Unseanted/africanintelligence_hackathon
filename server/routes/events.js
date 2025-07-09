@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const roleAuth = require("../middleware/roleAuth");
-const {Event, Team} = require("../models/Event");
+const { Event, Team } = require("../models/Event");
 
 /**
  * @swagger
@@ -441,6 +441,8 @@ router.delete("/:id", auth, roleAuth(["facilitator"]), async (req, res) => {
  *     responses:
  *       200:
  *         description: Successfully registered for event
+ *       400:
+ *         description: Already registered for this event
  *       404:
  *         description: Event not found
  *       401:

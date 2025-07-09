@@ -57,6 +57,30 @@ const writeCourseData = (res, courseId) => {
   res.write(`data: ${JSON.stringify(section)}\n\n`);
 };
 
+/**
+ * @swagger
+ * tags:
+ *   name: Leaderboard
+ *   description: Leaderboard endpoints using Server-Sent Events (SSE)
+ */
+/**
+ * @swagger
+ * /leaderboard/allTime:
+ *   get:
+ *     summary: Get all-time leaderboard (SSE stream)
+ *     tags: [Leaderboard]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns a stream of leaderboard updates for all-time XP. Response is sent as text/event-stream (SSE).
+ *     responses:
+ *       200:
+ *         description: SSE stream of leaderboard data
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: data: [{"id": "userId", "name": "Alice", "avatar": "url", "xp": 1000, "level": 5}]
+ */
 router.get("/leaderboard/allTime", auth, (req, res) => {
   const db = req.app.locals.db;
 
@@ -93,6 +117,24 @@ router.get("/leaderboard/allTime", auth, (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /leaderboard/weekly:
+ *   get:
+ *     summary: Get weekly leaderboard (SSE stream)
+ *     tags: [Leaderboard]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns a stream of leaderboard updates for weekly XP. Response is sent as text/event-stream (SSE).
+ *     responses:
+ *       200:
+ *         description: SSE stream of leaderboard data
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: data: [{"id": "userId", "name": "Alice", "avatar": "url", "xp": 100, "level": 2}]
+ */
 router.get("/leaderboard/weekly", auth, (req, res) => {
   const db = req.app.locals.db;
 
@@ -129,6 +171,31 @@ router.get("/leaderboard/weekly", auth, (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /leaderboard/course:
+ *   get:
+ *     summary: Get course leaderboard (SSE stream)
+ *     tags: [Leaderboard]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns a stream of leaderboard updates for a specific course. Response is sent as text/event-stream (SSE).
+ *     parameters:
+ *       - in: query
+ *         name: courseId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The course ID to filter leaderboard
+ *     responses:
+ *       200:
+ *         description: SSE stream of leaderboard data
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: data: [{"id": "userId", "name": "Alice", "avatar": "url", "xp": 500}]
+ */
 router.get("/leaderboard/course", auth, (req, res) => {
   const db = req.app.locals.db;
   const courseId = req.query.courseId; // Assuming you pass course ID as a query parameter
@@ -168,6 +235,24 @@ router.get("/leaderboard/course", auth, (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /leaderboard/friends:
+ *   get:
+ *     summary: Get friends leaderboard (SSE stream)
+ *     tags: [Leaderboard]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns a stream of leaderboard updates for the user's friends. Response is sent as text/event-stream (SSE).
+ *     responses:
+ *       200:
+ *         description: SSE stream of leaderboard data
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: data: [{"id": "userId", "name": "Bob", "avatar": "url", "xp": 300, "level": 3}]
+ */
 router.get("/leaderboard/friends", auth, (req, res) => {
   const db = req.app.locals.db;
   const userId = req.user.userId; // Assuming user ID is stored in req.user

@@ -43,7 +43,7 @@ const { ObjectId } = require("mongodb");
  *           description: Points awarded with this badge
  *         user_id:
  *           type: string
- *           description: ID of the user who earned the badge    
+ *           description: ID of the user who earned the badge
  *         status:
  *           type: string
  *           enum: [active, revoked, pending]
@@ -62,6 +62,12 @@ const { ObjectId } = require("mongodb");
  *     tags: [Badges]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter badges by category
  *     responses:
  *       200:
  *         description: List of badges
@@ -78,14 +84,13 @@ const { ObjectId } = require("mongodb");
  */
 router.get("/", auth, async (req, res) => {
   try {
-    const query = req.query.category
-    const badges = await Badge.find({query});
+    const query = req.query.category;
+    const badges = await Badge.find({ query });
     res.json(badges);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 /**
  * @swagger
@@ -153,14 +158,16 @@ router.get("/:id", auth, async (req, res) => {
  */
 router.post("/", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-
     // Validate required fields
     const { title, description, criteria, expiryDate } = req.body;
     if (!title || !description || !criteria) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const badge = await Badge.create({...req.body, expiryDate: new Date(expiryDate).getTime()});
+    const badge = await Badge.create({
+      ...req.body,
+      expiryDate: new Date(expiryDate).getTime(),
+    });
 
     res.status(201).json(badge);
   } catch (err) {
@@ -204,7 +211,8 @@ router.get("/:badgeId/check", auth, roleAuth(["student"]), async (req, res) => {
       _id: req.params.badgeId,
     });
     const student = await Student.findOne({
-      user: req.user.userId,});
+      user: req.user.userId,
+    });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -217,7 +225,6 @@ router.get("/:badgeId/check", auth, roleAuth(["student"]), async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 
 /**
  * @swagger
@@ -254,7 +261,6 @@ router.get("/:badgeId/check", auth, roleAuth(["student"]), async (req, res) => {
  */
 router.put("/:id", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "Invalid badge ID format" });
     }
@@ -301,7 +307,6 @@ router.put("/:id", auth, roleAuth(["admin"]), async (req, res) => {
  */
 router.delete("/:id", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "Invalid badge ID format" });
     }

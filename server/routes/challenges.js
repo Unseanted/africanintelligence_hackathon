@@ -114,15 +114,22 @@ router.get(
       if (status) query.status = status;
 
       // Only filter for students
-      if (req.user && req.user.role === 'student') {
+      if (req.user && req.user.role === "student") {
         const db = req.app.locals.db;
         // Get all enrollments for this student
-        const enrollments = await db.collection('enrollments').find({ studentId: req.user.userId }).toArray();
-        const courseIds = enrollments.map(e => e.courseId);
+        const enrollments = await db
+          .collection("enrollments")
+          .find({ studentId: req.user.userId })
+          .toArray();
+        const courseIds = enrollments.map((e) => e.courseId);
         if (courseIds.length === 0) {
           return res.json([]);
         }
-        query.course = { $in: courseIds.map(id => typeof id === 'string' ? new require('mongodb').ObjectId(id) : id) };
+        query.course = {
+          $in: courseIds.map((id) =>
+            typeof id === "string" ? new require("mongodb").ObjectId(id) : id
+          ),
+        };
       }
 
       const challenges = await Challenge.find(query)
@@ -131,9 +138,10 @@ router.get(
         .sort({ createdAt: -1 });
 
       // Add courseTitle to each challenge
-      const challengesWithCourseTitle = challenges.map(challenge => {
+      const challengesWithCourseTitle = challenges.map((challenge) => {
         const obj = challenge.toObject();
-        obj.courseTitle = obj.course && obj.course.title ? obj.course.title : undefined;
+        obj.courseTitle =
+          obj.course && obj.course.title ? obj.course.title : undefined;
         return obj;
       });
 
@@ -218,6 +226,7 @@ router.get(
  *               - difficulty
  *               - category
  *               - submissionFormat
+ *               - course
  *             properties:
  *               title:
  *                 type: string
@@ -238,7 +247,7 @@ router.get(
  *                 description: The category of the challenge
  *               course:
  *                 type: string
- *                 decription: Course id 
+ *                 description: Course id (required)
  *               submissionFormat:
  *                 type: string
  *                 description: The required format for challenge submissions
@@ -257,6 +266,8 @@ router.get(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Challenge'
+ *       400:
+ *         description: Invalid input or missing/invalid course
  *       401:
  *         description: Unauthorized
  *       500:
@@ -264,12 +275,13 @@ router.get(
  */
 router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
   try {
-    
-    const {course, ...challengeData } = req.body;
-    
+    const { course, ...challengeData } = req.body;
+
     // I don't know if challenges will be for courses or in general
     if (!course) {
-      return res.status(400).json({ message: "Course is required for a challenge." });
+      return res
+        .status(400)
+        .json({ message: "Course is required for a challenge." });
     }
     // Validate course exists
     const courseObj = await Course.findOne({ courseId: course });
@@ -277,8 +289,11 @@ router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
       return res.status(400).json({ message: "Invalid course selected." });
     }
     // Validate facilitator owns course
-    
-    const challenge = await Challenge.create({ ...challengeData, course: courseObj._id });
+
+    const challenge = await Challenge.create({
+      ...challengeData,
+      course: courseObj._id,
+    });
     console.log("Challenge", challenge);
     res.status(201).json(challenge);
   } catch (error) {
@@ -406,6 +421,8 @@ router.delete("/:id", auth, roleAuth(["facilitator"]), async (req, res) => {
  *     responses:
  *       200:
  *         description: Successfully participated in challenge
+ *       400:
+ *         description: Already participating in this challenge
  *       404:
  *         description: Challenge not found
  *       401:

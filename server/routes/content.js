@@ -5,6 +5,77 @@ const auth = require("../middleware/auth");
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Content:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The unique identifier for the content
+ *         title:
+ *           type: string
+ *         type:
+ *           type: string
+ *           enum: [quiz, article, lesson]
+ *         owner:
+ *           type: string
+ *           description: User ID of the content owner
+ *         collaborators:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of user IDs
+ *         latestVersion:
+ *           type: string
+ *           description: The latest ContentVersion ID
+ *         versions:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of ContentVersion IDs
+ *         visible:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - title
+ *         - type
+ *         - owner
+ *     ContentVersion:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         content:
+ *           type: string
+ *           description: Content ID
+ *         versionNumber:
+ *           type: integer
+ *         message:
+ *           type: string
+ *         fullContent:
+ *           type: string
+ *         contributor:
+ *           type: string
+ *           description: User ID
+ *         status:
+ *           type: string
+ *           enum: [pending_review, approved, needs_revision, rejected]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - content
+ *         - versionNumber
+ *         - message
+ *         - fullContent
+ *         - contributor
+ */
+
+/**
+ * @swagger
  * tags:
  *   name: Content
  *   description: Content management endpoints
@@ -18,6 +89,18 @@ const auth = require("../middleware/auth");
  *     tags: [Content]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [quiz, article, lesson]
+ *         description: Filter by content type
+ *       - in: query
+ *         name: visible
+ *         schema:
+ *           type: boolean
+ *         description: Filter by visibility
  *     responses:
  *       200:
  *         description: List of content
@@ -48,6 +131,9 @@ router.get("/", auth, contentController.listContent);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - type
  *             properties:
  *               title:
  *                 type: string
@@ -58,6 +144,8 @@ router.get("/", auth, contentController.listContent);
  *                 type: array
  *                 items:
  *                   type: string
+ *               visible:
+ *                 type: boolean
  *     responses:
  *       201:
  *         description: Content created
@@ -71,6 +159,36 @@ router.get("/", auth, contentController.listContent);
  *         description: Failed to create content
  */
 router.post("/", auth, contentController.createContent);
+
+/**
+ * @swagger
+ * /content/{contentId}:
+ *   get:
+ *     summary: Get content item by id
+ *     tags: [Content]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: contentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Content'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Content not found
+ *       500:
+ *         description: Failed to fetch content
+ */
+router.get("/:contentId", auth, contentController.getContentById);
 
 /**
  * @swagger
@@ -104,6 +222,42 @@ router.get("/:contentId/versions", auth, contentController.listVersions);
 
 /**
  * @swagger
+ * /content/{contentId}/collaborators:
+ *   get:
+ *     summary: List all collaborators for a content item
+ *     tags: [Content]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: contentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of content collaborators
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Content not found
+ *       500:
+ *         description: Failed to fetch collaborators
+ */
+router.get(
+  "/:contentId/collaborators",
+  auth,
+  contentController.getCollaborators
+);
+
+/**
+ * @swagger
  * /content/{contentId}/versions:
  *   post:
  *     summary: Submit a new version for a content item
@@ -122,8 +276,12 @@ router.get("/:contentId/versions", auth, contentController.listVersions);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - fullContent
  *             properties:
  *               fullContent:
+ *                 type: string
+ *               message:
  *                 type: string
  *     responses:
  *       201:
@@ -134,6 +292,8 @@ router.get("/:contentId/versions", auth, contentController.listVersions);
  *               $ref: '#/components/schemas/ContentVersion'
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Content not found
  *       500:
  *         description: Failed to create version
  */
@@ -141,9 +301,9 @@ router.post("/:contentId/versions", auth, contentController.createVersion);
 
 /**
  * @swagger
- * /content/{contentId}/versions/{versionId}:
- *   patch:
- *     summary: Update a version for a content item
+ * /content/{contentId}/visibility:
+ *   put:
+ *     summary: Update content visibility
  *     tags: [Content]
  *     security:
  *       - bearerAuth: []
@@ -153,76 +313,42 @@ router.post("/:contentId/versions", auth, contentController.createVersion);
  *         required: true
  *         schema:
  *           type: string
- *       - in: path
- *         name: versionId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - visible
  *             properties:
- *               fullContent:
- *                 type: string
- *               status:
- *                 type: string
- *                 enum: [pending_review, approved, needs_revision, rejected]
+ *               visible:
+ *                 type: boolean
  *     responses:
  *       200:
- *         description: Version updated
+ *         description: Visibility changed
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ContentVersion'
+ *               $ref: '#/components/schemas/Content'
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Content not found
  *       500:
- *         description: Failed to update version
+ *         description: Failed to update content
  */
-router.patch(
-  "/:contentId/versions/:versionId",
+router.put(
+  "/:contentId/visibility",
   auth,
-  contentController.updateVersion
+  contentController.setContentVisibility
 );
 
 /**
  * @swagger
- * /content/{contentId}/pull-requests:
- *   get:
- *     summary: List pull requests for a content item
- *     tags: [Content]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: contentId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of pull requests
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/PullRequest'
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Failed to fetch pull requests
- */
-router.get("/:contentId/pull-requests", auth, contentController.listPRs);
-
-/**
- * @swagger
- * /content/{contentId}/pull-requests:
- *   post:
- *     summary: Create a pull request for a content item
+ * /content/{contentId}/collaborators:
+ *   put:
+ *     summary: Add collaborators
  *     tags: [Content]
  *     security:
  *       - bearerAuth: []
@@ -238,40 +364,46 @@ router.get("/:contentId/pull-requests", auth, contentController.listPRs);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - collaborators
  *             properties:
- *               sourceVersion:
- *                 type: string
- *               targetVersion:
- *                 type: string
- *               reviewers:
+ *               collaborators:
  *                 type: array
  *                 items:
  *                   type: string
  *     responses:
- *       201:
- *         description: Pull request created
+ *       200:
+ *         description: Collaborators added
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/PullRequest'
+ *               $ref: '#/components/schemas/Content'
+ *       400:
+ *         description: No collaborators provided
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Content not found
  *       500:
- *         description: Failed to create pull request
+ *         description: Failed to add collaborators
  */
-router.post("/:contentId/pull-requests", auth, contentController.createPR);
+router.put(
+  "/:contentId/collaborators",
+  auth,
+  contentController.addCollaborators
+);
 
 /**
  * @swagger
- * /pull-requests/{prId}:
- *   patch:
- *     summary: Update a pull request status
+ * /content/{contentId}/revert:
+ *   put:
+ *     summary: Revert content version
  *     tags: [Content]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: prId
+ *         name: contentId
  *         required: true
  *         schema:
  *           type: string
@@ -281,79 +413,25 @@ router.post("/:contentId/pull-requests", auth, contentController.createPR);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - versionNumber
  *             properties:
- *               status:
- *                 type: string
- *                 enum: [open, needs_revision, approved, merged, rejected]
+ *               versionNumber:
+ *                 type: integer
  *     responses:
  *       200:
- *         description: Pull request updated
+ *         description: Content version reverted
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/PullRequest'
+ *               $ref: '#/components/schemas/Content'
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Content or version not found
  *       500:
- *         description: Failed to update pull request
+ *         description: Failed to revert version
  */
-router.patch("/pull-requests/:prId", auth, contentController.updatePR);
-
-/**
- * @swagger
- * /notifications:
- *   get:
- *     summary: List notifications for the user
- *     tags: [Content]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of notifications
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Notification'
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Failed to fetch notifications
- */
-router.get("/notifications", auth, contentController.listNotifications);
-
-/**
- * @swagger
- * /notifications:
- *   post:
- *     summary: Create a notification
- *     tags: [Content]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               type:
- *                 type: string
- *               content:
- *                 type: string
- *     responses:
- *       201:
- *         description: Notification created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Notification'
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Failed to create notification
- */
-router.post("/notifications", auth, contentController.createNotification);
+router.put("/:contentId/revert", auth, contentController.revertVersion);
 
 module.exports = router;

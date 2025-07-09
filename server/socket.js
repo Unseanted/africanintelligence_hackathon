@@ -7,6 +7,7 @@ const { vapid_private_key, mistral_api_key } = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
 const Student = require("./models/Student");
 const ForumPost = require("./models/Forum");
+const { sendForumNotification } = require("./routes/notification");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -39,12 +40,7 @@ class MockLLM extends LLMStrategy {
   }
 
   async generateResponse(message) {
-    return {
-      role: "assistant",
-      content: "This is a mock response",
-      model: this.model,
-      timestamp: new Date(),
-    };
+    return "This is a mock response for: " + message;
   }
 }
 
@@ -166,7 +162,7 @@ const setupSocket = (server, db) => {
 
     socket.on("ai:message", async (data) => {
       const { message, context } = data;
-      const { conversationId, role, timestamp } = context;
+      const { conversationId, role, timestamp, model } = context;
 
       const conversation = await db
         .collection("AIConversation")
@@ -183,7 +179,11 @@ const setupSocket = (server, db) => {
       }
 
       socket.emit("ai:typing", true);
-      const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      // TODO: switch between different LLM strategies based on user preference
+      // For now, we will use MistralLLM and local model as the default strategy
+
+      // const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
       const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,
@@ -347,6 +347,40 @@ const setupSocket = (server, db) => {
       return { totalTopics, totalPosts, activeUsers, onlineNow };
     }
 
+    // Helper: get users to notify for forum activity
+    async function getUsersToNotify(courseId = null) {
+      try {
+        let users = [];
+
+        if (courseId) {
+          // Get users enrolled in the specific course
+          const enrollments = await db
+            .collection("enrollments")
+            .find({
+              courseId: new ObjectId(courseId),
+            })
+            .toArray();
+          users = enrollments.map((enrollment) =>
+            enrollment.studentId.toString()
+          );
+        } else {
+          // Get all active users for community forum
+          const allUsers = await db
+            .collection("users")
+            .find({
+              role: { $in: ["student", "facilitator"] },
+            })
+            .toArray();
+          users = allUsers.map((user) => user._id.toString());
+        }
+
+        return users;
+      } catch (error) {
+        console.error("Error getting users to notify:", error);
+        return [];
+      }
+    }
+
     // forum:get_data - send all posts and stats
     socket.on("forum:get_data", async () => {
       try {
@@ -370,10 +404,23 @@ const setupSocket = (server, db) => {
           authorId: socket.user._id,
           comments: [],
           likes: 0,
-          likedBy: [],
         });
         const postObj = post.toObject();
         io.emit("forum:new_post", postObj);
+
+        // Send notifications to relevant users
+        const usersToNotify = await getUsersToNotify();
+        if (usersToNotify.length > 0) {
+          await sendForumNotification(
+            db,
+            post._id.toString(),
+            socket.user._id.toString(),
+            null, // community forum
+            usersToNotify,
+            false // isReply
+          );
+        }
+
         // Optionally, update stats for all
         const posts = await ForumPost.find({}).lean();
         const stats = await getForumStats(posts);
@@ -399,6 +446,20 @@ const setupSocket = (server, db) => {
         );
         if (post) {
           io.emit("forum:new_comment", { postId, comment });
+
+          // Send notifications to relevant users
+          const usersToNotify = await getUsersToNotify();
+          if (usersToNotify.length > 0) {
+            await sendForumNotification(
+              db,
+              postId,
+              socket.user._id.toString(),
+              null, // community forum
+              usersToNotify,
+              true // isReply
+            );
+          }
+
           // Optionally, update stats for all
           const posts = await ForumPost.find({}).lean();
           const stats = await getForumStats(posts);
