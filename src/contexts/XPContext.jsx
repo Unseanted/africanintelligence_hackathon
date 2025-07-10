@@ -1,123 +1,147 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { xpService } from '@/services/xp';
 import { badgeService } from '@/services/badges';
-import XPNotification from '@/components/xp/XPNotification';
 import { useTourLMS } from '@/contexts/TourLMSContext';
+import XPNotification from '@/components/xp/XPNotification';
 
 const XPContext = createContext();
 
-export const useXP = () => {
-  const context = useContext(XPContext);
-  if (!context) {
-    throw new Error('useXP must be used within an XPProvider');
-  }
-  return context;
-};
-
 export const XPProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
-  const [userXP, setUserXP] = useState(null);
   const { user } = useTourLMS();
+  const [state, setState] = useState({
+    xpData: null,
+    notifications: [],
+    badges: [],
+    recentActivity: []
+  });
 
-  const awardXP = useCallback(async (userId, action, metadata = {}) => {
+  const loadUserData = useCallback(async () => {
+    if (!user?._id) return;
+    
     try {
-      const result = await xpService.awardXP(userId, action, metadata);
-      setUserXP(result);
-
-      // Check for new badges
-      const newBadges = await badgeService.checkAndAwardBadges(userId, action, metadata);
-
-      // Add notification for XP
-      const points = xpService.xpActions[action] || 0;
-      const message = getActionMessage(action, metadata);
+      const [xpData, badges, activity] = await Promise.all([
+        xpService.getUserXP(user._id),
+        badgeService.getUserBadges(user._id),
+        xpService.getRecentActivity(user._id)
+      ]);
       
-      setNotifications(prev => [
+      setState(prev => ({
         ...prev,
-        {
-          id: Date.now(),
-          points,
-          message
-        }
+        xpData: xpService.enrichXPData(xpData),
+        badges,
+        recentActivity: activity
+      }));
+    } catch (error) {
+      console.error('Error loading user XP data:', error);
+    }
+  }, [user?._id]);
+
+  const awardXP = useCallback(async (action, metadata = {}) => {
+    if (!user?._id) return;
+
+    try {
+      const [xpResult, newBadges] = await Promise.all([
+        xpService.awardXP(user._id, action, metadata),
+        badgeService.checkAndAwardBadges(user._id, action, metadata)
       ]);
 
-      // Add notifications for new badges
-      newBadges.forEach(badge => {
-        setNotifications(prev => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            points: badge.xpReward,
-            message: `Earned badge: ${badge.title}`,
-            isBadge: true,
-            badge
-          }
-        ]);
-      });
+      setState(prev => ({
+        ...prev,
+        xpData: xpResult,
+        badges: [...prev.badges, ...newBadges],
+        notifications: [
+          ...prev.notifications,
+          createNotification('xp', action, metadata, xpResult.points),
+          ...newBadges.map(badge => createNotification('badge', badge))
+        ]
+      }));
 
-      return result;
+      return xpResult;
     } catch (error) {
       console.error('Error awarding XP:', error);
       throw error;
     }
-  }, []);
-
-  const removeNotification = useCallback((id) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
-  }, []);
-
-  const getActionMessage = (action, metadata) => {
-    const messages = {
-      COMPLETE_LESSON: `Completed lesson: ${metadata.lessonTitle}`,
-      COMPLETE_QUIZ: `Completed quiz: ${metadata.quizTitle}`,
-      POST_COMMENT: 'Posted a comment',
-      RECEIVE_LIKE: 'Received a like on your comment',
-      GIVE_LIKE: 'Liked a comment',
-      DAILY_LOGIN: 'Logged in today',
-      COMPLETE_COURSE: `Completed course: ${metadata.courseTitle}`,
-      ACHIEVE_STREAK: `Achieved a ${metadata.streakDays}-day streak!`,
-      EARN_ACHIEVEMENT: `Earned achievement: ${metadata.achievementTitle}`
-    };
-
-    return messages[action] || 'Earned XP';
-  };
-
-  // Load user XP when user changes
-  React.useEffect(() => {
-    const loadUserXP = async () => {
-      if (user?._id) {
-        try {
-          const xpData = await xpService.getUserXP(user._id);
-          setUserXP(xpData);
-        } catch (error) {
-          console.error('Error loading user XP:', error);
-        }
-      }
-    };
-
-    loadUserXP();
   }, [user?._id]);
 
-  const value = {
-    userXP,
-    awardXP,
-    notifications
+  const createNotification = (type, data, metadata, points) => {
+    const id = Date.now() + Math.random();
+    
+    if (type === 'xp') {
+      return {
+        id,
+        type: 'xp',
+        points,
+        action: data,
+        message: getXPMessage(data, metadata),
+        metadata
+      };
+    }
+    
+    if (type === 'badge') {
+      return {
+        id,
+        type: 'badge',
+        badge: data,
+        message: `Unlocked badge: ${data.title}`,
+        points: data.xpReward
+      };
+    }
+    
+    if (type === 'level') {
+      return {
+        id,
+        type: 'level',
+        level: data,
+        message: `Level Up! Reached Level ${data}`,
+        points: metadata?.points
+      };
+    }
   };
 
+  const getXPMessage = (action, metadata) => {
+    const messages = {
+      COMPLETE_LESSON: `Completed lesson: ${metadata.lessonTitle} (+{points} XP)`,
+      QUIZ_PASS: `Passed quiz with ${metadata.score}% (+{points} XP)`,
+      CHALLENGE_COMPLETE: `Completed challenge: ${metadata.challengeName} (+{points} XP)`,
+      DAILY_STREAK: `${metadata.streakDays}-day streak! (+{points} XP)`
+    };
+    
+    return messages[action] || `Earned ${points} XP`;
+  };
+
+  const removeNotification = useCallback((id) => {
+    setState(prev => ({
+      ...prev,
+      notifications: prev.notifications.filter(n => n.id !== id)
+    }));
+  }, []);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
+
   return (
-    <XPContext.Provider value={value}>
+    <XPContext.Provider value={{
+      ...state,
+      awardXP,
+      removeNotification,
+      calculateLevel: xpService.calculateLevel,
+      calculateDynamicXP: xpService.calculateDynamicXP
+    }}>
       {children}
-      {notifications.map(notification => (
+      {state.notifications.map(notification => (
         <XPNotification
           key={notification.id}
-          points={notification.points}
-          message={notification.message}
+          notification={notification}
           onClose={() => removeNotification(notification.id)}
-          isBadge={notification.isBadge}
-          badge={notification.badge}
         />
       ))}
     </XPContext.Provider>
   );
 };
 
-export default XPContext; 
+export const useXP = () => {
+  const context = useContext(XPContext);
+  if (!context) throw new Error('useXP must be used within XPProvider');
+  return context;
+};

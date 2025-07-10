@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Upload, CheckCircle, Clock } from 'lucide-react';
-
-// Suggestion: YouTube and example.com base URLs could be made configurable via environment variables if needed.
 
 const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
   const [submission, setSubmission] = useState({
@@ -46,32 +45,151 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
 
   const renderSubmissionForm = () => {
     switch (challenge.submissionType) {
-      case 'quiz':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-semibold">Quiz Questions</h3>
-            <textarea
-              value={submission.answer}
-              onChange={(e) => setSubmission({...submission, answer: e.target.value})}
-              placeholder="Enter your answers here..."
-              className="w-full p-3 border rounded-md h-64"
-            />
+     case 'quiz':
+  return (
+    <div className="space-y-6">
+      <h3 className="font-semibold text-lg">Quiz Questions</h3>
+      <div className="space-y-4">
+        {challenge.questions?.map((question, index) => (
+          <div key={index} className="p-4 border rounded-lg bg-white dark:bg-gray-800">
+            <div className="flex items-start mb-3">
+              <span className="font-medium mr-2">{index + 1}.</span>
+              <p className="font-medium">{question.text}</p>
+            </div>
+            <div className="space-y-2 ml-6">
+              {question.options?.map((option, optIndex) => (
+                <div key={optIndex} className="flex items-center">
+                  <input
+                    type={question.multiple ? "checkbox" : "radio"}
+                    id={`q${index}-opt${optIndex}`}
+                    name={`question-${index}`}
+                    value={option}
+                    checked={submission.answers?.[index]?.includes(option)}
+                    onChange={(e) => {
+                      const newAnswers = [...(submission.answers || [])];
+                      if (question.multiple) {
+                        newAnswers[index] = e.target.checked
+                          ? [...(newAnswers[index] || []), option]
+                          : (newAnswers[index] || []).filter(opt => opt !== option);
+                      } else {
+                        newAnswers[index] = [option];
+                      }
+                      setSubmission({...submission, answers: newAnswers});
+                    }}
+                    className="mr-2"
+                  />
+                  <label htmlFor={`q${index}-opt${optIndex}`} className="cursor-pointer">
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
-        );
-      case 'timed-quiz':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-semibold">Timed Coding Quiz</h3>
-            <div className="text-sm text-amber-600 mb-2">You have a limited time to complete this quiz. Please answer all questions below.</div>
-            <textarea
-              value={submission.answer}
-              onChange={(e) => setSubmission({...submission, answer: e.target.value})}
-              placeholder="Enter your code/answers here..."
-              className="w-full p-3 border rounded-md h-64"
-            />
+        ))}
+      </div>
+    </div>
+  );
+
+case 'timed-quiz':
+  const [timeLeft, setTimeLeft] = useState(challenge.timeLimit * 60); // in seconds
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      handleSubmit(); // Auto-submit when time runs out
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold text-lg">Timed Coding Quiz</h3>
+        <div className="px-4 py-2 bg-red-100 dark:bg-red-900 rounded-lg">
+          <span className="font-mono font-bold text-red-600 dark:text-red-200">
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg mb-4">
+        <p className="text-yellow-700 dark:text-yellow-300">
+          ⏱️ You have {challenge.timeLimit} minutes to complete this quiz. 
+          The quiz will auto-submit when time expires.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {challenge.questions?.map((question, index) => (
+          <div key={index} className="p-4 border rounded-lg bg-white dark:bg-gray-800">
+            <div className="flex items-start mb-3">
+              <span className="font-medium mr-2">{index + 1}.</span>
+              <div>
+                <p className="font-medium">{question.text}</p>
+                {question.codeSnippet && (
+                  <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-sm overflow-x-auto">
+                    <code>{question.codeSnippet}</code>
+                  </pre>
+                )}
+              </div>
+            </div>
+            
+            {question.type === 'code' ? (
+              <div className="mt-3">
+                <label className="block text-sm font-medium mb-2">Your Answer:</label>
+                <textarea
+                  value={submission.answers?.[index]?.[0] || ''}
+                  onChange={(e) => {
+                    const newAnswers = [...(submission.answers || [])];
+                    newAnswers[index] = [e.target.value];
+                    setSubmission({...submission, answers: newAnswers});
+                  }}
+                  placeholder="Write your code here..."
+                  className="w-full p-3 border rounded-md h-32 font-mono text-sm"
+                  spellCheck="false"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2 ml-6">
+                {question.options?.map((option, optIndex) => (
+                  <div key={optIndex} className="flex items-center">
+                    <input
+                      type={question.multiple ? "checkbox" : "radio"}
+                      id={`q${index}-opt${optIndex}`}
+                      name={`question-${index}`}
+                      value={option}
+                      checked={submission.answers?.[index]?.includes(option)}
+                      onChange={(e) => {
+                        const newAnswers = [...(submission.answers || [])];
+                        if (question.multiple) {
+                          newAnswers[index] = e.target.checked
+                            ? [...(newAnswers[index] || []), option]
+                            : (newAnswers[index] || []).filter(opt => opt !== option);
+                        } else {
+                          newAnswers[index] = [option];
+                        }
+                        setSubmission({...submission, answers: newAnswers});
+                      }}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`q${index}-opt${optIndex}`} className="cursor-pointer">
+                      {option}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        );
-      case 'document':
+        ))}
+      </div>
+    </div>
+  );
+   case 'document':
       case 'file':
         return (
           <div className="space-y-4">
@@ -206,6 +324,16 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
     }
   };
 
+  const formatTimeRemaining = (ms) => {
+    if (ms <= 0) return 'Time expired';
+    
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) return `${hours}h ${minutes}m remaining`;
+    return `${minutes}m remaining`;
+  };
+
   if (isSubmitted) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -244,9 +372,17 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
           <div className="mb-6">
             <h3 className="font-semibold mb-2">Requirements</h3>
             <ul className="list-disc list-inside space-y-1 mb-4">
-              {challenge.requirements.map((req, index) => (
-                <li key={index} className="text-gray-600 dark:text-gray-300">{req}</li>
-              ))}
+              {Array.isArray(challenge.requirements) ? (
+                challenge.requirements.length > 0 ? (
+                  challenge.requirements.map((req, index) => (
+                    <li key={index} className="text-gray-600 dark:text-gray-300">{req}</li>
+                  ))
+                ) : (
+                  <li className="text-gray-600 dark:text-gray-300">No specific requirements</li>
+                )
+              ) : (
+                <li className="text-gray-600 dark:text-gray-300">Requirements not specified</li>
+              )}
             </ul>
           </div>
 
@@ -269,14 +405,33 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
   );
 };
 
-const formatTimeRemaining = (ms) => {
-  if (ms <= 0) return 'Time expired';
-  
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours > 0) return `${hours}h ${minutes}m remaining`;
-  return `${minutes}m remaining`;
+ChallengeAttempt.propTypes = {
+  challenge: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    requirements: PropTypes.arrayOf(PropTypes.string),
+    endTime: PropTypes.number.isRequired,
+    submissionType: PropTypes.oneOf([
+      'quiz',
+      'timed-quiz',
+      'document',
+      'presentation',
+      'image',
+      'video',
+      'text',
+      'url',
+      'file'
+    ]).isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+};
+
+ChallengeAttempt.defaultProps = {
+  challenge: {
+    requirements: [],
+  },
 };
 
 export default ChallengeAttempt;
