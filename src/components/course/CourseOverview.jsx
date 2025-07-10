@@ -151,22 +151,34 @@ const CourseOverview = ({ course, isEnrolled }) => {
               {course.prerequisites && (
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Prerequisites</h3>
-                  <ul className="list-disc list-inside text-gray-600 space-y-4">
-                    {course.prerequisites.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
+                  <div className="text-gray-600">
+                    {Array.isArray(course.prerequisites) ? (
+                      <ul className="list-disc list-inside space-y-4">
+                        {course.prerequisites.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>{course.prerequisites}</p>
+                    )}
+                  </div>
                 </div>
               )}
               
-              {course.learningOutcomes && course.learningOutcomes.length > 0 && (
+              {course.learningOutcomes && (
                 <div>
                   <h3 className="text-xl font-semibold mb-2">What You'll Learn</h3>
-                  <ul className="list-disc list-inside text-gray-600 space-y-4">
-                    {course.learningOutcomes.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
+                  <div className="text-gray-600">
+                    {Array.isArray(course.learningOutcomes) ? (
+                      <ul className="list-disc list-inside space-y-4">
+                        {course.learningOutcomes.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>{course.learningOutcomes}</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

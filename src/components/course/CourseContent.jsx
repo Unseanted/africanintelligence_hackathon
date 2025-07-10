@@ -229,7 +229,7 @@ const CourseContent = ({ course }) => {
         [key]: true,
       }));
 
-      const response = await fetch(`${API_URL}/learner/courses/${course.key}/modules/${moduleId}/contents/${contentId}/complete`, {
+      const response = await fetch(`${API_URL}/learner/courses/${course.courseId || course._id}/modules/${moduleId}/contents/${contentId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -902,7 +902,7 @@ const CourseContent = ({ course }) => {
               quiz={course.modules[currentQuizModule].quiz}
               onClose={handleCloseQuiz}
               onSubmit={handleSubmitQuiz}
-              courseId={course.key}
+              courseId={course.courseId || course._id}
               moduleId={course.modules[currentQuizModule].title}
             />
           </div>
@@ -917,7 +917,7 @@ const CourseContent = ({ course }) => {
               videoUrl={course.modules[activeModule].content[activeContent].url}
               videoTitle={course.modules[activeModule].content[activeContent].title}
               videoDescription={course.modules[activeModule].content[activeContent].description || "No description available."}
-              courseId={course.key}
+              courseId={course.courseId || course._id}
               moduleId={course.modules[activeModule].title}
               contentId={course.modules[activeModule].content[activeContent].title}
               onWatchProgress={(completed) => handleVideoWatchProgress(

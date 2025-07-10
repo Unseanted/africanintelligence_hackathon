@@ -14,12 +14,41 @@ const configureAxios = (token) => {
 
 // Get all published courses
 export const getAllCourses = async (token) => {
+  console.log("🔍 [CourseService] getAllCourses called with token:", !!token);
+  console.log("🔍 [CourseService] API_URL:", API_URL);
+
   configureAxios(token);
   try {
+    console.log(
+      "🔍 [CourseService] Making GET request to:",
+      `${API_URL}/courses`
+    );
     const response = await axios.get(`${API_URL}/courses`);
+    console.log("🔍 [CourseService] Response status:", response.status);
+    console.log("🔍 [CourseService] Response data type:", typeof response.data);
+    console.log(
+      "🔍 [CourseService] Response data length:",
+      response.data?.length
+    );
+
+    if (response.data && response.data.length > 0) {
+      console.log("🔍 [CourseService] First course in response:", {
+        courseId: response.data[0].courseId,
+        _id: response.data[0]._id,
+        title: response.data[0].title,
+        keys: Object.keys(response.data[0]),
+      });
+    }
+
     return response.data;
   } catch (error) {
-    console.error("Error fetching courses:", error);
+    console.error("❌ [CourseService] Error fetching courses:", error);
+    console.error("❌ [CourseService] Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
     throw error;
   }
 };
@@ -152,10 +181,12 @@ export const getCourseStudents = async (courseId, token) => {
 export const getLearnerCourses = async (token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/courses`);
+    const response = await axios.get(`${API_URL}/students/courses`);
+    console.log(response.data);
+
     return response.data;
   } catch (error) {
-    console.error("Error fetching learner courses:", error);
+    console.error("Error fetching students courses:", error);
     throw error;
   }
 };
@@ -177,7 +208,7 @@ export const updateCourseProgress = async (
     }
 
     const response = await axios.put(
-      `${API_URL}/learner/courses/${courseId}/progress`,
+      `${API_URL}/students/courses/${courseId}/progress`,
       {
         moduleId,
         contentId,
@@ -234,7 +265,7 @@ export const enrollInCourse = async (courseId, token) => {
   try {
     clg("enroll id - ", courseId);
     const response = await axios.post(
-      `${API_URL}/learner/courses/${courseId}/enroll`,
+      `${API_URL}/students/courses/${courseId}/enroll`,
       { courseId },
       {
         headers: {
@@ -256,7 +287,7 @@ export const checkEnrollmentStatus = async (courseId, token) => {
   configureAxios(token);
   try {
     const response = await axios.get(
-      `${API_URL}/learner/courses/${courseId}/status`
+      `${API_URL}/students/courses/${courseId}/status`
     );
     return response.data.isEnrolled;
   } catch (error) {
@@ -272,7 +303,7 @@ export const checkEnrollmentStatus = async (courseId, token) => {
 export const getEnrolledCourseWithProgress = async (courseId, token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/courses/${courseId}`);
+    const response = await axios.get(`${API_URL}/students/courses/${courseId}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -305,8 +336,10 @@ export const getStudentCourseProgress = async (courseId, token) => {
 export const getStudentLearningMaterials = async (token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/courses`);
+    const response = await axios.get(`${API_URL}/students/courses`);
+
     return response.data;
+    console.log(response.data);
   } catch (error) {
     console.error("Error fetching student learning materials:", error);
     throw error;
@@ -318,7 +351,7 @@ export const syncEnrollmentData = async (token) => {
   configureAxios(token);
   try {
     const response = await axios.post(
-      `${API_URL}/learner/sync-enrollments`,
+      `${API_URL}/students/sync-enrollments`,
       {},
       {
         headers: {
@@ -392,7 +425,7 @@ export const subscribeToCourseNotifications = async (courseId, token) => {
 export const getLearningStats = async (token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/learner/stats`);
+    const response = await axios.get(`${API_URL}/students/stats`);
     return response.data;
   } catch (error) {
     console.error("Error fetching learning stats:", error);
@@ -436,7 +469,7 @@ export const trackVideoWatchTime = async (
   configureAxios(token);
   try {
     const response = await axios.post(
-      `${API_URL}/learner/courses/${courseId}/watch-time`,
+      `${API_URL}/students/courses/${courseId}/watch-time`,
       {
         moduleId,
         contentId,
@@ -456,7 +489,7 @@ export const checkModuleCompletion = async (courseId, moduleId, token) => {
   configureAxios(token);
   try {
     const response = await axios.get(
-      `${API_URL}/learner/courses/${courseId}/modules/${moduleId}/check-completion`
+      `${API_URL}/students/courses/${courseId}/modules/${moduleId}/check-completion`
     );
     return response.data;
   } catch (error) {
