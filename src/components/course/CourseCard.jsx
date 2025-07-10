@@ -15,15 +15,26 @@ const CourseCard = ({ course, path = 'course' }) => {
   const [isEnrolled,setIsEnrolled]=useState(false);
   const [progress,setProgress]=useState(0);
 
+  // Debug logging
+  console.log('🔍 [CourseCard] Course data:', {
+    courseId: course.courseId,
+    _id: course._id,
+    title: course.title,
+    path: path
+  });
+
   useEffect(()=>{
     if(!isEnrolled&&ocn(user)&&course.enrolledStudents.find(stu=>stu==user.id)){
-      const Course=enrolledCourses.find(crs=>crs.key==course.key);
+      const Course=enrolledCourses.find(crs=>crs.courseId==course.courseId || crs._id==course._id);
       if(Course)setProgress(parse(Course.progress));
       setIsEnrolled(true);
 
     }
 
   },[user])
+  
+  const courseIdentifier = course.courseId || course._id;
+  console.log('🔍 [CourseCard] Generated link:', `/${path}/${courseIdentifier}`);
   
   return (
     <motion.div
@@ -32,7 +43,7 @@ const CourseCard = ({ course, path = 'course' }) => {
       className="h-full"
     >
       <Link 
-        to={`/${path}/${course.key}`}
+        to={`/${path}/${courseIdentifier}`}
         className="block h-full"
       >
         <div className="relative h-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 border border-slate-200 dark:border-slate-700 flex flex-col">

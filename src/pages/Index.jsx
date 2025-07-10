@@ -323,7 +323,7 @@ const Index = () => {
                       {course.description}
                     </p>
                     <Link 
-                      to={`/student/courses/${course.key}`} 
+                      to={`/student/courses/${course.courseId || course._id}`} 
                       className={`inline-flex items-center font-medium ${theme === 'light' ? 'text-amber-600 hover:text-amber-700' : 'text-amber-500 hover:text-gold-200'}`}
                     >
                       Explore Course <ArrowRight className={`ml-2 h-4 w-4 ${theme === 'light' ? 'text-amber-600' : 'text-amber-500'}`} />

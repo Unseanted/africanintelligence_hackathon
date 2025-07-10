@@ -116,7 +116,14 @@ export const TourLMSProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
-  useEffect(()=>{if(ison)return;
+  useEffect(()=>{
+    console.log('🔍 [TourLMSContext] Initial useEffect triggered');
+    console.log('🔍 [TourLMSContext] ison value:', ison);
+    if(ison) {
+      console.log('🔍 [TourLMSContext] Already loaded, skipping packLoad');
+      return;
+    }
+    console.log('🔍 [TourLMSContext] Setting ison to true and calling packLoad');
     ison=true;
     packLoad('','');
   },[])
@@ -307,14 +314,19 @@ export const TourLMSProvider = ({ children }) => {
   };
     
   async function packLoad(newUser, tok) {
+    console.log('🔍 [TourLMSContext] packLoad called');
+    console.log('🔍 [TourLMSContext] newUser:', newUser);
+    console.log('🔍 [TourLMSContext] token exists:', !!tok);
+    
     try {
       // Load courses based on user role
       if (newUser?.role === 'facilitator') {
+        console.log('🔍 [TourLMSContext] Loading facilitator courses...');
         // Load facilitator courses
         const facilitatorResponse = await axios.get(`${API_URL}/facilitator/courses`, {
           headers: { 'x-auth-token': tok }
         });
-        console.log('Facilitator courses:', facilitatorResponse.data);
+        console.log('🔍 [TourLMSContext] Facilitator courses response:', facilitatorResponse.data);
         setFacilitatorCourses(facilitatorResponse.data);
         setCoursesLoaded(true)
         // Load facilitator stats and students
@@ -322,25 +334,44 @@ export const TourLMSProvider = ({ children }) => {
         await loadFacilitatorStudents();
       }
       if (newUser?.role === 'student' || newUser?.role === 'learner') {
+        console.log('🔍 [TourLMSContext] Loading learner courses...');
         clg('checking leaners courses')
-        const learnerResponse = await axios.get(`${API_URL}/learner/courses`, {
+        const learnerResponse = await axios.get(`${API_URL}/students/courses`, {
           headers: { 'x-auth-token': tok }
         });
-        console.log('Learner courses:', learnerResponse.data);
+        console.log('🔍 [TourLMSContext] Learner courses response:', learnerResponse.data);
         await setEnrolledCourses(learnerResponse.data);
       }
       
       // For both students and facilitators, load all courses
+      console.log('🔍 [TourLMSContext] Loading all courses...');
       const allCoursesResponse = await axios.get(`${API_URL}/courses`, {
         headers: { 'x-auth-token': tok }
       });
-      console.log('All courses:', allCoursesResponse.data);
+      console.log('🔍 [TourLMSContext] All courses response length:', allCoursesResponse.data?.length);
+      if (allCoursesResponse.data && allCoursesResponse.data.length > 0) {
+        console.log('🔍 [TourLMSContext] First course sample:', {
+          courseId: allCoursesResponse.data[0].courseId,
+          _id: allCoursesResponse.data[0]._id,
+          title: allCoursesResponse.data[0].title,
+          keys: Object.keys(allCoursesResponse.data[0])
+        });
+        console.log('🔍 [TourLMSContext] All courseIds:', allCoursesResponse.data.map(c => c.courseId));
+        console.log('🔍 [TourLMSContext] All _ids:', allCoursesResponse.data.map(c => c._id));
+      }
+      console.log('🔍 [TourLMSContext] Setting CoursesHub...');
       setCoursesHub(allCoursesResponse.data);
       
       // For students, also get enrolled courses
       
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ [TourLMSContext] Error in packLoad:', error);
+      console.error('❌ [TourLMSContext] Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
     }
   }
   

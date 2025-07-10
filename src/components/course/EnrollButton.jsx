@@ -19,82 +19,65 @@ const EnrollButton = ({ course, isEnrolled, className }) => {
   clg('button course --',token);
   console.log(user)
 
-  const handleEnrollment = async () => {
+  const handleEnroll = async () => {
+    if (!token) {
+      navigate('/login', { state: { from: `/courses/${course.courseId || course._id}` } });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Enroll in the course
-      const result = await enrollInCourse(course.key, token);
+      const result = await enrollInCourse(course.courseId || course._id, token);
+      console.log('Enrollment successful:', result);
       
-      // Sync enrollment data to fix inconsistencies
-      // try {
-      //   await syncEnrollmentData(token);
-      //   console.log('Successfully synced enrollment data');
-      // } catch (syncError) {
-      //   console.error('Failed to sync enrollment data:', syncError);
-      //   // Continue with enrollment even if sync fails
-      // }
-      
-      // Try to subscribe to push notifications for this course
+      // Subscribe to course notifications
       try {
-        await subscribeToCourseNotifications(course.key, token);
-        console.log('Successfully subscribed to course notifications');
-      } catch (notificationError) {
-        console.error('Failed to subscribe to course notifications:', notificationError);
-        // Continue with enrollment even if notification subscription fails
+        await subscribeToCourseNotifications(course.courseId || course._id, token);
+      } catch (error) {
+        console.warn('Failed to subscribe to notifications:', error);
       }
       
       toast({
-        title: "Enrollment successful!",
-        description: "You have been enrolled in this course. You can now access all course materials.",
-        variant: "success",
+        title: "Success!",
+        description: "You have been enrolled in this course.",
+        variant: "default",
       });
       
-      // Update the course in CoursesHub to reflect the enrollment
+      // Refresh course data
+      await packLoad(user, token);
       
-      await packLoad(user);
-      // Redirect to course content
-      const to=setTimeout(()=>{
-        if (CoursesHub && CoursesHub.length > 0) {
-          const updatedCourses = CoursesHub.map(c => {
-            if (c._id === course._id) {
-              return {
-                ...c,
-                enrolled: (c.enrolled || 0) + 1,
-                enrolledStudents:[...c.enrolledStudents,user.id],
-                isEnrolled: true
-              };
-            }
-            return c;
-          });
-          setCoursesHub(updatedCourses);
-        }
-
-        navigate(`/student/courses/${course.key}`);
-      
-      },3000);
+      // Navigate to course detail page
+      navigate(`/student/courses/${course.courseId || course._id}`);
     } catch (error) {
       console.error('Enrollment failed:', error);
       toast({
-        title: "Enrollment failed",
-        description: error.response?.data?.message || "Something went wrong. Please try again.",
+        title: "Enrollment Failed",
+        description: error.response?.data?.message || "Failed to enroll in course. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-      setShowDialog(false);
     }
+  };
+
+  const handleContinue = () => {
+    if (!token) {
+      navigate('/login', { state: { from: `/courses/${course.courseId || course._id}` } });
+      return;
+    }
+    navigate(`/student/courses/${course.courseId || course._id}`);
   };
 
   const handleButtonClick = () => {
     // Redirect to login if not authenticated
     if (!user) {
-      navigate('/login', { state: { from: `/courses/${course.key}` } });
+      navigate('/login', { state: { from: `/courses/${course.courseId || course._id}` } });
       return;
     }
 
     // If already enrolled, navigate to course content
     if (isEnrolled) {
-      navigate(`/student/courses/${course.key}`);
+      navigate(`/student/courses/${course.courseId || course._id}`);
       return;
     }
 
@@ -125,7 +108,7 @@ const EnrollButton = ({ course, isEnrolled, className }) => {
         open={showDialog} 
         onOpenChange={setShowDialog} 
         course={course}
-        onConfirm={handleEnrollment}
+        onConfirm={handleEnroll}
         isLoading={loading}
       />
     </>

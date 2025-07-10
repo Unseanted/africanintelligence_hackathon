@@ -58,22 +58,48 @@ const StudentCourses = () => {
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
+      console.log('🔍 [StudentCourses] fetchEnrolledCourses called');
+      console.log('🔍 [StudentCourses] token exists:', !!token);
+      console.log('🔍 [StudentCourses] user:', user);
+      
       if (!token) {
+        console.log('❌ [StudentCourses] No token, skipping fetch');
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
+        console.log('🔍 [StudentCourses] Calling getLearnerCourses...');
         const courses = await getLearnerCourses(token);
+        console.log('🔍 [StudentCourses] getLearnerCourses response:', courses);
+        console.log('🔍 [StudentCourses] Response type:', typeof courses);
+        console.log('🔍 [StudentCourses] Response length:', courses?.length);
+        
+        if (courses && courses.length > 0) {
+          console.log('🔍 [StudentCourses] First course sample:', {
+            courseId: courses[0].courseId,
+            _id: courses[0]._id,
+            title: courses[0].title,
+            keys: Object.keys(courses[0])
+          });
+        }
+        
         setEnrolledCourses(courses || []);
       } catch (error) {
-        console.error("Error fetching enrolled courses:", error);
+        console.error("❌ [StudentCourses] Error fetching enrolled courses:", error);
+        console.error("❌ [StudentCourses] Error details:", {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
         toast({
           title: "Error",
           description: "Failed to load your enrolled courses",
           variant: "destructive",
         });
+        setEnrolledCourses([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
@@ -93,6 +119,11 @@ const StudentCourses = () => {
         </TabsList>
 
         <TabsContent value="explore" className="space-y-4">
+          {console.log('🔍 [StudentCourses] Explore tab - CoursesHub:', {
+            exists: !!CoursesHub,
+            length: CoursesHub?.length,
+            sample: CoursesHub?.slice(0, 2)?.map(c => ({ courseId: c.courseId, _id: c._id, title: c.title }))
+          })}
           {CoursesHub && CoursesHub.length > 0 ? (
             <CourseGrid 
               title="Available Courses"
@@ -112,13 +143,36 @@ const StudentCourses = () => {
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : enrolledCourses.length > 0 ? (
+          ) : enrolledCourses && enrolledCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrolledCourses.map((course) => (
-                <a href={`/student/courses/${course.key || course._id}`} key={course._id}>
-                  <EnrolledCourseCard course={course} />
-                </a>
-              ))}
+              {enrolledCourses.map((course) => { 
+                if (course) {
+                  console.log('🔍 [StudentCourses] Rendering enrolled course:', {
+                    courseId: course.courseId,
+                    _id: course._id,
+                    title: course.title,
+                    keys: Object.keys(course)
+                  });
+                  
+                  // Use courseId if available, otherwise fall back to _id
+                  const courseIdentifier = course.courseId || course._id;
+                  
+                  // Skip rendering if no valid identifier
+                  if (!courseIdentifier) {
+                    console.log('❌ [StudentCourses] Skipping course with no valid identifier:', course);
+                    return null;
+                  }
+                  
+                  const link = `/student/courses/${courseIdentifier}`;
+                  console.log(`🔍 [StudentCourses] Generated link: ${link} for course: ${course.title}`);
+                  return (
+                    <a href={link} key={courseIdentifier}>
+                      <EnrolledCourseCard course={course} />
+                    </a>
+                  );
+                }
+                return null;
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
