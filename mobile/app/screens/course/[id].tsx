@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
-import { Card, Button, Text, ProgressBar, Chip } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
+import { Card, Button, Text, ProgressBar, Chip, TextInput, Rating } from 'react-native-paper';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTourLMS } from '../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
@@ -8,45 +8,94 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { CoursesHub, user, token, enrollInCourse } = useTourLMS();
+  const { user, token, apiCall, socket } = useTourLMS();
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
 
   useEffect(() => {
     const fetchCourse = async () => {
       if (!id) return;
       
       try {
-        const foundCourse = CoursesHub.find(c => c._id === id);
-        if (foundCourse) {
-          setCourse(foundCourse);
-          setIsEnrolled(foundCourse.enrolledStudents?.includes(user?.id));
-        }
+        const data = await apiCall(`/courses/${id}`);
+        setCourse(data.course);
+        setIsEnrolled(data.isEnrolled); // Assuming API returns isEnrolled flag
       } catch (error) {
         console.error('Error fetching course:', error);
+        Alert.alert('Error', 'Failed to load course details');
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourse();
-  }, [id, CoursesHub, user]);
+
+    // Set up socket listeners for real-time updates
+    if (socket) {
+      socket.on('courseUpdate', (updatedCourse) => {
+        if (updatedCourse._id === id) {
+          setCourse(prev => ({ ...prev, ...updatedCourse }));
+        }
+      });
+
+      socket.on('enrollmentUpdate', ({ courseId, enrolled }) => {
+        if (courseId === id) {
+          setIsEnrolled(enrolled);
+        }
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('courseUpdate');
+        socket.off('enrollmentUpdate');
+      }
+    };
+  }, [id, apiCall, socket]);
 
   const handleEnroll = async () => {
     if (!course || !token) return;
 
     try {
       setEnrolling(true);
-      await enrollInCourse(course._id);
+      await apiCall(`/courses/${id}/enroll`, { method: 'POST' });
       setIsEnrolled(true);
-      router.push(`/course/${course._id}/content`);
+      router.push(`/course/${id}/content`);
     } catch (error) {
       console.error('Error enrolling in course:', error);
+      Alert.alert('Error', error.message || 'Failed to enroll in course');
     } finally {
       setEnrolling(false);
     }
+  };
+
+  const handleRateCourse = async () => {
+    try {
+      await apiCall(`/courses/${id}/rate`, {
+        method: 'POST',
+        body: JSON.stringify({ rating, comment: review })
+      });
+      setRatingModalVisible(false);
+      Alert.alert('Success', 'Thank you for your rating!');
+    } catch (error) {
+      console.error('Error rating course:', error);
+      Alert.alert('Error', 'Failed to submit rating');
+    }
+  };
+
+  const handleContinueLearning = () => {
+    router.push({
+      pathname: `/course/${id}/content`,
+      params: { 
+        lastModuleId: course.lastAccessedModule,
+        lastContentId: course.lastAccessedContent 
+      }
+    });
   };
 
   if (loading) {
@@ -83,13 +132,13 @@ export default function CourseDetailScreen() {
         
         <View style={styles.metaContainer}>
           <Chip icon="account-group" style={styles.chip}>
-            {course.totalStudents || 0} students
+            {course.enrolledStudents || 0} students
           </Chip>
           <Chip icon="clock-outline" style={styles.chip}>
             {course.duration || 'Self-paced'}
           </Chip>
           <Chip icon="star" style={styles.chip}>
-            {course.level || 'Beginner'}
+            {course.averageRating ? `${course.averageRating.toFixed(1)}/5` : 'Not rated'}
           </Chip>
         </View>
 
@@ -111,11 +160,11 @@ export default function CourseDetailScreen() {
           </Card.Content>
         </Card>
 
-        {course.whatYouWillLearn && (
+        {course.learningOutcomes && (
           <Card style={styles.section}>
             <Card.Content>
               <Text style={styles.sectionTitle}>What You'll Learn</Text>
-              {course.whatYouWillLearn.map((item, index) => (
+              {course.learningOutcomes.map((item, index) => (
                 <View key={index} style={styles.learningItem}>
                   <MaterialCommunityIcons name="check-circle" size={20} color={PRIMARY} />
                   <Text style={styles.learningText}>{item}</Text>
@@ -125,35 +174,62 @@ export default function CourseDetailScreen() {
           </Card>
         )}
 
-        {course.facilitatorInfo && (
+        {course.instructor && (
           <Card style={styles.section}>
             <Card.Content>
               <Text style={styles.sectionTitle}>Instructor</Text>
               <View style={styles.instructorContainer}>
                 <Image
-                  source={{ uri: course.facilitatorInfo.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(course.facilitatorInfo.name)}&background=random` }}
+                  source={{ uri: course.instructor.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(course.instructor.name)}&background=random` }}
                   style={styles.instructorImage}
                 />
                 <View style={styles.instructorInfo}>
-                  <Text style={styles.instructorName}>{course.facilitatorInfo.name}</Text>
-                  <Text style={styles.instructorTitle}>{course.facilitatorInfo.title}</Text>
-                  <Text style={styles.instructorBio}>{course.facilitatorInfo.bio}</Text>
+                  <Text style={styles.instructorName}>{course.instructor.name}</Text>
+                  <Text style={styles.instructorTitle}>{course.instructor.title}</Text>
+                  <Text style={styles.instructorBio}>{course.instructor.bio}</Text>
                 </View>
               </View>
             </Card.Content>
           </Card>
         )}
 
+        {course.modules && (
+          <Card style={styles.section}>
+            <Card.Content>
+              <Text style={styles.sectionTitle}>Course Content</Text>
+              {course.modules.map((module, index) => (
+                <View key={module._id} style={styles.moduleItem}>
+                  <Text style={styles.moduleTitle}>{index + 1}. {module.title}</Text>
+                  <Text style={styles.moduleDuration}>{module.duration}</Text>
+                  {isEnrolled && module.completed && (
+                    <MaterialCommunityIcons name="check-circle" size={20} color="green" />
+                  )}
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
+
         <View style={styles.buttonContainer}>
           {isEnrolled ? (
-            <Button
-              mode="contained"
-              onPress={() => router.push(`/course/${course._id}/content`)}
-              style={styles.button}
-              buttonColor={PRIMARY}
-            >
-              Continue Learning
-            </Button>
+            <>
+              <Button
+                mode="contained"
+                onPress={handleContinueLearning}
+                style={styles.button}
+                buttonColor={PRIMARY}
+              >
+                Continue Learning
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={() => setRatingModalVisible(true)}
+                style={[styles.button, { marginTop: 12 }]}
+                textColor={PRIMARY}
+              >
+                Rate This Course
+              </Button>
+            </>
           ) : (
             <Button
               mode="contained"
@@ -168,6 +244,46 @@ export default function CourseDetailScreen() {
           )}
         </View>
       </View>
+
+      {/* Rating Modal */}
+      <Modal
+        visible={ratingModalVisible}
+        onDismiss={() => setRatingModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
+      >
+        <Text style={styles.modalTitle}>Rate This Course</Text>
+        <Rating
+          value={rating}
+          onValueChange={setRating}
+          count={5}
+          size={30}
+        />
+        <TextInput
+          label="Your Review"
+          value={review}
+          onChangeText={setReview}
+          multiline
+          numberOfLines={4}
+          style={styles.reviewInput}
+        />
+        <View style={styles.modalButtons}>
+          <Button
+            mode="outlined"
+            onPress={() => setRatingModalVisible(false)}
+            style={styles.modalButton}
+          >
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleRateCourse}
+            style={styles.modalButton}
+            disabled={rating === 0}
+          >
+            Submit
+          </Button>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -281,6 +397,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: TEXT_SECONDARY,
   },
+  moduleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER_COLOR,
+  },
+  moduleTitle: {
+    fontSize: 14,
+    color: TEXT_PRIMARY,
+    flex: 1,
+  },
+  moduleDuration: {
+    fontSize: 12,
+    color: TEXT_SECONDARY,
+    marginHorizontal: 8,
+  },
   buttonContainer: {
     marginTop: 16,
     marginBottom: 32,
@@ -288,4 +422,30 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 8,
   },
-}); 
+  modalContainer: {
+    backgroundColor: BACKGROUND,
+    padding: 20,
+    margin: 20,
+    borderRadius: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: TEXT_PRIMARY,
+    textAlign: 'center',
+  },
+  reviewInput: {
+    marginVertical: 16,
+    backgroundColor: CARD_BACKGROUND,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+});

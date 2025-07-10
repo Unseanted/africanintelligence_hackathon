@@ -453,7 +453,10 @@ const ContentEditor= ({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Last Saved</span>
                 <span className="text-sm">
-                  {editorState.lastSaved ? editorState.lastSaved.toLocaleTimeString() : 'Never'}
+                {editorState.lastSaved
+  ? new Date(editorState.lastSaved).toLocaleTimeString()
+  : 'Not yet saved'}
+
                 </span>
               </div>
               <div className="flex items-center justify-between">

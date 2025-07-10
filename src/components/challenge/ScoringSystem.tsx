@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,6 @@ import { useSocket } from '@/services/socketService';
 import { useTourLMS } from '@/contexts/TourLMSContext';
 import { Trophy, Users, Clock, Star, Award, Target, Zap } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
-import { socketService } from '@/services/socketService';
 
 interface Score {
   userId: string;
@@ -23,6 +22,7 @@ interface Achievement {
   description: string;
   points: number;
   icon: string;
+  timestamp?: number;
 }
 
 interface TeamScore {
@@ -38,6 +38,108 @@ interface ScoringSystemProps {
   onComplete?: () => void;
 }
 
+// Memoized components for better performance
+const AchievementBadge = React.memo(({ achievement }: { achievement: Achievement }) => {
+  const getAchievementIcon = useCallback((icon: string) => {
+    switch (icon) {
+      case 'trophy': return <Trophy className="h-4 w-4" />;
+      case 'star': return <Star className="h-4 w-4" />;
+      case 'target': return <Target className="h-4 w-4" />;
+      case 'zap': return <Zap className="h-4 w-4" />;
+      default: return <Award className="h-4 w-4" />;
+    }
+  }, []);
+
+  return (
+    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+      <div className="p-2 bg-primary/10 rounded-full">
+        {getAchievementIcon(achievement.icon)}
+      </div>
+      <div>
+        <h4 className="font-medium">{achievement.name}</h4>
+        <p className="text-sm text-muted-foreground">{achievement.description}</p>
+        <Badge variant="secondary" className="mt-1">+{achievement.points} points</Badge>
+      </div>
+    </div>
+  );
+});
+
+const ScoreRow = React.memo(({ 
+  score, 
+  index, 
+  maxScore 
+}: { 
+  score: Score, 
+  index: number, 
+  maxScore: number 
+}) => {
+  const progressColor = useCallback((score: number, maxScore: number) => {
+    const percentage = (score / maxScore) * 100;
+    if (percentage >= 80) return 'bg-green-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Badge variant="outline">{index + 1}</Badge>
+        <span className="font-medium">{score.username}</span>
+        <Badge variant="secondary">{score.role}</Badge>
+        {score.achievements?.length > 0 && (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Award className="h-3 w-3" />
+            {score.achievements.length}
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Progress
+          value={(score.score / maxScore) * 100}
+          className={`h-2 w-32 ${progressColor(score.score, maxScore)}`}
+        />
+        <span className="font-bold">{score.score}</span>
+      </div>
+    </div>
+  );
+});
+
+const TeamScoreRow = React.memo(({ 
+  team, 
+  index, 
+  maxScore 
+}: { 
+  team: TeamScore, 
+  index: number, 
+  maxScore: number 
+}) => {
+  const progressColor = useCallback((score: number, maxScore: number) => {
+    const percentage = (score / maxScore) * 100;
+    if (percentage >= 80) return 'bg-green-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Badge variant="outline">{index + 1}</Badge>
+        <span className="font-medium">{team.teamName}</span>
+        <Badge variant="secondary">
+          {team.members.length} members
+        </Badge>
+      </div>
+      <div className="flex items-center gap-2">
+        <Progress
+          value={(team.score / maxScore) * 100}
+          className={`h-2 w-32 ${progressColor(team.score, maxScore)}`}
+        />
+        <span className="font-bold">{team.score}</span>
+      </div>
+    </div>
+  );
+});
+
 const ScoringSystem: React.FC<ScoringSystemProps> = ({
   challengeId,
   duration,
@@ -51,53 +153,92 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
   const [isActive, setIsActive] = useState(true);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
+  // Format time display
+  const formatTime = useCallback((seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Handle score updates
+  const handleScoreUpdate = useCallback((score: number, challengeId: string) => {
+    if (user?.role === 'facilitator' || user?.role === 'admin') {
+      socket?.emit('score:update', { score, challengeId });
+    } else {
+      toast({
+        title: "Permission Denied",
+        description: "Only facilitators or admins can score students.",
+        variant: "destructive",
+      });
+    }
+  }, [socket, user?.role]);
+
+  // Socket event handlers
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('score:update', (data: Score) => {
+    const handleScoreUpdate = (data: Score) => {
       setScores(prev => {
-        const index = prev.findIndex(s => s.userId === data.userId);
-        if (index >= 0) {
+        const existingIndex = prev.findIndex(s => s.userId === data.userId);
+        if (existingIndex >= 0) {
           const newScores = [...prev];
-          newScores[index] = data;
+          newScores[existingIndex] = data;
           return newScores;
         }
         return [...prev, data];
       });
-    });
+    };
 
-    socket.on('leaderboard:update', (data: Score[]) => {
+    const handleLeaderboardUpdate = (data: Score[]) => {
       setScores(data);
-    });
+    };
 
-    socket.on('team:update', (data: TeamScore) => {
+    const handleTeamUpdate = (data: TeamScore) => {
       setTeamScores(prev => {
-        const index = prev.findIndex(t => t.teamId === data.teamId);
-        if (index >= 0) {
+        const existingIndex = prev.findIndex(t => t.teamId === data.teamId);
+        if (existingIndex >= 0) {
           const newScores = [...prev];
-          newScores[index] = data;
+          newScores[existingIndex] = data;
           return newScores;
         }
         return [...prev, data];
       });
-    });
+    };
 
-    socket.on('achievement:unlocked', (achievement: Achievement) => {
-      setAchievements(prev => [...prev, achievement]);
+    const handleAchievementUnlocked = (achievement: Achievement) => {
+      setAchievements(prev => {
+        // Prevent duplicates and limit to 5 most recent
+        const exists = prev.some(a => a.id === achievement.id);
+        if (exists) return prev;
+        
+        const newAchievements = [{ ...achievement, timestamp: Date.now() }, ...prev];
+        return newAchievements.slice(0, 5); // Keep only 5 most recent
+      });
+      
       toast({
         title: "Achievement Unlocked! 🎉",
         description: `${achievement.name} - ${achievement.description}`,
       });
-    });
+    };
+
+    socket.on('score:update', handleScoreUpdate);
+    socket.on('leaderboard:update', handleLeaderboardUpdate);
+    socket.on('team:update', handleTeamUpdate);
+    socket.on('achievement:unlocked', handleAchievementUnlocked);
+
+    // Initial data fetch
+    socket.emit('leaderboard:request', challengeId);
+    socket.emit('teams:request', challengeId);
 
     return () => {
-      socket.off('score:update');
-      socket.off('leaderboard:update');
-      socket.off('team:update');
-      socket.off('achievement:unlocked');
+      socket.off('score:update', handleScoreUpdate);
+      socket.off('leaderboard:update', handleLeaderboardUpdate);
+      socket.off('team:update', handleTeamUpdate);
+      socket.off('achievement:unlocked', handleAchievementUnlocked);
     };
-  }, [socket]);
+  }, [socket, challengeId]);
 
+  // Timer logic
   useEffect(() => {
     if (!isActive) return;
 
@@ -116,40 +257,9 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
     return () => clearInterval(timer);
   }, [isActive, onComplete]);
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const getProgressColor = (score: number, maxScore: number) => {
-    const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  const handleScoreUpdate = (score: number, challengeId: string) => {
-    if (user?.role === 'facilitator' || user?.role === 'admin') {
-      socketService.updateScore(score, challengeId);
-    } else {
-      toast({
-        title: "Permission Denied",
-        description: "Only facilitators or admins can score students.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getAchievementIcon = (icon: string) => {
-    switch (icon) {
-      case 'trophy': return <Trophy className="h-4 w-4" />;
-      case 'star': return <Star className="h-4 w-4" />;
-      case 'target': return <Target className="h-4 w-4" />;
-      case 'zap': return <Zap className="h-4 w-4" />;
-      default: return <Award className="h-4 w-4" />;
-    }
-  };
+  // Calculate max scores for progress bars
+  const maxIndividualScore = scores.length > 0 ? Math.max(...scores.map(s => s.score)) : 1;
+  const maxTeamScore = teamScores.length > 0 ? Math.max(...teamScores.map(t => t.score)) : 1;
 
   return (
     <div className="space-y-6">
@@ -179,16 +289,7 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {achievements.map((achievement) => (
-                <div key={achievement.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    {getAchievementIcon(achievement.icon)}
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{achievement.name}</h4>
-                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                    <Badge variant="secondary" className="mt-1">+{achievement.points} points</Badge>
-                  </div>
-                </div>
+                <AchievementBadge key={achievement.id} achievement={achievement} />
               ))}
             </div>
           </CardContent>
@@ -207,26 +308,12 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
             {scores
               .sort((a, b) => b.score - a.score)
               .map((score, index) => (
-                <div key={score.userId} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{index + 1}</Badge>
-                    <span className="font-medium">{score.username}</span>
-                    <Badge variant="secondary">{score.role}</Badge>
-                    {score.achievements?.length > 0 && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Award className="h-3 w-3" />
-                        {score.achievements.length}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress
-                      value={(score.score / Math.max(...scores.map(s => s.score))) * 100}
-                      className={`h-2 w-32 ${getProgressColor(score.score, Math.max(...scores.map(s => s.score)))}`}
-                    />
-                    <span className="font-bold">{score.score}</span>
-                  </div>
-                </div>
+                <ScoreRow 
+                  key={score.userId} 
+                  score={score} 
+                  index={index} 
+                  maxScore={maxIndividualScore} 
+                />
               ))}
           </div>
         </CardContent>
@@ -245,22 +332,12 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
               {teamScores
                 .sort((a, b) => b.score - a.score)
                 .map((team, index) => (
-                  <div key={team.teamId} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{index + 1}</Badge>
-                      <span className="font-medium">{team.teamName}</span>
-                      <Badge variant="secondary">
-                        {team.members.length} members
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={(team.score / Math.max(...teamScores.map(t => t.score))) * 100}
-                        className={`h-2 w-32 ${getProgressColor(team.score, Math.max(...teamScores.map(t => t.score)))}`}
-                      />
-                      <span className="font-bold">{team.score}</span>
-                    </div>
-                  </div>
+                  <TeamScoreRow 
+                    key={team.teamId} 
+                    team={team} 
+                    index={index} 
+                    maxScore={maxTeamScore} 
+                  />
                 ))}
             </div>
           </CardContent>
@@ -270,4 +347,4 @@ const ScoringSystem: React.FC<ScoringSystemProps> = ({
   );
 };
 
-export default ScoringSystem; 
+export default React.memo(ScoringSystem);

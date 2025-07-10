@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
-
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ThemedText } from './components/ThemedText';
 import { ThemedView } from './components/ThemedView';
 
@@ -52,13 +52,13 @@ export default function LandingPage() {
   );
 }
 
+// Use StyleSheet.create for better performance
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    borderRadius: 50,
   },
   logo: {
     width: 200,
@@ -68,5 +68,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     textAlign: 'center',
     fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
   },
-}); 
+});

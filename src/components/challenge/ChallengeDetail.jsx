@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, Book, FileText, AlertCircle } from 'lucide-react';
@@ -32,6 +33,16 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
       case 'file': return 'File Upload';
       default: return 'Submission';
     }
+  };
+
+  const formatTimeRemaining = (ms) => {
+    if (ms <= 0) return 'Expired';
+    
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
   };
 
   return (
@@ -87,9 +98,17 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
               
               <h3 className="font-semibold">Requirements</h3>
               <ul className="list-disc list-inside space-y-1">
-                {challenge.requirements.map((req, index) => (
-                  <li key={index} className="text-gray-600 dark:text-gray-300">{req}</li>
-                ))}
+                {Array.isArray(challenge.requirements) ? (
+                  challenge.requirements.length > 0 ? (
+                    challenge.requirements.map((req, index) => (
+                      <li key={index} className="text-gray-600 dark:text-gray-300">{req}</li>
+                    ))
+                  ) : (
+                    <li className="text-gray-600 dark:text-gray-300">No specific requirements</li>
+                  )
+                ) : (
+                  <li className="text-gray-600 dark:text-gray-300">Requirements not specified</li>
+                )}
               </ul>
             </div>
           </div>
@@ -125,14 +144,44 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
   );
 };
 
-const formatTimeRemaining = (ms) => {
-  if (ms <= 0) return 'Expired';
-  
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
+ChallengeDetail.propTypes = {
+  challenge: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    courseTitle: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    requirements: PropTypes.arrayOf(PropTypes.string),
+    status: PropTypes.oneOf(['active', 'upcoming', 'completed']).isRequired,
+    startTime: PropTypes.number.isRequired,
+    endTime: PropTypes.number.isRequired,
+    participants: PropTypes.number,
+    maxScore: PropTypes.number,
+    difficulty: PropTypes.string,
+    submissionType: PropTypes.oneOf([
+      'quiz',
+      'timed-quiz',
+      'document',
+      'presentation',
+      'image',
+      'video',
+      'text',
+      'url',
+      'file'
+    ]).isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onJoin: PropTypes.func,
+  isSubmitted: PropTypes.bool,
+  isWaitlisted: PropTypes.bool,
+  onJoinWaitlist: PropTypes.func,
+};
+
+ChallengeDetail.defaultProps = {
+  requirements: [],
+  participants: 0,
+  maxScore: 0,
+  isSubmitted: false,
+  isWaitlisted: false,
 };
 
 export default ChallengeDetail;

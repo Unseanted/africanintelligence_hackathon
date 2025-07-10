@@ -24,7 +24,6 @@ export default function Register() {
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: 'YOUR_WEB_CLIENT_ID', // From Google Cloud Console
-      androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Optional, if you have a separate Android client ID
       iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional, if you have a separate iOS client ID
       scopes: ['profile', 'email'],
       offlineAccess: true,
@@ -50,7 +49,7 @@ export default function Register() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token: userInfo.idToken,
+          token: userInfo.idToken || userInfo.user?.idToken,
           role,
         }),
       });
@@ -68,7 +67,7 @@ export default function Register() {
           title: "Tribe Welcomes You!",
           description: "You've joined African Intelligence. Onward to greatness!",
         });
-        router.replace('/(tabs)/student');
+        router.replace('/screens/(tabs)/student');
       } else {
         throw new Error(result.message || 'Google signup failed');
       }
@@ -122,7 +121,7 @@ export default function Register() {
         title: "Tribe Welcomes You!",
         description: "You've joined African Intelligence. Onward to greatness!",
       });
-      router.replace('/(tabs)/student');
+      router.replace('/screens/(tabs)/student');
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({

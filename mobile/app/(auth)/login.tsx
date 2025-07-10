@@ -1,26 +1,30 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
-import { Text, TextInput, Button, SegmentedButtons } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
+import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
+import { router } from 'expo-router';
 import { useTourLMS } from '../contexts/TourLMSContext';
 import { useToast } from '../hooks/use-toast';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { router } from 'expo-router';
 
-export default function LoginScreen() {
+export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('student');
-  const [loading, setLoading] = useState(false);
-  const { login, API_URL } = useTourLMS();
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register, API_URL } = useTourLMS();
   const { toast } = useToast();
 
   // Configure Google Sign-In
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: 'YOUR_WEB_CLIENT_ID', // From Google Cloud Console
-      androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Optional
-      iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional
+      iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional, if you have a separate iOS client ID
       scopes: ['profile', 'email'],
       offlineAccess: true,
       hostedDomain: '', // Optional
@@ -28,29 +32,17 @@ export default function LoginScreen() {
     });
   }, []);
 
-  // Safe navigation function
-  const navigateToApp = () => {
+  const handleGoogleSignIn = useCallback(async () => {
     try {
-      router.replace('/' as any); // Navigate to root
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback navigation
-      router.push('/');
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
+      setIsLoading(true);
       
       // Check if your device supports Google Play
       await GoogleSignin.hasPlayServices();
       
       // Get the user's ID token
       const userInfo = await GoogleSignin.signIn();
-      
-      // Get the ID token
-      const tokens = await GoogleSignin.getTokens();
+
+    
       
       // Send the ID token to your backend
       const response = await fetch(`${API_URL}/auth/google`, {
@@ -59,174 +51,251 @@ export default function LoginScreen() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          idToken: tokens.idToken,
-          accessToken: tokens.accessToken,
+          token: userInfo.idToken, // ✅ correct
           role,
-          userInfo: {
-            id: userInfo.user.id,
-            email: userInfo.user.email,
-            name: userInfo.user.name,
-            photo: userInfo.user.photo,
-          },
         }),
       });
 
       const result = await response.json();
       
       if (response.ok && result.user && result.token) {
-        // Store authentication data in context
-        await login(result.user.email, '');
-        
-        toast({
-          title: "Access Granted!",
-          description: `Welcome back, ${result.user.name}, to African Intelligence!`,
+        await register({
+          name: result.user.name,
+          email: result.user.email,
+          password: '',
+          role: result.user.role
         });
-        
-        // Navigate to main app
-        navigateToApp();
+        toast({
+          title: "Tribe Welcomes You!",
+          description: "You've joined African Intelligence. Onward to greatness!",
+        });
+       router.replace('/screens/(tabs)/student');
       } else {
-        throw new Error(result.message || 'Google login failed');
+        throw new Error(result.message || 'Google signup failed');
       }
     } catch (error: any) {
-      console.error("Google Login error:", error);
+      console.error("Google Sign-In error:", error);
       
-      let errorMessage = "Failed to login with Google. Please try again.";
+      let errorMessage = "Failed to signup with Google. Please try again.";
       
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        errorMessage = "Sign in was cancelled";
+        errorMessage = "Google sign-in was cancelled.";
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        errorMessage = "Sign in is in progress";
+        errorMessage = "Google sign-in is already in progress.";
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        errorMessage = "Google Play Services not available";
+        errorMessage = "Google Play Services is not available or outdated.";
       }
       
       toast({
-        title: "Access Denied",
+        title: "Entry Denied",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [API_URL, role, register, toast]);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const handleSubmit = async () => {
+    if (password !== confirmPassword) {
       toast({
-        title: "Missing Information",
-        description: "Please enter both email and password",
+        title: "Password Mismatch",
+        description: "Ensure your passwords align, warrior.",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      setLoading(true);
-      await login(email, password);
-      
+    if (!agreeTerms) {
       toast({
-        title: "Access Granted!",
-        description: "Welcome back to African Intelligence!",
+        title: "Tribal Pact",
+        description: "Accept the tribe's code to join the ascent.",
+        variant: "destructive",
       });
-      
-      // Navigate to main app
-      navigateToApp();
-    } catch (error: any) {
-      console.error("Login error:", error);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const userData = { name, email, password, role };
+      await register(userData);
       toast({
-        title: "Login Failed",
-        description: error?.message || "Invalid credentials. Please try again.",
+        title: "Tribe Welcomes You!",
+        description: "You've joined African Intelligence. Onward to greatness!",
+      });
+     router.replace('/screens/(tabs)/student');
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Entry Denied",
+        description: error.message || "The tribe couldn't forge your path. Try again.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: BACKGROUND }]}>
+    <ScrollView style={[styles.container, { backgroundColor: BACKGROUND }]}>
       <View style={styles.content}>
-        <Image
-          source={require('../../assets/images/logo1.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={[styles.title, { color: TEXT_PRIMARY }]}>
-          Welcome Back
-        </Text>
-        <Text style={[styles.subtitle, { color: TEXT_SECONDARY }]}>
-          Sign in to continue your learning journey
-        </Text>
-
-        <View style={styles.form}>
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-            theme={{ colors: { primary: PRIMARY } }}
-            disabled={loading}
-          />
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            secureTextEntry
-            style={styles.input}
-            theme={{ colors: { primary: PRIMARY } }}
-            disabled={loading}
-          />
-          
-          <View style={[styles.roleSelector, { opacity: loading ? 0.5 : 1 }]}>
-            <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>
-              Login as:
+        <View style={styles.formContainer}>
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/images/logo1.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={[styles.title, { color: TEXT_PRIMARY }]}>
+              Join African Intelligence
             </Text>
-            <SegmentedButtons
-              value={role}
-              onValueChange={setRole}
-              buttons={[
-                { value: 'student', label: 'Student' },
-                { value: 'facilitator', label: 'Facilitator' },
-              ]}
-            />
+            <Text style={[styles.subtitle, { color: TEXT_SECONDARY }]}>
+              Forge your path in the tribe&apos;s ascent
+            </Text>
           </View>
 
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={loading}
-            style={styles.button}
-            buttonColor={PRIMARY}
-          >
-            {loading ? "Entering..." : "Enter African Intelligence"}
-          </Button>
+          <View style={styles.form}>
+            <TextInput
+              label="Tribal Name"
+              value={name}
+              onChangeText={setName}
+              mode="outlined"
+              style={styles.input}
+              theme={{ colors: { primary: PRIMARY } }}
+              disabled={isLoading}
+              placeholder="Akin Zulu"
+            />
 
-          <Button
-            mode="outlined"
-            onPress={handleGoogleLogin}
-            disabled={loading}
-            style={styles.googleButton}
-            icon="google"
-          >
-            Continue with Google
-          </Button>
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.input}
+              theme={{ colors: { primary: PRIMARY } }}
+              disabled={isLoading}
+              placeholder="you@africanintelligence.com"
+            />
 
-          <Button
-            mode="text"
-            onPress={() => router.push('/register')}
-            style={styles.registerButton}
-            disabled={loading}
-          >
-            Don&apos;t have an account? Register here
-          </Button>
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              style={styles.input}
+              theme={{ colors: { primary: PRIMARY } }}
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
+
+            <TextInput
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              mode="outlined"
+              secureTextEntry={!showConfirmPassword}
+              right={
+                <TextInput.Icon
+                  icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+              }
+              style={styles.input}
+              theme={{ colors: { primary: PRIMARY } }}
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
+
+            <View style={styles.roleContainer}>
+              <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>I join as a</Text>
+              <View style={styles.roleButtons}>
+                <Button
+                  mode={role === 'facilitator' ? 'contained' : 'outlined'}
+                  onPress={() => setRole('facilitator')}
+                  style={styles.roleButton}
+                  theme={{ colors: { primary: PRIMARY } }}
+                  disabled={isLoading}
+                >
+                  Griot (Facilitator)
+                </Button>
+                <Button
+                  mode={role === 'student' ? 'contained' : 'outlined'}
+                  onPress={() => setRole('student')}
+                  style={styles.roleButton}
+                  theme={{ colors: { primary: PRIMARY } }}
+                  disabled={isLoading}
+                >
+                  Warrior (Student)
+                </Button>
+              </View>
+            </View>
+
+            <View style={styles.termsContainer}>
+              <Checkbox
+                status={agreeTerms ? 'checked' : 'unchecked'}
+                onPress={() => setAgreeTerms(!agreeTerms)}
+                color={PRIMARY}
+                disabled={isLoading}
+              />
+              <Text style={[styles.termsText, { color: TEXT_SECONDARY }]}>
+                I pledge to the{' '}
+                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/terms' as any)}>
+                  Tribal Code
+                </Text>{' '}
+                and{' '}
+                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/privacy' as any)}>
+                  Sacred Pact
+                </Text>
+              </Text>
+            </View>
+
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.registerButton}
+              theme={{ colors: { primary: PRIMARY } }}
+            >
+              {isLoading ? 'Forging Your Path...' : 'Join the Tribe'}
+            </Button>
+
+            <Button
+              mode="outlined"
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+              style={styles.googleButton}
+              icon="google"
+            >
+              Continue with Google
+            </Button>
+
+            <View style={styles.loginContainer}>
+              <Text style={[styles.loginText, { color: TEXT_SECONDARY }]}>
+                Already in the tribe?{' '}
+                <Text
+                  style={styles.loginLink}
+                  onPress={() => router.push('/(auth)/login')}
+                >
+                  Enter Now
+                </Text>
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -237,47 +306,88 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
+  },
+  formContainer: {
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.2)',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logoContainer: {
+    backgroundColor: 'rgba(234, 179, 8, 0.2)',
+    padding: 15,
+    borderRadius: 30,
+    marginBottom: 20,
   },
   logo: {
-    width: 120,
-    height: 120,
-    alignSelf: 'center',
-    marginBottom: 20,
+    width: 40,
+    height: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 32,
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderColor: 'rgba(234, 179, 8, 0.2)',
   },
-  roleSelector: {
-    marginVertical: 8,
+  roleContainer: {
+    marginVertical: 10,
   },
   roleLabel: {
-    fontSize: 16,
-    fontWeight: '500',
     marginBottom: 8,
+    fontSize: 16,
   },
-  button: {
-    marginTop: 8,
+  roleButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  roleButton: {
+    flex: 1,
+  },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  termsText: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  termsLink: {
+    color: PRIMARY,
+    fontWeight: 'bold',
+  },
+  registerButton: {
+    marginTop: 20,
+    paddingVertical: 8,
   },
   googleButton: {
     marginTop: 8,
     borderColor: PRIMARY,
   },
-  registerButton: {
-    marginTop: 16,
+  loginContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  loginText: {
+    fontSize: 16,
+  },
+  loginLink: {
+    color: PRIMARY,
+    fontWeight: 'bold',
   },
 });
