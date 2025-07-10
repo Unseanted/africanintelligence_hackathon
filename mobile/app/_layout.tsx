@@ -18,25 +18,22 @@ SplashScreen.preventAutoHideAsync();
 function useProtectedRoute() {
   const segments = useSegments();
   const router = useRouter();
-  const { user, token } = useTourLMS();
+  const { user, token, loading } = useTourLMS();
   const isNavigating = useRef(false);
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    // Don't run the auth check while still loading
+    if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const isLandingPage = segments[0] === undefined;
+    const isLandingPage = segments.length === 0; // Check for empty segments array
 
-    if (isNavigating.current || isLandingPage) return;
+    if (isNavigating.current) return;
 
-    if (!user && !token && !inAuthGroup) {
+    if (!user && !token && !inAuthGroup && !isLandingPage) {
       isNavigating.current = true;
       router.replace('/(auth)/login');
-    } else if (user && token && inAuthGroup) {
+    } else if (user && token && (inAuthGroup || isLandingPage)) {
       isNavigating.current = true;
       router.replace('/(tabs)/student');
     }
@@ -44,7 +41,7 @@ function useProtectedRoute() {
     return () => {
       isNavigating.current = false;
     };
-  }, [user, token, segments, router]);
+  }, [user, token, segments, router, loading]);
 }
 
 function AppContent() {
@@ -54,15 +51,16 @@ function AppContent() {
   useEffect(() => {
     if (!loading) {
       // Hide splash screen once we're done loading
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(console.warn);
     }
   }, [loading]);
 
   return (
     <SafeAreaProvider>
-      <View style={[styles.container, { pointerEvents: 'auto' }]}>
+      <View style={styles.container}>
         <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
         <Slot />
+        <Toast />
       </View>
     </SafeAreaProvider>
   );
@@ -72,7 +70,6 @@ function RootLayoutNav() {
   return (
     <PaperProvider>
       <AppContent />
-      <Toast />
     </PaperProvider>
   );
 }

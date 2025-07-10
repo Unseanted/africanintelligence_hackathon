@@ -67,7 +67,7 @@ export default function Register() {
           title: "Tribe Welcomes You!",
           description: "You've joined African Intelligence. Onward to greatness!",
         });
-        router.replace('/screens/(tabs)/student');
+        router.replace('/../screens/(tabs)/student');
       } else {
         throw new Error(result.message || 'Google signup failed');
       }
