@@ -30,6 +30,7 @@ const {
 } = require("./configs/config");
 const analyticsRoutes = require("./routes/analytics");
 const contentRoutes = require("./routes/content");
+const { Event } = require("./models/Event");
 
 // Configure the environment
 require("dotenv").config();
@@ -104,6 +105,21 @@ async function startServer() {
 
     // Start websocket server
     const webSocketServer = setupSocket(server, app.locals.db);
+
+    // Schedule event status updates every 5 minutes
+    setInterval(async () => {
+      try {
+        await Event.updateAllEventStatuses();
+        console.log("Event statuses updated");
+      } catch (error) {
+        console.error("Error updating event statuses:", error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Initial event status update
+    Event.updateAllEventStatuses().catch((error) => {
+      console.error("Error in initial event status update:", error);
+    });
   } catch (error) {
     console.error("Error starting server:", error);
     process.exit(1);

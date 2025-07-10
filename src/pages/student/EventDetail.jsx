@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, Calendar, MapPin, Clock, Users, Award, PenTool, 
   Loader2, FileText, CalendarX, Share2, Monitor, UserPlus, Shield, 
-  AlignJustify, BookOpen, Target
+  AlignJustify, BookOpen, Target, Printer, Download, Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,7 @@ const EventDetail = () => {
   const [teamCount, setTeamCount] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [isRegisteringForEvent, setIsRegisteringForEvent] = useState(false);
+  const [guidelinesToc, setGuidelinesToc] = useState([]);
 
   useEffect(() => {
     fetchEventDetails();
@@ -48,12 +49,28 @@ const EventDetail = () => {
       }
       
   },[event,user])
+
+  // Extract table of contents from guidelines HTML
+  useEffect(() => {
+    if (event?.guidelines) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = event.guidelines;
+      const headings = tempDiv.querySelectorAll('h1, h2, h3');
+      const toc = Array.from(headings).map((heading, index) => ({
+        id: `guideline-${index}`,
+        text: heading.textContent,
+        level: parseInt(heading.tagName.charAt(1)),
+        element: heading
+      }));
+      setGuidelinesToc(toc);
+    }
+  }, [event?.guidelines]);
   
   const fetchEventDetails = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/admin/events/${id}`, {
+      const response = await axios.get(`${API_URL}/events/${id}`, {
         headers: { 'x-auth-token': token },
       });
       
@@ -90,7 +107,7 @@ const EventDetail = () => {
       
       if (isParticipant) {
         // Leave the event
-        await axios.delete(`${API_URL}/admin/events/${id}/register/${user.id}`, {
+        const response = await axios.delete(`${API_URL}/events/${id}/leave/`, {
           headers: { 'x-auth-token': token },
         });
         
@@ -101,9 +118,14 @@ const EventDetail = () => {
         
         setIsParticipant(false);
         setParticipantCount(prev => Math.max(0, prev - 1));
+        
+        // Update capacity if provided
+        if (response.data.remainingCapacity !== undefined) {
+          // This will be updated when we refresh event data
+        }
       } else {
         // Join the event
-        await axios.post(`${API_URL}/admin/events/${id}/register/${user.id}`, {}, {
+        const response = await axios.post(`${API_URL}/events/${id}/register/`, {}, {
           headers: { 'x-auth-token': token },
         });
         
@@ -114,6 +136,11 @@ const EventDetail = () => {
         
         setIsParticipant(true);
         setParticipantCount(prev => prev + 1);
+        
+        // Update capacity if provided
+        if (response.data.remainingCapacity !== undefined) {
+          // This will be updated when we refresh event data
+        }
       }
       
       // Refresh event data
@@ -162,7 +189,7 @@ const EventDetail = () => {
     );
   }
 
-  const isEventPast = new Date(event.eventDate) < new Date();
+  const isEventPast = new Date(event.date) < new Date();
 
   return (
     <div className="container px-4 py-6 mx-auto max-w-7xl">
@@ -182,9 +209,9 @@ const EventDetail = () => {
           {/* Event Header */}
           <div className="relative rounded-lg overflow-hidden">
             <div className="h-64 w-full">
-              {event.flyer ? (
+              {event.media ? (
                 <img 
-                  src={event.flyer} 
+                  src={event.media[0]} 
                   alt={event.title} 
                   className={`w-full h-full object-cover ${isEventPast ? 'grayscale' : ''}`}
                 />
@@ -225,6 +252,8 @@ const EventDetail = () => {
                 </CardContent>
               </Card>
 
+
+
               {event.timeline && event.timeline.length > 0 && (
                 <Card className="mt-6">
                   <CardHeader>
@@ -253,18 +282,162 @@ const EventDetail = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Award className="mr-2 h-5 w-5" />
-                      Prizes
+                      Prizes & Rewards
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {event.prizes.map((prize, index) => (
-                        <div key={index} className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                          <h4 className="font-semibold text-lg">{prize.title}</h4>
-                          <p className="text-purple-600 dark:text-purple-400 font-medium">{prize.value}</p>
-                          {prize.description && <p className="text-sm mt-1">{prize.description}</p>}
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {event.prizes.map((prize, index) => {
+                        // Handle both old string format and new object format
+                        const prizeData = typeof prize === 'string' ? {
+                          title: prize,
+                          category: 'other',
+                          value: 'TBD',
+                          description: 'Prize details to be announced',
+                          eligibility: 'Open to all participants',
+                          rank: index + 1
+                        } : prize;
+
+                        const isFirst = prizeData.rank === 1;
+                        const isSecond = prizeData.rank === 2;
+                        const isThird = prizeData.rank === 3;
+                        
+                        // Category colors and icons
+                        const categoryConfig = {
+                          cash: {
+                            color: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+                            border: 'border-green-200 dark:border-green-700',
+                            icon: '💰',
+                            badgeColor: 'bg-green-500',
+                            textColor: 'text-green-800 dark:text-green-200'
+                          },
+                          experience: {
+                            color: 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20',
+                            border: 'border-blue-200 dark:border-blue-700',
+                            icon: '🎯',
+                            badgeColor: 'bg-blue-500',
+                            textColor: 'text-blue-800 dark:text-blue-200'
+                          },
+                          recognition: {
+                            color: 'from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20',
+                            border: 'border-purple-200 dark:border-purple-700',
+                            icon: '🏆',
+                            badgeColor: 'bg-purple-500',
+                            textColor: 'text-purple-800 dark:text-purple-200'
+                          },
+                          resources: {
+                            color: 'from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20',
+                            border: 'border-orange-200 dark:border-orange-700',
+                            icon: '📚',
+                            badgeColor: 'bg-orange-500',
+                            textColor: 'text-orange-800 dark:text-orange-200'
+                          },
+                          opportunity: {
+                            color: 'from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20',
+                            border: 'border-pink-200 dark:border-pink-700',
+                            icon: '🚀',
+                            badgeColor: 'bg-pink-500',
+                            textColor: 'text-pink-800 dark:text-pink-200'
+                          },
+                          other: {
+                            color: 'from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20',
+                            border: 'border-gray-200 dark:border-gray-700',
+                            icon: '🎁',
+                            badgeColor: 'bg-gray-500',
+                            textColor: 'text-gray-800 dark:text-gray-200'
+                          }
+                        };
+
+                        const config = categoryConfig[prizeData.category] || categoryConfig.other;
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            className={`
+                              relative p-6 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
+                              ${config.color} ${config.border}
+                            `}
+                          >
+                            {/* Prize Rank Badge */}
+                            <div className="absolute -top-3 -left-3">
+                              <div className={`
+                                w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm
+                                ${isFirst ? 'bg-yellow-500' : isSecond ? 'bg-gray-500' : isThird ? 'bg-orange-500' : config.badgeColor}
+                              `}>
+                                {prizeData.rank}
+                              </div>
+                            </div>
+
+                            {/* Category Badge */}
+                            <div className="absolute top-3 right-3">
+                              <Badge variant="secondary" className="text-xs">
+                                {config.icon} {prizeData.category.charAt(0).toUpperCase() + prizeData.category.slice(1)}
+                              </Badge>
+                            </div>
+
+                            {/* Prize Content */}
+                            <div className="space-y-4">
+                              {/* Prize Icon and Title */}
+                              <div className="flex items-start gap-4">
+                                <div className="text-3xl">
+                                  {config.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className={`
+                                    font-bold text-xl mb-2 ${config.textColor}
+                                  `}>
+                                    {prizeData.title}
+                                  </h4>
+                                  
+                                  {/* Prize Value */}
+                                  <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-3">
+                                    <p className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                                      {prizeData.value}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Prize Description */}
+                              <div className="space-y-3">
+                                <div>
+                                  <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    What you'll get:
+                                  </h5>
+                                  <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                                    {prizeData.description}
+                                  </p>
+                                </div>
+
+                                {/* Eligibility */}
+                                <div>
+                                  <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    Eligibility:
+                                  </h5>
+                                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                    {prizeData.eligibility}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Action Button */}
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-4"
+                                onClick={() => {
+                                  toast({
+                                    title: "Prize Details",
+                                    description: `Learn more about the ${prizeData.title} prize!`,
+                                  });
+                                }}
+                              >
+                                Learn More
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -279,21 +452,144 @@ const EventDetail = () => {
                     Event Guidelines
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="prose dark:prose-invert max-w-none">
-                  {event.guidelines?.text ? (
-                    <div dangerouslySetInnerHTML={{ __html: event.guidelines.text }} />
+                <CardContent>
+                  {event.guidelines ? (
+                    <div className="space-y-6">
+                      {/* Table of Contents */}
+                      {guidelinesToc.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <AlignJustify className="h-4 w-4" />
+                            Table of Contents
+                          </h4>
+                          <nav className="space-y-1">
+                            {guidelinesToc.map((item, index) => (
+                              <button
+                                key={item.id}
+                                onClick={() => {
+                                  const element = document.querySelector(`h${item.level}`);
+                                  if (element) {
+                                    element.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }}
+                                className={`
+                                  block w-full text-left px-3 py-2 rounded-md text-sm transition-colors
+                                  ${item.level === 1 
+                                    ? 'font-semibold text-gray-900 dark:text-gray-100' 
+                                    : item.level === 2 
+                                    ? 'font-medium text-gray-700 dark:text-gray-300 ml-4' 
+                                    : 'text-gray-600 dark:text-gray-400 ml-8'
+                                  }
+                                  hover:bg-gray-200 dark:hover:bg-gray-800
+                                `}
+                              >
+                                {item.text}
+                              </button>
+                            ))}
+                          </nav>
+                        </div>
+                      )}
+
+                      {/* Guidelines Content */}
+                      <div className="prose dark:prose-invert max-w-none">
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: event.guidelines }} 
+                          className="
+                            prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                            prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4
+                            prose-h2:text-xl prose-h2:font-semibold prose-h2:mb-3 prose-h2:mt-6
+                            prose-h3:text-lg prose-h3:font-medium prose-h3:mb-2 prose-h3:mt-4
+                            prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+                            prose-ul:text-gray-700 dark:prose-ul:text-gray-300
+                            prose-ol:text-gray-700 dark:prose-ol:text-gray-300
+                            prose-li:my-1
+                            prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-strong:font-semibold
+                            prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                            prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:pl-4 prose-blockquote:italic
+                            prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-a:underline
+                          "
+                        />
+                      </div>
+
+                      {/* Quick Actions */}
+                      <div className="border-t pt-6">
+                        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                          Quick Actions
+                        </h4>
+                        <div className="flex flex-wrap gap-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            onClick={() => window.print()}
+                          >
+                            <Printer className="h-4 w-4" />
+                            Print Guidelines
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            onClick={() => {
+                              navigator.share?.({
+                                title: `${event.title} - Guidelines`,
+                                text: 'Check out the event guidelines!',
+                                url: window.location.href
+                              }).catch(() => {
+                                navigator.clipboard.writeText(window.location.href);
+                                toast({
+                                  title: 'Link copied!',
+                                  description: 'Event guidelines link copied to clipboard',
+                                });
+                              });
+                            }}
+                          >
+                            <Share2 className="h-4 w-4" />
+                            Share Guidelines
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            onClick={() => {
+                              // Save to localStorage for later
+                              const savedGuidelines = JSON.parse(localStorage.getItem('savedGuidelines') || '[]');
+                              const newGuideline = {
+                                id: event._id,
+                                title: event.title,
+                                date: new Date().toISOString(),
+                                url: window.location.href
+                              };
+                              if (!savedGuidelines.find(g => g.id === event._id)) {
+                                savedGuidelines.push(newGuideline);
+                                localStorage.setItem('savedGuidelines', JSON.stringify(savedGuidelines));
+                                toast({
+                                  title: 'Guidelines saved!',
+                                  description: 'You can find this in your saved items',
+                                });
+                              } else {
+                                toast({
+                                  title: 'Already saved',
+                                  description: 'These guidelines are already in your saved items',
+                                });
+                              }
+                            }}
+                          >
+                            <Bookmark className="h-4 w-4" />
+                            Save for Later
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <p>No guidelines have been provided for this event.</p>
-                  )}
-                  
-                  {event.guidelines?.pdf && (
-                    <div className="mt-6">
-                      <Button asChild variant="outline">
-                        <a href={event.guidelines.pdf} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Download Guidelines PDF
-                        </a>
-                      </Button>
+                    <div className="text-center py-8">
+                      <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        No Guidelines Available
+                      </h3>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        Guidelines for this event haven't been provided yet. Check back later or contact the event organizer.
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -360,7 +656,7 @@ const EventDetail = () => {
                   <Calendar className="h-5 w-5 mr-3 text-purple-500" />
                   <div>
                     <p className="text-sm text-gray-500">Date</p>
-                    <p className="font-medium">{formatEventDate(event.eventDate)}</p>
+                    <p className="font-medium">{formatEventDate(event.date)}</p>
                   </div>
                 </div>
 
@@ -377,7 +673,7 @@ const EventDetail = () => {
                   <div>
                     <p className="text-sm text-gray-500">Duration</p>
                     <p className="font-medium">
-                      {event.duration ? `${event.duration.value} ${event.duration.unit}` : 'TBD'}
+                      {event.duration || 'TBD'}
                     </p>
                   </div>
                 </div>
@@ -386,7 +682,32 @@ const EventDetail = () => {
                   <Users className="h-5 w-5 mr-3 text-purple-500" />
                   <div>
                     <p className="text-sm text-gray-500">Participants</p>
-                    <p className="font-medium">{participantCount}</p>
+                    <p className="font-medium">
+                      {participantCount}
+                      {event.capacity && (
+                        <span className="text-gray-400"> / {event.capacity}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {event.capacity && (
+                  <div className="flex items-center">
+                    <Target className="h-5 w-5 mr-3 text-purple-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Remaining Spots</p>
+                      <p className="font-medium">
+                        {event.remainingCapacity !== null ? event.remainingCapacity : 'Unlimited'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center">
+                  <CalendarX className="h-5 w-5 mr-3 text-purple-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Registration Deadline</p>
+                    <p className="font-medium">{formatEventDate(event.deadline)}</p>
                   </div>
                 </div>
 
@@ -402,6 +723,16 @@ const EventDetail = () => {
               <Separator className="my-4" />
 
               {!isEventPast ? (
+                <>
+                  {!event.isRegistrationOpen ? (
+                    <Button disabled className="w-full bg-gray-600">
+                      Registration Closed
+                    </Button>
+                  ) : !event.hasCapacity ? (
+                    <Button disabled className="w-full bg-red-600">
+                      Event Full
+                    </Button>
+                  ) : (
                 <Button 
                   onClick={handleParticipate} 
                   className="w-full bg-purple-600 hover:bg-purple-700"
@@ -415,6 +746,8 @@ const EventDetail = () => {
                     'Join Event'
                   )}
                 </Button>
+                  )}
+                </>
               ) : (
                 <Button disabled className="w-full">
                   Event Ended

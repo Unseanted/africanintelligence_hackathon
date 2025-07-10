@@ -983,38 +983,27 @@ const Student = require("../models/Student");
  *                   example: "Server error"
  */
 
+// Replace the /courses/latest endpoint with a Mongoose-only implementation
 router.get("/latest", async (req, res) => {
   try {
-    let db = req.app.locals.db;
-
     // Fetch the last 6 published courses, sorted by createdAt descending
-    let courses = await db
-      .collection("courses")
-      .find({ status: "published" })
-      .sort({ "createdAt.is": -1 })
+    let courses = await Course.find({ status: "published" })
+      .sort({ createdAt: -1 })
       .limit(6)
-      .toArray();
+      .lean();
 
-    // Get facilitator names
+    // Get facilitator IDs
     let facilitatorIds = [
       ...new Set(
-        courses
-          .map((course) =>
-            course.facilitator ? new ObjectId(course.facilitator) : null
-          )
-          .filter((id) => id !== null)
+        courses.map((course) => course.facilitator).filter((id) => id)
       ),
     ];
 
-    let facilitators =
-      facilitatorIds.length > 0
-        ? await db
-            .collection("users")
-            .find({ _id: { $in: facilitatorIds } })
-            .project({ _id: 1, name: 1 })
-            .toArray()
-        : [];
-
+    // Fetch facilitator names using Mongoose
+    let facilitators = await User.find(
+      { roleData: { $in: facilitatorIds } },
+      { _id: 1, name: 1 }
+    ).lean();
     let facilitatorMap = {};
     facilitators.forEach((f) => {
       facilitatorMap[f._id.toString()] = f.name;
@@ -1023,8 +1012,8 @@ router.get("/latest", async (req, res) => {
     // Sanitize courses
     let sanitizedCourses = courses.map((course) => {
       let facilitatorName =
-        course.facilitator && facilitatorMap[course.facilitator]
-          ? facilitatorMap[course.facilitator]
+        course.facilitator && facilitatorMap[course.facilitator.toString()]
+          ? facilitatorMap[course.facilitator.toString()]
           : "Unknown";
 
       // Ensure enrolledStudents array exists
@@ -1357,7 +1346,7 @@ router.put(
   async (req, res) => {
     try {
       let db = req.app.locals.db;
-      let {courseId} = req.params;
+      let { courseId } = req.params;
 
       let course = await db.collection("courses").findOne({ courseId });
 
@@ -1402,7 +1391,7 @@ router.delete(
   async (req, res) => {
     try {
       let db = req.app.locals.db;
-      let {courseId} = req.params;
+      let { courseId } = req.params;
 
       let course = await db.collection("courses").findOne({ courseId });
 
@@ -1437,73 +1426,78 @@ router.delete(
 );
 
 // Enroll in a course
-router.post("/:courseId/enroll", auth, roleAuth(["student"]), async (req, res) => {
-  try {
-    let db = req.app.locals.db;
-    let {courseId} = req.params;
-    let userId = req.user.userId;
+router.post(
+  "/:courseId/enroll",
+  auth,
+  roleAuth(["student"]),
+  async (req, res) => {
+    try {
+      let db = req.app.locals.db;
+      let { courseId } = req.params;
+      let userId = req.user.userId;
 
-    let student = await User.findById(userId, "roleData");
-    const studentId = student.roleData;
-    if (!studentId) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    let course = await Course.findOne({ courseId });
-    if (!course) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    let existingEnrollment = await Enrollment.findOne({
-      student: studentId,
-      course: course._id,
-    });
-
-    if (existingEnrollment) {
-      return res
-        .status(400)
-        .json({ message: "Already enrolled in this course" });
-    }
-
-    let enrollment = {
-      student: studentId,
-      course: course._id,
-      progress: 0,
-      moduleProgress: course.modules.map((module) => ({
-        moduleId: module.title,
-        completed: false,
-        contentProgress: module.content.map((content) => ({
-          contentId: content.title,
-          completed: false,
-        })),
-        quizAttempts: [],
-      })),
-      enrolledAt: new Date(),
-      completedAt: null,
-      lastAccessed: new Date(),
-    };
-
-    let newEnrollment = await Enrollment.create(enrollment);
-
-    await Course.updateOne(
-      { courseId },
-      {
-        $inc: { enrollmentCount: 1 },
-        $push: { enrollments: newEnrollment._id },
+      let student = await User.findById(userId, "roleData");
+      const studentId = student.roleData;
+      if (!studentId) {
+        return res.status(404).json({ message: "Student not found" });
       }
-    );
 
-    await Student.updateOne(
-      { _id: studentId },
-      { $push: { enrollments: newEnrollment._id } }
-    );
+      let course = await Course.findOne({ courseId });
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
 
-    res.status(201).json(newEnrollment);
-  } catch (error) {
-    console.error("Error enrolling in course:", error);
-    res.status(500).json({ message: "Server error during enrollment" });
+      let existingEnrollment = await Enrollment.findOne({
+        student: studentId,
+        course: course._id,
+      });
+
+      if (existingEnrollment) {
+        return res
+          .status(400)
+          .json({ message: "Already enrolled in this course" });
+      }
+
+      let enrollment = {
+        student: studentId,
+        course: course._id,
+        progress: 0,
+        moduleProgress: course.modules.map((module) => ({
+          moduleId: module.title,
+          completed: false,
+          contentProgress: module.content.map((content) => ({
+            contentId: content.title,
+            completed: false,
+          })),
+          quizAttempts: [],
+        })),
+        enrolledAt: new Date(),
+        completedAt: null,
+        lastAccessed: new Date(),
+      };
+
+      let newEnrollment = await Enrollment.create(enrollment);
+
+      await Course.updateOne(
+        { courseId },
+        {
+          $inc: { enrollmentCount: 1 },
+          $push: { enrollments: newEnrollment._id },
+        }
+      );
+
+      await Student.updateOne(
+        { _id: studentId },
+        { $push: { enrollments: newEnrollment._id } }
+      );
+
+      res.status(201).json(newEnrollment);
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      res.status(500).json({ message: "Server error during enrollment" });
+    }
   }
-});
+);
 
 // Update module progress
 router.put(
@@ -1719,7 +1713,7 @@ router.post(
 router.post("/:courseId/rate", auth, async (req, res) => {
   try {
     let db = req.app.locals.db;
-    let {courseId} = req.params;
+    let { courseId } = req.params;
     let { rating, comment } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
