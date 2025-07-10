@@ -986,11 +986,26 @@ const Student = require("../models/Student");
 // Replace the /courses/latest endpoint with a Mongoose-only implementation
 router.get("/latest", async (req, res) => {
   try {
+    console.log("🔍 [Course Routes] GET /latest called");
+
     // Fetch the last 6 published courses, sorted by createdAt descending
     let courses = await Course.find({ status: "published" })
       .sort({ createdAt: -1 })
       .limit(6)
       .lean();
+
+    console.log(
+      "🔍 [Course Routes] Latest courses from Mongoose:",
+      courses.length
+    );
+    if (courses.length > 0) {
+      console.log("🔍 [Course Routes] First latest course sample:", {
+        courseId: courses[0].courseId,
+        _id: courses[0]._id,
+        title: courses[0].title,
+        keys: Object.keys(courses[0]),
+      });
+    }
 
     // Get facilitator IDs
     let facilitatorIds = [
@@ -998,6 +1013,11 @@ router.get("/latest", async (req, res) => {
         courses.map((course) => course.facilitator).filter((id) => id)
       ),
     ];
+
+    console.log(
+      "🔍 [Course Routes] Latest courses facilitator IDs:",
+      facilitatorIds
+    );
 
     // Fetch facilitator names using Mongoose
     let facilitators = await User.find(
@@ -1008,6 +1028,11 @@ router.get("/latest", async (req, res) => {
     facilitators.forEach((f) => {
       facilitatorMap[f._id.toString()] = f.name;
     });
+
+    console.log(
+      "🔍 [Course Routes] Latest courses facilitators found:",
+      facilitators.length
+    );
 
     // Sanitize courses
     let sanitizedCourses = courses.map((course) => {
@@ -1038,9 +1063,13 @@ router.get("/latest", async (req, res) => {
       };
     });
 
+    console.log(
+      "🔍 [Course Routes] Returning latest sanitized courses:",
+      sanitizedCourses.length
+    );
     res.json(sanitizedCourses);
   } catch (error) {
-    console.error("Error fetching latest courses:", error);
+    console.error("❌ [Course Routes] Error fetching latest courses:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -1052,11 +1081,17 @@ router.get(
   roleAuth(["student", "facilitator"]),
   async (req, res) => {
     try {
+      console.log("🔍 [Course Routes] GET /courses called");
+      console.log("🔍 [Course Routes] User:", req.user);
+      console.log("🔍 [Course Routes] Query params:", req.query);
+
       const { difficulty, status } = req.query;
       const query = {};
 
       if (difficulty) query.difficulty = difficulty;
       if (status) query.status = status;
+
+      console.log("🔍 [Course Routes] Final query:", query);
 
       let db = req.app.locals.db;
       let courses = await db
@@ -1064,6 +1099,16 @@ router.get(
         .find(query)
         .sort({ createdAt: -1 })
         .toArray();
+
+      console.log("🔍 [Course Routes] Raw courses from DB:", courses.length);
+      if (courses.length > 0) {
+        console.log("🔍 [Course Routes] First course sample:", {
+          courseId: courses[0].courseId,
+          _id: courses[0]._id,
+          title: courses[0].title,
+          keys: Object.keys(courses[0]),
+        });
+      }
 
       // Get facilitator names
       let facilitatorIds = [
@@ -1076,6 +1121,8 @@ router.get(
         ),
       ];
 
+      console.log("🔍 [Course Routes] Facilitator IDs:", facilitatorIds);
+
       let facilitators =
         facilitatorIds.length > 0
           ? await db
@@ -1084,6 +1131,11 @@ router.get(
               .project({ _id: 1, name: 1 })
               .toArray()
           : [];
+
+      console.log(
+        "🔍 [Course Routes] Found facilitators:",
+        facilitators.length
+      );
 
       let facilitatorMap = {};
       facilitators.forEach((f) => {
@@ -1119,9 +1171,13 @@ router.get(
         };
       });
 
+      console.log(
+        "🔍 [Course Routes] Returning sanitized courses:",
+        sanitizedCourses.length
+      );
       res.json(sanitizedCourses);
     } catch (error) {
-      console.error("Error fetching courses:", error);
+      console.error("❌ [Course Routes] Error fetching courses:", error);
       res.status(500).json({ message: "Server error" });
     }
   }
@@ -1185,6 +1241,10 @@ router.get("/:id/ratings", auth, async (req, res) => {
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
+    console.log("🔍 [Course Routes] GET /:id called");
+    console.log("🔍 [Course Routes] Requested ID:", req.params.id);
+    console.log("🔍 [Course Routes] ID type:", typeof req.params.id);
+
     let db = req.app.locals.db;
     let courseId = req.params.id;
 
@@ -1195,11 +1255,35 @@ router.get("/:id", async (req, res) => {
     //   return res.status(400).json({ message: "Invalid course ID format" });
     // }
 
+    console.log("🔍 [Course Routes] Searching for courseId:", courseId);
     let course = await db.collection("courses").findOne({ courseId });
+    console.log("🔍 [Course Routes] Course found by courseId:", !!course);
 
     if (!course) {
+      console.log("🔍 [Course Routes] Trying to find by _id...");
+      try {
+        const objectId = new ObjectId(courseId);
+        course = await db.collection("courses").findOne({ _id: objectId });
+        console.log("🔍 [Course Routes] Course found by _id:", !!course);
+      } catch (error) {
+        console.log(
+          "🔍 [Course Routes] Invalid ObjectId format:",
+          error.message
+        );
+      }
+    }
+
+    if (!course) {
+      console.log("❌ [Course Routes] Course not found by any method");
       return res.status(404).json({ message: "Course not found" });
     }
+
+    console.log("🔍 [Course Routes] Course found:", {
+      courseId: course.courseId,
+      _id: course._id,
+      title: course.title,
+    });
+
     if (!course.enrolledStudents) course.enrolledStudents = [];
 
     let facilitatorInfo = { name: "Unknown", email: "" };

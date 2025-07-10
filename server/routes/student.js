@@ -229,14 +229,64 @@ router.get("/me/stats", auth, async (req, res) => {
 // Get all courses the student is enrolled in
 router.get("/courses", auth, async (req, res) => {
   try {
+    console.log("🔍 [Student Routes] GET /courses called");
+    console.log("🔍 [Student Routes] User ID:", req.user.userId);
+
     const userId = req.user.userId;
     const student = await Student.findOne({ user: userId });
+    console.log("🔍 [Student Routes] Student found:", !!student);
+
     if (!student) return res.status(404).json({ message: "Student not found" });
+
     const enrollments = await Enrollment.find({
       student: student._id,
     }).populate("course");
-    res.json(enrollments.map((e) => e.course));
+
+    console.log("🔍 [Student Routes] Enrollments found:", enrollments.length);
+    if (enrollments.length > 0) {
+      console.log("🔍 [Student Routes] First enrollment sample:", {
+        enrollmentId: enrollments[0]._id,
+        courseId: enrollments[0].course?._id,
+        courseTitle: enrollments[0].course?.title,
+        progress: enrollments[0].progress,
+      });
+    }
+
+    // Return enrollment data with course details and progress
+    const enrollmentData = enrollments
+      .map((enrollment) => {
+        const course = enrollment.course;
+        if (!course) {
+          console.log(
+            "🔍 [Student Routes] Warning: Course not found for enrollment:",
+            enrollment._id
+          );
+          return null;
+        }
+
+        return {
+          ...course.toObject(),
+          enrollmentId: enrollment._id,
+          progress: enrollment.progress || 0,
+          moduleProgress: enrollment.moduleProgress || [],
+          enrolledAt: enrollment.enrolledAt,
+          completedAt: enrollment.completedAt,
+          certificateIssued: enrollment.certificateIssued,
+          active: enrollment.active,
+          lastAccessedAt: enrollment.enrolledAt, // Use enrolledAt as fallback
+        };
+      })
+      .filter(Boolean); // Remove null entries
+
+    console.log(
+      "🔍 [Student Routes] Returning enrollment data:",
+      enrollmentData.length
+    );
+
+    res.json(enrollmentData);
   } catch (error) {
+    console.error("❌ [Student Routes] Error in /courses:", error);
+    console.error("❌ [Student Routes] Error stack:", error.stack);
     res.status(500).json({ message: "Server error" });
   }
 });
