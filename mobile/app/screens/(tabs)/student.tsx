@@ -109,8 +109,8 @@ export default function StudentDashboardScreen() {
     token,
     userXP,
     fetchUserXP,
-    fetchEnrolledCourses: fetchEnrolledFromContext,
-    fetchUserStats,
+    fetchEnrolledCourses,
+    fetchUserStats, 
     fetchRecentActivities,
     fetchRecommendedCourses,
     refreshDashboard,
@@ -147,13 +147,12 @@ export default function StudentDashboardScreen() {
       setLoading(true);
       setError(null);
       
-      const [stats, activities, recommended] = await Promise.all([
-        fetchUserStats(),
+      const [activities, recommended] = await Promise.all([
         fetchRecentActivities(),
         fetchRecommendedCourses()
       ]);
 
-      setUserStats(stats);
+      // Removed stats as fetchUserStats does not exist
       setRecentActivities(activities);
       setRelatedCourses(recommended);
 
@@ -232,7 +231,7 @@ export default function StudentDashboardScreen() {
   };
 
   const handleBrowseCourses = () => {
-    router.replace('/courses');
+    router.replace('../courses'); 
   };
 
   if (loading && !refreshing) {
@@ -252,7 +251,7 @@ export default function StudentDashboardScreen() {
     >
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeTitle}>Welcome back, {user?.firstName || 'Learner'}!</Text>
+        <Text style={styles.welcomeTitle}>Welcome back, {user?.name || 'Learner'}!</Text>
         <Text style={styles.welcomeSubtitle}>
           Your journey into advanced AI education continues. Track your progress, join events, and connect with fellow learners.
         </Text>

@@ -2,11 +2,13 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io, Socket } from 'socket.io-client';
 import { Platform, Alert } from 'react-native';
-import { BASE_API_URL, SOCKET_URL } from '../config'; // You'll need to configure these
+import { BASE_API_URL, SOCKET_URL } from './config'; // You'll need to configure these
 
-// 1. Enhanced User Interface
+// Enhanced User Interface
 interface User {
   _id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
   role: string;
@@ -17,58 +19,137 @@ interface User {
   };
 }
 
-// 2. Course Interfaces
+// Course Interfaces
 interface Course {
+  _id: string;
   id: string;
   title: string;
-  thumbnail: string;
+  category?: string;
+  thumbnail?: string;
   progress?: number;
+  nextModule?: string;
+  facilitatorName?: string;
+  instructor?: string;
+  totalLessons?: number;
+  completedLessons?: number;
+  totalQuizzes?: number;
+  completedQuizzes?: number;
+  averageScore?: number;
+  points?: number;
+  xp?: number;
+  completed?: boolean;
+  certificateIssued?: boolean;
+  lastAccessedAt?: string;
   lastAccessed?: Date;
+  shortDescription?: string;
+  description?: string;
+  enrollment?: {
+    moduleProgress?: Array<{
+      contentProgress?: Array<{
+        contentId: string;
+        lastAccessedAt?: string;
+        completed?: boolean;
+      }>;
+    }>;
+  };
 }
 
 interface UserStats {
+  totalPoints: number;
+  rank: number;
   completedCourses: number;
+  activeCourses: number;
+  currentStreak: number;
+  totalXp: number;
+  totalEnrolled: number;
+  certificatesEarned: number;
+  completedLessons: number;
+  totalLessons: number;
+  completedQuizzes: number;
+  totalQuizzes: number;
+  averageScore: number;
+  lastActive: string;
+  streakDays: number;
   inProgressCourses: number;
   totalHoursLearned: number;
   achievements: string[];
 }
 
 interface Activity {
+  _id: string;
   id: string;
-  action: string;
+  courseId: string;
+  courseTitle: string;
+  contentId: string;
+  contentTitle: string;
+  type: 'lesson' | 'quiz' | 'assignment';
+  action: 'completed' | 'started' | 'submitted';
+  createdAt: string;
+  updatedAt: string;
   date: Date;
   metadata?: any;
 }
 
-// 3. Context Interface
+interface UserXP {
+  totalXP: number;
+  level: number;
+  currentLevelXP: number;
+  nextLevelXP: number;
+  streak: {
+    current: number;
+    longest: number;
+    lastUpdated: string;
+  };
+}
+
+// Context Interface
 interface TourLMSContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  
+  // Auth functions
   login: (userData: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (updates: Partial<User>) => Promise<void>;
+  
+  // Course data
+  enrolledCourses: Course[];
+  CoursesHub: Course[];
+  
+  // User data
+  userXP: UserXP | null;
+  
+  // Data fetching functions
   fetchEnrolledCourses: () => Promise<Course[]>;
   fetchUserStats: () => Promise<UserStats>;
   fetchRecentActivities: () => Promise<Activity[]>;
   fetchRecommendedCourses: () => Promise<Course[]>;
+  fetchUserXP: () => Promise<UserXP>;
   refreshDashboard: () => Promise<void>;
+  
+  // Socket
   socket: Socket | null;
+  
+  // Error handling
   error: string | null;
   clearError: () => void;
 }
 
-// 4. Create Context
+// Create Context
 const TourLMSContext = createContext<TourLMSContextType | undefined>(undefined);
 
-// 5. Provider Component
+// Provider Component
 export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [CoursesHub, setCoursesHub] = useState<Course[]>([]);
+  const [userXP, setUserXP] = useState<UserXP | null>(null);
 
   // Load user/token from AsyncStorage on mount
   useEffect(() => {
@@ -164,6 +245,9 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUser(null);
       setToken(null);
       setSocket(null);
+      setEnrolledCourses([]);
+      setCoursesHub([]);
+      setUserXP(null);
     } catch (error) {
       console.error('Error clearing login data:', error);
       setError('Failed to logout');
@@ -221,7 +305,9 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchEnrolledCourses = async (): Promise<Course[]> => {
     try {
       const data = await apiCall('/courses/enrolled');
-      return data.courses;
+      const courses = data.courses || [];
+      setEnrolledCourses(courses);
+      return courses;
     } catch (error) {
       console.error('Error fetching enrolled courses:', error);
       throw error;
@@ -242,7 +328,7 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const data = await apiCall('/activities/recent');
       return data.activities.map((act: any) => ({
         ...act,
-        date: new Date(act.date)
+        date: new Date(act.date || act.createdAt)
       }));
     } catch (error) {
       console.error('Error fetching recent activities:', error);
@@ -253,9 +339,22 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchRecommendedCourses = async (): Promise<Course[]> => {
     try {
       const data = await apiCall('/courses/recommended');
-      return data.courses;
+      const courses = data.courses || [];
+      setCoursesHub(courses);
+      return courses;
     } catch (error) {
       console.error('Error fetching recommended courses:', error);
+      throw error;
+    }
+  };
+
+  const fetchUserXP = async (): Promise<UserXP> => {
+    try {
+      const data = await apiCall('/users/xp');
+      setUserXP(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching user XP:', error);
       throw error;
     }
   };
@@ -268,6 +367,7 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fetchUserStats(),
         fetchRecentActivities(),
         fetchRecommendedCourses(),
+        fetchUserXP(),
       ]);
     } catch (error) {
       console.error('Error refreshing dashboard:', error);
@@ -288,15 +388,19 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
     login,
     logout,
     updateUserProfile,
+    enrolledCourses,
+    CoursesHub,
+    userXP,
     fetchEnrolledCourses,
     fetchUserStats,
     fetchRecentActivities,
     fetchRecommendedCourses,
+    fetchUserXP,
     refreshDashboard,
     socket,
     error,
     clearError,
-  }), [user, token, isLoading, socket, error]);
+  }), [user, token, isLoading, socket, error, enrolledCourses, CoursesHub, userXP]);
 
   return (
     <TourLMSContext.Provider value={contextValue}>
@@ -305,7 +409,7 @@ export const TourLMSProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
-// 6. Custom hook with additional checks
+// Custom hook with additional checks
 export const useTourLMS = () => {
   const context = useContext(TourLMSContext);
   if (context === undefined) {
@@ -314,7 +418,7 @@ export const useTourLMS = () => {
   return context;
 };
 
-// 7. Helper hook for authentication status
+// Helper hook for authentication status
 export const useAuth = () => {
   const { isAuthenticated, isLoading } = useTourLMS();
   return { isAuthenticated, isLoading };
