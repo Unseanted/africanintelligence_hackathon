@@ -1,11 +1,13 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { clg, ocn } from '../lib/basic';
 import { io } from 'socket.io-client';
 import notificationService from '../services/notificationService';
 
-const API_URL = 'https://africanapi.onrender.com/api';
+// Required env: VITE_API_URL, VITE_SOCKET_URL
+const API_URL = import.meta.env.VITE_API_URL || 'https://africanapi.onrender.com/api';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://africanapi.onrender.com';
+// const API_URL = 'http://localhost:3031/api';
 const clientID='NOTIFICATION-CLIENT-ID'
 
 const TourLMSContext = createContext(null);
@@ -137,7 +139,7 @@ export const TourLMSProvider = ({ children }) => {
     
     if (token) {
       // Initialize socket connection
-      const socketURL = 'https://africanapi.onrender.com';
+      const socketURL = SOCKET_URL;
       
       socketConnection = io(socketURL, {
         path: '/socket.io',

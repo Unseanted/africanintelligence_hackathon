@@ -83,7 +83,7 @@ const sendWelcomeEmail = async (user, courses = []) => {
 
     // Send email
     const info = await transporter.sendMail({
-      from: `"African Intelligence LMS" <${process.env.EMAIL_USER || 'support@africanintelligence.com'}>`,
+      from: `"African Intelligence LMS" <${email_user || 'support@africanintelligence.com'}>`,
       to: user.email,
       subject: 'Welcome to the Tribe - Your African Intelligence Journey Begins!',
       html: `

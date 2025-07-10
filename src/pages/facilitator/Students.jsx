@@ -13,13 +13,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
+
 const StudentCard = ({ student, onClick }) => {
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onClick(student)}>
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={student.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`} />
+            <AvatarImage src={student.profilePicture || `${AVATAR_URL}?name=${encodeURIComponent(student.name)}&background=random`} />
             <AvatarFallback>{student.name?.charAt(0) || 'S'}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -69,7 +72,7 @@ const StudentRow = ({ student, onClick }) => {
       <td className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={student.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`} />
+            <AvatarImage src={student.profilePicture || `${AVATAR_URL}?name=${encodeURIComponent(student.name)}&background=random`} />
             <AvatarFallback>{student.name?.charAt(0) || 'S'}</AvatarFallback>
           </Avatar>
           <div>
@@ -426,7 +429,7 @@ const Students = () => {
               {/* Basic Information */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={selectedStudent.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedStudent.name)}&background=random`} />
+                  <AvatarImage src={selectedStudent.profilePicture || `${AVATAR_URL}?name=${encodeURIComponent(selectedStudent.name)}&background=random`} />
                   <AvatarFallback>{selectedStudent.name?.charAt(0) || 'S'}</AvatarFallback>
                 </Avatar>
                 <div>

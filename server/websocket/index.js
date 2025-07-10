@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
+const {jwt_secret} = require("../configs/config");
 
 class WebSocketHandler {
   constructor(server, db) {
@@ -25,7 +26,7 @@ class WebSocketHandler {
           return next(new Error("Authentication error"));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, jwt_secret);
         const user = await this.db
           .collection("users")
           .findOne({ _id: new ObjectId(decoded.userId) });

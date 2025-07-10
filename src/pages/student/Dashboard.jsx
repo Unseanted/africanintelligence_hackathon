@@ -34,6 +34,9 @@ import { useSocket } from '@/services/socketService';
 import { useXP } from "@/contexts/XPContext";
 import XPProgress from "@/components/xp/XPProgress";
 
+// Required env: VITE_UNSPLASH_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80';
+
 const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const { enrolledCourses, CoursesHub } = useTourLMS();
@@ -434,7 +437,7 @@ const Dashboard = () => {
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                     <div className="h-36 relative">
                       <img 
-                        src={course.thumbnail || `https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80`}
+                        src={course.thumbnail || UNSPLASH_URL}
                         alt={course.title}
                         className="w-full h-full object-cover"
                       />
@@ -497,7 +500,7 @@ const Dashboard = () => {
                         <div className="flex items-start gap-4 pb-4 border-b last:border-0 border-gray-100 dark:border-gray-800">
                           <div className="h-16 w-16 relative flex-shrink-0">
                             <img 
-                              src={course.thumbnail || `https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80`}
+                              src={course.thumbnail || UNSPLASH_URL}
                               alt={course.title}
                               className="w-full h-full object-cover rounded-lg"
                             />

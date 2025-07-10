@@ -1,6 +1,6 @@
 // Primary Colors
-export const PRIMARY = '#3B82F6';
-export const PRIMARY_LIGHT = '#FFD700'; // Gold
+export const PRIMARY = '#FFBF00';
+export const PRIMARY_LIGHT = 'rgba(255, 191, 0, 0.1)';
 export const PRIMARY_DARK = '#FF8C00'; // Dark Amber
 
 // Background Colors
@@ -24,7 +24,7 @@ export const WARNING = '#FFC107'; // Amber
 export const ERROR = '#F44336'; // Red
 
 // Shadow
-export const SHADOW = 'rgba(0, 0, 0, 0.1)'; // Black with opacity
+export const SHADOW = '#000000';
 
 // Card Background
 export const CARD_BACKGROUND = 'rgba(255, 255, 255, 0.05)'; // slate-800 with opacity

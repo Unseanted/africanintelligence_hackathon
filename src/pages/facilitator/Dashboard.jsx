@@ -16,6 +16,10 @@ import { BarChart, LineChart } from '@/components/ui/chart';
 import { motion } from "framer-motion";
 import { useTourLMS } from '../../contexts/TourLMSContext';
 
+// Required env: VITE_UNSPLASH_URL, VITE_AVATAR_URL
+const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80';
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
+
 // Glassy styles with golden accents
 const dashboardStyles = `
   .dashboard-container {
@@ -436,7 +440,7 @@ const Dashboard = () => {
                       <Card className="glass-card overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                         <div className="h-36 relative">
                           <img 
-                            src={course.thumbnail || `https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80`}
+                            src={course.thumbnail || UNSPLASH_URL}
                             alt={course.title}
                             className="w-full h-full object-cover"
                           />
@@ -502,7 +506,7 @@ const Dashboard = () => {
                         <div className="p-4 space-y-3 flex-1 flex flex-col">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 border-2 border-yellow-500">
-                              <AvatarImage src={student.studentProfilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.studentName)}&background=random`} />
+                              <AvatarImage src={student.studentProfilePicture || `${AVATAR_URL}?name=${encodeURIComponent(student.studentName)}&background=random`} />
                               <AvatarFallback>{student.studentName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1">

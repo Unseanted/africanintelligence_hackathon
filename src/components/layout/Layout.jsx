@@ -15,6 +15,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { initializeNotifications, requestNotificationPermission } from "@/api/notificationService";
 import AIChatbot from "@/components/ai/AIChatbot";
 
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://ui-avatars.com/api/';
 
 let ison=false;
 const Layout = ({ userType }) => {
@@ -344,7 +346,7 @@ const Layout = ({ userType }) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-3">
                   <Avatar className={`h-8 w-8 border-2 ${theme === 'light' ? 'border-amber-100' : 'border-gold-300/30'}`}>
-                    <AvatarImage src={user?.profilePicture?user?.profilePicture:`https://ui-avatars.com/api/?name=User&background=random`} />
+                    <AvatarImage src={user?.profilePicture ? user?.profilePicture : `${AVATAR_URL}?name=User&background=random`} />
                     <AvatarFallback>{user?.name?.substring(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-sm hidden md:flex">

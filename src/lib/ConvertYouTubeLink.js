@@ -4,10 +4,11 @@
  * @returns {string} - The embed link (e.g., https://www.youtube.com/embed/04AMaTsXFJU)
  * @throws {Error} - If the URL is invalid or not a YouTube share link
  */
+// Suggestion: YouTube base URLs (e.g., https://youtu.be, https://www.youtube.com) could be made environment variables if you want to make them configurable.
 const convertYouTubeLink = (url) => {
   try {
-    if (!url || typeof url !== 'string') {
-      console.warn('Invalid YouTube URL: URL must be a non-empty string');
+    if (!url || typeof url !== "string") {
+      console.warn("Invalid YouTube URL: URL must be a non-empty string");
       return null;
     }
 
@@ -16,9 +17,15 @@ const convertYouTubeLink = (url) => {
       // Short link: https://youtu.be/VIDEO_ID
       { pattern: /https:\/\/youtu\.be\/([a-zA-Z0-9_-]+)/, idIndex: 1 },
       // Watch link: https://www.youtube.com/watch?v=VIDEO_ID
-      { pattern: /https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/, idIndex: 1 },
+      {
+        pattern: /https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+        idIndex: 1,
+      },
       // Embed link: https://www.youtube.com/embed/VIDEO_ID
-      { pattern: /https:\/\/www\.youtube\.com\/embed\/([a-zA-Z0-9_-]+)/, idIndex: 1 },
+      {
+        pattern: /https:\/\/www\.youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+        idIndex: 1,
+      },
       // Short link with params: https://youtu.be/VIDEO_ID?si=SHARE_TOKEN
       { pattern: /https:\/\/youtu\.be\/([a-zA-Z0-9_-]+)(\?.*)?/, idIndex: 1 },
     ];
@@ -31,17 +38,17 @@ const convertYouTubeLink = (url) => {
       }
     }
 
-    console.warn(`Invalid YouTube URL format: ${url}. Expected formats: https://youtu.be/VIDEO_ID, https://www.youtube.com/watch?v=VIDEO_ID, or https://www.youtube.com/embed/VIDEO_ID`);
+    console.warn(
+      `Invalid YouTube URL format: ${url}. Expected formats: https://youtu.be/VIDEO_ID, https://www.youtube.com/watch?v=VIDEO_ID, or https://www.youtube.com/embed/VIDEO_ID`
+    );
     return null;
   } catch (error) {
-    console.error('Error converting YouTube link:', error);
+    console.error("Error converting YouTube link:", error);
     return null;
   }
 };
 
-export {
-  convertYouTubeLink
-}
+export { convertYouTubeLink };
 
 // Example usage:
 // try {

@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getCourseForumPosts, createForumPost, addCommentToPost, toggleLikePost } from '@/api/forumService';
 import io from 'socket.io-client';
 
+// Required env: VITE_SOCKET_URL
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://africanapi.onrender.com';
+
 const CourseDiscussion = ({ courseId }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -30,7 +33,7 @@ const CourseDiscussion = ({ courseId }) => {
     if (!token) return;
     
     // Connect to the production server
-    socketRef.current = io('https://africanapi.onrender.com', { 
+    socketRef.current = io(SOCKET_URL, { 
       path: '/socket.io',
       auth: { token }
     });

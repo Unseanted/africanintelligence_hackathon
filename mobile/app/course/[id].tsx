@@ -13,7 +13,7 @@ import AIAssistantButton from '../components/AIAssistantButton';
 export default function CourseDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user, token, CoursesHub, enrolledCourses } = useTourLMS();
+  const { user, token, CoursesHub, enrolledCourses, enrollInCourse, packLoad } = useTourLMS();
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -118,7 +118,17 @@ export default function CourseDetail() {
         
         <Button
           mode="contained"
-          onPress={() => {/* Handle enrollment */}}
+          onPress={async () => {
+            const courseId = course._id || course.key;
+            if (!enrollInCourse || !courseId) return;
+            try {
+              await enrollInCourse(courseId);
+              await packLoad(user, token); // refresh state
+              toast({ title: 'Enrolled!', description: 'You have been enrolled in this course.' });
+            } catch (error: any) {
+              toast({ title: 'Error', description: error?.message || 'Failed to enroll.' });
+            }
+          }}
           style={styles.enrollButton}
           buttonColor={PRIMARY}
         >
@@ -171,8 +181,23 @@ export default function CourseDetail() {
                 modules: course.modules || [],
                 totalProgress: course.progress || 0
               }}
+              isEnrolled={isEnrolled}
               onLessonPress={(lessonId) => {
                 router.push(`/lesson/${lessonId}` as any);
+              }}
+              onEnroll={async () => {
+                const courseId = course._id || course.key;
+                if (!enrollInCourse || !courseId) return;
+                try {
+                  await enrollInCourse(courseId);
+                  await packLoad(user, token);
+                  toast({ title: 'Enrolled!', description: 'You have been enrolled in this course.' });
+                } catch (error: any) {
+                  toast({ title: 'Error', description: error?.message || 'Failed to enroll.' });
+                }
+              }}
+              onContinue={() => {
+                // Optionally handle continue action
               }}
             />
           </View>
@@ -196,8 +221,16 @@ export default function CourseDetail() {
                 thumbnail: course.thumbnail
               }}
               isEnrolled={isEnrolled}
-              onEnroll={() => {
-                // Handle enrollment
+              onEnroll={async () => {
+                const courseId = course._id || course.key;
+                if (!enrollInCourse || !courseId) return;
+                try {
+                  await enrollInCourse(courseId);
+                  await packLoad(user, token);
+                  toast({ title: 'Enrolled!', description: 'You have been enrolled in this course.' });
+                } catch (error: any) {
+                  toast({ title: 'Error', description: error?.message || 'Failed to enroll.' });
+                }
               }}
             />
           </View>

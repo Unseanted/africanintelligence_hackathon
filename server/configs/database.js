@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { MongoClient } = require("mongodb");
+const { mongo_uri } = require("./config"); // Adjust the path as necessary
 
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL = 5000; // 5 seconds
@@ -14,7 +15,7 @@ class DatabaseConnection {
 
   async connect() {
     try {
-      const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/lms";
+      const mongoURI = mongo_uri || "mongodb://localhost:27017/lms";
 
       // Connect using Mongoose
       this.mongooseConnection = await mongoose.connect(mongoURI, {

@@ -4,7 +4,9 @@ import { Leaderboard } from "../../components/challenge/Leaderboard";
 import { useTourLMS } from "../../contexts/TourLMSContext";
 import { useSocket } from "../../services/socketService";
 import { XPProgress } from "../../components/challenge/XPProgress";
-import { Badge } from "../../components/ui/Badge";
+
+// Required env: VITE_AVATAR_URL
+const AVATAR_URL = import.meta.env.VITE_AVATAR_URL || 'https://i.pravatar.cc/150';
 
 const TABS = [
   { key: "global", label: "Global", icon: "🌍" },
@@ -32,7 +34,7 @@ const generateUsers = (count, isWeekly = false) => {
     name: names[i % names.length],
     xp: Math.floor(Math.random() * 10000) + 1000,
     level: Math.floor(Math.random() * 10) + 1,
-    avatar: i < 5 ? `https://i.pravatar.cc/150?img=${i + 1}` : null,
+    avatar: i < 5 ? `${AVATAR_URL}?img=${i + 1}` : null,
     isPremium: i % 3 === 0,
     xpChange: isWeekly ? Math.floor(Math.random() * 200) - 100 : null,
     weeklyProgress: isWeekly ? Math.floor(Math.random() * 100) : null
@@ -70,7 +72,7 @@ export default function LeaderboardPage() {
     nextLevelXp: 5000,
     rank: 15,
     level: 4,
-    avatar: "https://i.pravatar.cc/150?img=68",
+    avatar: `${AVATAR_URL}?img=68`,
     isPremium: true
   };
 

@@ -1,10 +1,8 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-// API base URL
-const API_URL = 'https://africanapi.onrender.com/api';
-
+// Required env: VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3031/api';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +13,6 @@ export const useAuth = () => {
   }
   return context;
 };
-
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

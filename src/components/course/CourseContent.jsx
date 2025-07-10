@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from 'date-fns';
 
+// Suggestion: WhatsApp share base URL and YouTube embed API could be made configurable via environment variables if needed.
+
 const CourseContent = ({ course }) => {
   const [completedContent, setCompletedContent] = useState({});
   const [videoDurations, setVideoDurations] = useState({});

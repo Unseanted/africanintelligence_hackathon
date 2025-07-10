@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const roleAuth = require("../middleware/roleAuth");
-const Challenge = require("../models/Challenges");
+const Challenge = require("../models/Challenge");
+const User = require("../models/User");
+const Course = require("../models/Course");
 
 /**
  * @swagger
@@ -111,11 +113,39 @@ router.get(
       if (difficulty) query.difficulty = difficulty;
       if (status) query.status = status;
 
+      // Only filter for students
+      if (req.user && req.user.role === "student") {
+        const db = req.app.locals.db;
+        // Get all enrollments for this student
+        const enrollments = await db
+          .collection("enrollments")
+          .find({ studentId: req.user.userId })
+          .toArray();
+        const courseIds = enrollments.map((e) => e.courseId);
+        if (courseIds.length === 0) {
+          return res.json([]);
+        }
+        query.course = {
+          $in: courseIds.map((id) =>
+            typeof id === "string" ? new require("mongodb").ObjectId(id) : id
+          ),
+        };
+      }
+
       const challenges = await Challenge.find(query)
         .populate("participants", "name email")
+        .populate("course", "title")
         .sort({ createdAt: -1 });
 
-      res.json(challenges);
+      // Add courseTitle to each challenge
+      const challengesWithCourseTitle = challenges.map((challenge) => {
+        const obj = challenge.toObject();
+        obj.courseTitle =
+          obj.course && obj.course.title ? obj.course.title : undefined;
+        return obj;
+      });
+
+      res.json(challengesWithCourseTitle);
     } catch (error) {
       console.error("Error fetching challenges:", error);
       res.status(500).json({ message: "Server error" });
@@ -196,6 +226,7 @@ router.get(
  *               - difficulty
  *               - category
  *               - submissionFormat
+ *               - course
  *             properties:
  *               title:
  *                 type: string
@@ -214,6 +245,9 @@ router.get(
  *               category:
  *                 type: string
  *                 description: The category of the challenge
+ *               course:
+ *                 type: string
+ *                 description: Course id (required)
  *               submissionFormat:
  *                 type: string
  *                 description: The required format for challenge submissions
@@ -232,6 +266,8 @@ router.get(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Challenge'
+ *       400:
+ *         description: Invalid input or missing/invalid course
  *       401:
  *         description: Unauthorized
  *       500:
@@ -239,11 +275,26 @@ router.get(
  */
 router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
   try {
-    // Remove participants and _id from request body
-    const { participants, _id, ...challengeData } = req.body;
+    const { course, ...challengeData } = req.body;
 
-    const challenge = new Challenge(challengeData);
-    await challenge.save();
+    // I don't know if challenges will be for courses or in general
+    if (!course) {
+      return res
+        .status(400)
+        .json({ message: "Course is required for a challenge." });
+    }
+    // Validate course exists
+    const courseObj = await Course.findOne({ courseId: course });
+    if (!courseObj) {
+      return res.status(400).json({ message: "Invalid course selected." });
+    }
+    // Validate facilitator owns course
+
+    const challenge = await Challenge.create({
+      ...challengeData,
+      course: courseObj._id,
+    });
+    console.log("Challenge", challenge);
     res.status(201).json(challenge);
   } catch (error) {
     console.error("Error creating challenge:", error);
@@ -271,7 +322,14 @@ router.post("/", auth, roleAuth(["facilitator"]), async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Challenge'
+ *             type: object
+ *             properties:
+ *              title:
+ *                type: string
+ *                description: The title of the challenge
+ *              description:
+ *                type: string
+ *                description: The description of the challenge
  *     responses:
  *       200:
  *         description: Challenge updated successfully
@@ -363,6 +421,8 @@ router.delete("/:id", auth, roleAuth(["facilitator"]), async (req, res) => {
  *     responses:
  *       200:
  *         description: Successfully participated in challenge
+ *       400:
+ *         description: Already participating in this challenge
  *       404:
  *         description: Challenge not found
  *       401:
@@ -382,13 +442,15 @@ router.post(
         return res.status(404).json({ message: "Challenge not found" });
       }
 
-      if (challenge.participants.includes(req.user._id)) {
+      const user = await User.findById(req.user.userId);
+
+      if (challenge.participants.includes(user.roleData)) {
         return res
           .status(400)
           .json({ message: "Already participating in this challenge" });
       }
 
-      challenge.participants.push(req.user._id);
+      challenge.participants.push(user.roleData);
       await challenge.save();
 
       res.json({ message: "Successfully participated in challenge" });

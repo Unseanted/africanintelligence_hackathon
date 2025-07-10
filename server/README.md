@@ -10,12 +10,7 @@ This is the backend server for the Tourism & Hospitality Learning Management Sys
    npm install
    ```
 
-2. Create a `.env` file in the root of the server directory with the following variables:
-   ```
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/tourism-lms
-   JWT_SECRET=your_secret_key
-   ```
+2. Create a `.env` file in the root of the server directory with the variables in .env.example:
 
 3. Start the server:
    ```

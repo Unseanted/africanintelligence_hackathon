@@ -2,15 +2,18 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../constants/api';
 
-interface User {
+export interface User {
   id: string;
   _id: string;
   name: string;
   email: string;
   role: 'student' | 'facilitator' | 'admin' | 'learner';
-  avatar?: string;
+  avatar: string;
   preferences?: {
     notifications: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
     darkMode: boolean;
   };
 }
@@ -58,6 +61,41 @@ export interface Course {
   };
 }
 
+// XP System Types
+export interface XPData {
+  totalXP: number;
+  level: number;
+  currentLevelXP: number;
+  nextLevelXP: number;
+  achievements: Achievement[];
+  badges: Badge[];
+  streak: {
+    current: number;
+    longest: number;
+    lastActiveDate: string;
+  };
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  xpReward: number;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earnedAt: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+}
+
 interface TourLMSContextType {
   user: User | null;
   token: string | null;
@@ -67,12 +105,29 @@ interface TourLMSContextType {
   facilitatorCourses: Course[];
   coursesLoaded: boolean;
   API_URL: string;
+  // XP System
+  userXP: XPData | null;
+  xpLoading: boolean;
+  // Auth methods
   login: (email: string, password: string) => Promise<void>;
   register: (userData: { name: string; email: string; password: string; role: string }) => Promise<void>;
   logout: () => Promise<void>;
+  // Course methods
   getCoursesHub: () => Promise<void>;
   packLoad: (user: User | null, token: string | null) => Promise<void>;
-  updateUserPreferences: (preferences: { notifications?: boolean; darkMode?: boolean }) => Promise<void>;
+  updateUserPreferences: (preferences: {
+    notifications?: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+    darkMode?: boolean;
+  }) => Promise<void>;
+  enrollInCourse: (courseId: string) => Promise<void>;
+  // XP methods
+  awardXP: (amount: number, reason: string) => Promise<void>;
+  fetchUserXP: () => Promise<void>;
+  calculateLevel: (totalXP: number) => { level: number; currentLevelXP: number; nextLevelXP: number };
+  checkAchievements: () => Promise<void>;
 }
 
 const TourLMSContext = createContext<TourLMSContextType | undefined>(undefined);
@@ -85,9 +140,190 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     enrolledCourses: [] as Course[],
     CoursesHub: [] as Course[],
     facilitatorCourses: [] as Course[],
-    coursesLoaded: false
+    coursesLoaded: false,
+    userXP: null as XPData | null,
+    xpLoading: false
   });
 
+  // XP System Functions
+  const calculateLevel = useCallback((totalXP: number) => {
+    // Level calculation: Level 1 = 0-99 XP, Level 2 = 100-299 XP, etc.
+    // Each level requires more XP: Level n requires n*100 + (n-1)*50 additional XP
+    let level = 1;
+    let xpForCurrentLevel = 0;
+    let xpForNextLevel = 100;
+    
+    while (totalXP >= xpForNextLevel) {
+      xpForCurrentLevel = xpForNextLevel;
+      level++;
+      xpForNextLevel = xpForCurrentLevel + (level * 100) + ((level - 1) * 50);
+    }
+    
+    return {
+      level,
+      currentLevelXP: totalXP - xpForCurrentLevel,
+      nextLevelXP: xpForNextLevel - xpForCurrentLevel
+    };
+  }, []);
+
+  const fetchUserXP = useCallback(async () => {
+    if (!state.token || !state.user) return;
+    
+    try {
+      setState(prev => ({ ...prev, xpLoading: true }));
+      
+      const response = await fetch(`${API_URL}/user/xp`, {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const xpData = await response.json();
+        const levelData = calculateLevel(xpData.totalXP || 0);
+        
+        setState(prev => ({
+          ...prev,
+          userXP: {
+            totalXP: xpData.totalXP || 0,
+            level: levelData.level,
+            currentLevelXP: levelData.currentLevelXP,
+            nextLevelXP: levelData.nextLevelXP,
+            achievements: xpData.achievements || [],
+            badges: xpData.badges || [],
+            streak: xpData.streak || {
+              current: 0,
+              longest: 0,
+              lastActiveDate: new Date().toISOString()
+            }
+          }
+        }));
+      } else {
+        // Initialize default XP data if API doesn't have it
+        setState(prev => ({
+          ...prev,
+          userXP: {
+            totalXP: 0,
+            level: 1,
+            currentLevelXP: 0,
+            nextLevelXP: 100,
+            achievements: [],
+            badges: [],
+            streak: {
+              current: 0,
+              longest: 0,
+              lastActiveDate: new Date().toISOString()
+            }
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching user XP:', error);
+      // Initialize default XP data on error
+      setState(prev => ({
+        ...prev,
+        userXP: {
+          totalXP: 0,
+          level: 1,
+          currentLevelXP: 0,
+          nextLevelXP: 100,
+          achievements: [],
+          badges: [],
+          streak: {
+            current: 0,
+            longest: 0,
+            lastActiveDate: new Date().toISOString()
+          }
+        }
+      }));
+    } finally {
+      setState(prev => ({ ...prev, xpLoading: false }));
+    }
+  }, [state.token, state.user, calculateLevel]);
+
+  const awardXP = useCallback(async (amount: number, reason: string) => {
+    if (!state.token || !state.user) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/user/xp/award`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount, reason })
+      });
+
+      if (response.ok) {
+        const newXPData = await response.json();
+        const levelData = calculateLevel(newXPData.totalXP);
+        
+        setState(prev => ({
+          ...prev,
+          userXP: prev.userXP ? {
+            ...prev.userXP,
+            totalXP: newXPData.totalXP,
+            level: levelData.level,
+            currentLevelXP: levelData.currentLevelXP,
+            nextLevelXP: levelData.nextLevelXP
+          } : null
+        }));
+        
+        // Check for new achievements after XP award
+        await checkAchievements();
+      } else {
+        // If API doesn't support XP yet, update locally
+        if (state.userXP) {
+          const newTotalXP = state.userXP.totalXP + amount;
+          const levelData = calculateLevel(newTotalXP);
+          
+          setState(prev => ({
+            ...prev,
+            userXP: prev.userXP ? {
+              ...prev.userXP,
+              totalXP: newTotalXP,
+              level: levelData.level,
+              currentLevelXP: levelData.currentLevelXP,
+              nextLevelXP: levelData.nextLevelXP
+            } : null
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+    }
+  }, [state.token, state.user, state.userXP, calculateLevel]);
+
+  const checkAchievements = useCallback(async () => {
+    if (!state.token || !state.user || !state.userXP) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/user/achievements/check`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const achievements = await response.json();
+        setState(prev => ({
+          ...prev,
+          userXP: prev.userXP ? {
+            ...prev.userXP,
+            achievements: achievements.achievements || prev.userXP.achievements,
+            badges: achievements.badges || prev.userXP.badges
+          } : null
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking achievements:', error);
+    }
+  }, [state.token, state.user, state.userXP]);
+
+  // Original functions with XP integration
   const packLoad = useCallback(async (user: User | null, token: string | null) => {
     if (!token) return;
 
@@ -139,10 +375,13 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
           CoursesHub: data
         }));
       }
+
+      // Load XP data after loading courses
+      await fetchUserXP();
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  }, []);
+  }, [fetchUserXP]);
 
   const loadStoredAuth = useCallback(async () => {
     try {
@@ -270,7 +509,9 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
         enrolledCourses: [],
         CoursesHub: [],
         facilitatorCourses: [],
-        coursesLoaded: false
+        coursesLoaded: false,
+        userXP: null,
+        xpLoading: false
       });
     } catch (error) {
       console.error('Logout error:', error);
@@ -278,65 +519,118 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateUserPreferences = async (preferences: { notifications?: boolean; darkMode?: boolean }) => {
+  const updateUserPreferences = useCallback(async (preferences: {
+    notifications?: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+    darkMode?: boolean;
+  }) => {
     if (!state.user || !state.token) return;
-    
     try {
       const response = await fetch(`${API_URL}/user/preferences`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${state.token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(preferences)
       });
-      
       if (response.ok) {
-        const updatedUser = { ...state.user, preferences: { ...state.user.preferences, ...preferences } };
+        const updatedUser = { 
+          ...state.user, 
+          preferences: { 
+            ...state.user?.preferences, 
+            ...preferences,
+            notifications: preferences.notifications ?? state.user?.preferences?.notifications ?? false,
+            darkMode: preferences.darkMode ?? state.user?.preferences?.darkMode ?? false
+          } 
+        };
         setState(prev => ({
           ...prev,
           user: updatedUser
         }));
       }
+
+      const updatedUser = {
+        ...state.user,
+        preferences: {
+          notifications: state.user.preferences?.notifications ?? true,
+          darkMode: state.user.preferences?.darkMode ?? false,
+          ...preferences
+        }
+      };
+
+      setState(prev => ({
+        ...prev,
+        user: updatedUser
+      }));
+
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Error updating preferences:', error);
       throw error;
     }
-  };
+  }, [state.user, state.token]);
+
+  const enrollInCourse = useCallback(async (courseId: string) => {
+    if (!state.token) return;
+    try {
+      const response = await fetch(`${API_URL}/learner/courses/${courseId}/enroll`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Enroll error:', errorText);
+        throw new Error('Failed to enroll');
+      }
+      
+      // Award XP for enrollment
+      await awardXP(50, 'Course enrollment');
+      
+      await packLoad(state.user, state.token);
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      throw error;
+    }
+  }, [state.token, state.user, packLoad, awardXP]);
 
   useEffect(() => {
     loadStoredAuth();
   }, [loadStoredAuth]);
 
   const value = useMemo(() => ({
-    user: state.user,
-    token: state.token,
-    loading: state.loading,
-    enrolledCourses: state.enrolledCourses,
-    CoursesHub: state.CoursesHub,
-    facilitatorCourses: state.facilitatorCourses,
-    coursesLoaded: state.coursesLoaded,
+    ...state,
     API_URL,
     login,
     register,
     logout,
     getCoursesHub,
     packLoad,
-    updateUserPreferences
+    updateUserPreferences,
+    enrollInCourse,
+    // XP methods
+    awardXP,
+    fetchUserXP,
+    calculateLevel,
+    checkAchievements,
   }), [
-    state.user,
-    state.token,
-    state.loading,
-    state.enrolledCourses,
-    state.CoursesHub,
-    state.facilitatorCourses,
-    state.coursesLoaded,
+    state,
     login,
     register,
     logout,
     getCoursesHub,
     packLoad,
-    updateUserPreferences
+    updateUserPreferences,
+    enrollInCourse,
+    awardXP,
+    fetchUserXP,
+    calculateLevel,
+    checkAchievements
   ]);
 
   return (

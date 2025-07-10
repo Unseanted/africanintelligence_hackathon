@@ -1,17 +1,73 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Badge = require('../models/Badges');
-const auth = require('../middleware/auth');
-const { ObjectId } = require('mongodb');
+const Badge = require("../models/Badge");
+const Student = require("../models/Student");
+const User = require("../models/User");
+const auth = require("../middleware/auth");
+const roleAuth = require("../middleware/roleAuth");
+const { ObjectId } = require("mongodb");
 
 /**
  * @swagger
- * /api/badges:
+ * components:
+ *   schemas:
+ *     Badge:
+ *       type: object
+ *       required:
+ *         - title
+ *         - description
+ *         - imageUrl
+ *         - category
+ *         - criteria
+ *         - user_id
+ *         - awardedBy
+ *       properties:
+ *         title:
+ *           type: string
+ *           description: Title of the badge
+ *         description:
+ *           type: string
+ *           description: Description of the badge
+ *         imageUrl:
+ *           type: string
+ *           description: URL of the badge image
+ *         category:
+ *           type: string
+ *           enum: [achievement, participation, excellence, milestone, special]
+ *           description: Category of the badge
+ *         criteria:
+ *           type: string
+ *           description: Criteria for earning the badge
+ *         points:
+ *           type: number
+ *           description: Points awarded with this badge
+ *         user_id:
+ *           type: string
+ *           description: ID of the user who earned the badge
+ *         status:
+ *           type: string
+ *           enum: [active, revoked, pending]
+ *           description: Current status of the badge
+ *         expiryDate:
+ *           type: string
+ *           format: date-time
+ *           description: Expiration date of the badge (optional)
+ */
+
+/**
+ * @swagger
+ * /badges:
  *   get:
- *     summary: Get all badges for the authenticated user
+ *     summary: Get all badges
  *     tags: [Badges]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter badges by category
  *     responses:
  *       200:
  *         description: List of badges
@@ -26,18 +82,19 @@ const { ObjectId } = require('mongodb');
  *       500:
  *         description: Server error
  */
-router.get('/', auth, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    const badges = await Badge.find({ user: req.user.userId });
+    const query = req.query.category;
+    const badges = await Badge.find({ query });
     res.json(badges);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 /**
  * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   get:
  *     summary: Get a single badge by ID
  *     tags: [Badges]
@@ -62,13 +119,13 @@ router.get('/', auth, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get('/:id', auth, async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
     if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid badge ID format' });
+      return res.status(400).json({ message: "Invalid badge ID format" });
     }
-    const badge = await Badge.findById(req.params.id).populate('user');
-    if (!badge) return res.status(404).json({ message: 'Badge not found' });
+    const badge = await Badge.findById(req.params.id);
+    if (!badge) return res.status(404).json({ message: "Badge not found" });
     res.json(badge);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -77,7 +134,7 @@ router.get('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges:
+ * /badges:
  *   post:
  *     summary: Create a new badge (admin only)
  *     tags: [Badges]
@@ -99,77 +156,20 @@ router.get('/:id', auth, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.post('/', auth, async (req, res) => {
+router.post("/", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only admins can create badges' });
-    }
-
     // Validate required fields
-    const { name, description, criteria, imageUrl } = req.body;
-    if (!name || !description || !criteria) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    const { title, description, criteria, expiryDate } = req.body;
+    if (!title || !description || !criteria) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const badge = new Badge(req.body);
-    const saved = await badge.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/badges/award/{userId}:
- *   post:
- *     summary: Award a badge to a specific user (admin only)
- *     tags: [Badges]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID to award badge to
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Badge'
- *     responses:
- *       201:
- *         description: Badge awarded successfully
- *       400:
- *         description: Invalid input
- *       403:
- *         description: Forbidden - Admin access required
- *       500:
- *         description: Server error
- */
-router.post('/award/:userId', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only admins can award badges' });
-    }
-
-    if (!ObjectId.isValid(req.params.userId)) {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-
-    const badge = new Badge({
+    const badge = await Badge.create({
       ...req.body,
-      user: req.params.userId,
-      awardedBy: req.user.userId,
-      awardedAt: new Date()
+      expiryDate: new Date(expiryDate).getTime(),
     });
-    const saved = await badge.save();
-    res.status(201).json(saved);
+
+    res.status(201).json(badge);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -177,85 +177,7 @@ router.post('/award/:userId', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/user/{userId}:
- *   get:
- *     summary: Get all badges for a specific user
- *     tags: [Badges]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID
- *     responses:
- *       200:
- *         description: List of user's badges
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Badge'
- *       400:
- *         description: Invalid user ID
- *       500:
- *         description: Server error
- */
-router.get('/user/:userId', auth, async (req, res) => {
-  try {
-    if (!ObjectId.isValid(req.params.userId)) {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    const userBadges = await Badge.find({ user: req.params.userId });
-    res.json(userBadges);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/badges/category/{category}:
- *   get:
- *     summary: Get badges by category
- *     tags: [Badges]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: category
- *         required: true
- *         schema:
- *           type: string
- *           enum: [achievement, participation, excellence, milestone, special]
- *         description: Badge category
- *     responses:
- *       200:
- *         description: List of badges in category
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Badge'
- *       500:
- *         description: Server error
- */
-router.get('/category/:category', auth, async (req, res) => {
-  try {
-    const badges = await Badge.find({ category: req.params.category });
-    res.json(badges);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/badges/check/{badgeId}:
+ * /badges/{badgeId}/check:
  *   get:
  *     summary: Check if user has earned a specific badge
  *     tags: [Badges]
@@ -283,16 +205,22 @@ router.get('/category/:category', auth, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get('/check/:badgeId', auth, async (req, res) => {
+router.get("/:badgeId/check", auth, roleAuth(["student"]), async (req, res) => {
   try {
-    if (!ObjectId.isValid(req.params.badgeId)) {
-      return res.status(400).json({ message: 'Invalid badge ID format' });
-    }
     const badge = await Badge.findOne({
       _id: req.params.badgeId,
-      user: req.user.userId
     });
-    res.json({ hasBadge: !!badge });
+    const student = await Student.findOne({
+      user: req.user.userId,
+    });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    if (student.badges.includes(req.params.badgeId)) {
+      return res.status(200).json({ hasBadge: true });
+    }
+    return res.status(200).json({ hasBadge: false });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -300,52 +228,7 @@ router.get('/check/:badgeId', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/leaderboard:
- *   get:
- *     summary: Get badge leaderboard (top 10 users)
- *     tags: [Badges]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Leaderboard data
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   user:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       name:
- *                         type: string
- *                   count:
- *                     type: number
- *       500:
- *         description: Server error
- */
-router.get('/leaderboard', auth, async (req, res) => {
-  try {
-    const leaderboard = await Badge.aggregate([
-      { $group: { _id: '$user', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
-      { $unwind: '$user' }
-    ]);
-    res.json(leaderboard);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   put:
  *     summary: Update a badge (admin only)
  *     tags: [Badges]
@@ -376,23 +259,18 @@ router.get('/leaderboard', auth, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.put('/:id', auth, async (req, res) => {
+router.put("/:id", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only admins can update badges' });
-    }
-
     if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid badge ID format' });
+      return res.status(400).json({ message: "Invalid badge ID format" });
     }
 
-    const updated = await Badge.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const updated = await Badge.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!updated) {
-      return res.status(404).json({ message: 'Badge not found' });
+      return res.status(404).json({ message: "Badge not found" });
     }
     res.json(updated);
   } catch (err) {
@@ -402,7 +280,7 @@ router.put('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/badges/{id}:
+ * /badges/{id}:
  *   delete:
  *     summary: Delete a badge (admin only)
  *     tags: [Badges]
@@ -427,21 +305,17 @@ router.put('/:id', auth, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete("/:id", auth, roleAuth(["admin"]), async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only admins can delete badges' });
-    }
-
     if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid badge ID format' });
+      return res.status(400).json({ message: "Invalid badge ID format" });
     }
 
     const deleted = await Badge.findByIdAndDelete(req.params.id);
     if (!deleted) {
-      return res.status(404).json({ message: 'Badge not found' });
+      return res.status(404).json({ message: "Badge not found" });
     }
-    res.json({ message: 'Badge deleted successfully' });
+    res.json({ message: "Badge deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

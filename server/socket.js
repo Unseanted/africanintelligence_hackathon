@@ -5,6 +5,9 @@ const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
 const { vapid_private_key, mistral_api_key } = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
+const Student = require("./models/Student");
+const ForumPost = require("./models/Forum");
+const { sendForumNotification } = require("./routes/notification");
 
 class LLMStrategy {
   constructor(apiKey) {
@@ -37,12 +40,7 @@ class MockLLM extends LLMStrategy {
   }
 
   async generateResponse(message) {
-    return {
-      role: "assistant",
-      content: "This is a mock response",
-      model: this.model,
-      timestamp: new Date(),
-    };
+    return "This is a mock response for: " + message;
   }
 }
 
@@ -164,7 +162,7 @@ const setupSocket = (server, db) => {
 
     socket.on("ai:message", async (data) => {
       const { message, context } = data;
-      const { conversationId, role, content, timestamp } = context;
+      const { conversationId, role, timestamp, model } = context;
 
       const conversation = await db
         .collection("AIConversation")
@@ -174,16 +172,19 @@ const setupSocket = (server, db) => {
         conversation.addMessage({
           conversationId: conversation._id,
           role,
-          content,
+          content: message,
           tokenCount: 0,
           timestamp,
         });
       }
 
       socket.emit("ai:typing", true);
-      const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
-      const response = await llmContext.generateResponse(content);
-      console.log(response);
+      // TODO: switch between different LLM strategies based on user preference
+      // For now, we will use MistralLLM and local model as the default strategy
+
+      // const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
+      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
+      const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,
         role: "assistant",
@@ -195,6 +196,7 @@ const setupSocket = (server, db) => {
       socket.emit("ai:response", {
         message: aiMessage,
       });
+      console.log(aiMessage);
       socket.emit("ai:typing", false);
 
       // Store the conversation in the database
@@ -309,6 +311,12 @@ const setupSocket = (server, db) => {
 
     // Handle disconnection
     socket.on("disconnect", () => {
+      // Clean up subscriptions
+      if (socket.leaderboardSubscription) {
+        const { type, timeRange } = socket.leaderboardSubscription;
+        const subscriptionKey = `${socket.id}-${type}-${timeRange}`;
+        activeSubscriptions.delete(subscriptionKey);
+      }
       console.log(`User disconnected: ${socket.user._id}`);
     });
 
@@ -316,6 +324,175 @@ const setupSocket = (server, db) => {
     socket.on("ping", (data) => {
       socket.emit("pong");
     });
+
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err.message);
+      socket.emit("error", {
+        message: "Connection error",
+        code: "CONNECTION_ERROR",
+      });
+    });
+
+    // --- FORUM SOCKET EVENTS ---
+    // Helper: calculate forum stats
+    async function getForumStats(posts) {
+      const totalTopics = posts.length;
+      const totalPosts = posts.reduce(
+        (acc, post) => acc + (post.comments ? post.comments.length : 0),
+        0
+      );
+      const activeUsers = new Set(posts.map((post) => post.authorId.toString()))
+        .size;
+      const onlineNow = 42; // Dummy value
+      return { totalTopics, totalPosts, activeUsers, onlineNow };
+    }
+
+    // Helper: get users to notify for forum activity
+    async function getUsersToNotify(courseId = null) {
+      try {
+        let users = [];
+
+        if (courseId) {
+          // Get users enrolled in the specific course
+          const enrollments = await db
+            .collection("enrollments")
+            .find({
+              courseId: new ObjectId(courseId),
+            })
+            .toArray();
+          users = enrollments.map((enrollment) =>
+            enrollment.studentId.toString()
+          );
+        } else {
+          // Get all active users for community forum
+          const allUsers = await db
+            .collection("users")
+            .find({
+              role: { $in: ["student", "facilitator"] },
+            })
+            .toArray();
+          users = allUsers.map((user) => user._id.toString());
+        }
+
+        return users;
+      } catch (error) {
+        console.error("Error getting users to notify:", error);
+        return [];
+      }
+    }
+
+    // forum:get_data - send all posts and stats
+    socket.on("forum:get_data", async () => {
+      try {
+        const posts = await ForumPost.find({}).lean();
+        const categories = [...new Set(posts.map((post) => post.category))];
+        const stats = await getForumStats(posts);
+        socket.emit("forum:data", { posts, categories, stats });
+      } catch (err) {
+        socket.emit("error", { message: "Failed to fetch forum data." });
+      }
+    });
+
+    // forum:create_post - create a new post
+    socket.on("forum:create_post", async (data) => {
+      try {
+        const { title, content, category } = data;
+        const post = await ForumPost.create({
+          title,
+          content,
+          category,
+          authorId: socket.user._id,
+          comments: [],
+          likes: 0,
+        });
+        const postObj = post.toObject();
+        io.emit("forum:new_post", postObj);
+
+        // Send notifications to relevant users
+        const usersToNotify = await getUsersToNotify();
+        if (usersToNotify.length > 0) {
+          await sendForumNotification(
+            db,
+            post._id.toString(),
+            socket.user._id.toString(),
+            null, // community forum
+            usersToNotify,
+            false // isReply
+          );
+        }
+
+        // Optionally, update stats for all
+        const posts = await ForumPost.find({}).lean();
+        const stats = await getForumStats(posts);
+        io.emit("forum:stats", stats);
+      } catch (err) {
+        socket.emit("error", { message: "Failed to create post." });
+      }
+    });
+
+    // forum:create_comment - add a comment to a post
+    socket.on("forum:create_comment", async (data) => {
+      try {
+        const { postId, content } = data;
+        const comment = {
+          authorId: socket.user._id,
+          content,
+          createdAt: new Date(),
+        };
+        const post = await ForumPost.findByIdAndUpdate(
+          postId,
+          { $push: { comments: comment } },
+          { new: true }
+        );
+        if (post) {
+          io.emit("forum:new_comment", { postId, comment });
+
+          // Send notifications to relevant users
+          const usersToNotify = await getUsersToNotify();
+          if (usersToNotify.length > 0) {
+            await sendForumNotification(
+              db,
+              postId,
+              socket.user._id.toString(),
+              null, // community forum
+              usersToNotify,
+              true // isReply
+            );
+          }
+
+          // Optionally, update stats for all
+          const posts = await ForumPost.find({}).lean();
+          const stats = await getForumStats(posts);
+          io.emit("forum:stats", stats);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to add comment." });
+      }
+    });
+
+    // forum:toggle_like - like/unlike a post (idempotent)
+    socket.on("forum:toggle_like", async (data) => {
+      try {
+        const { postId } = data;
+        const userId = socket.user._id;
+        const post = await ForumPost.findById(postId);
+        if (!post) return socket.emit("error", { message: "Post not found." });
+        const likedIdx = post.likedBy.findIndex(
+          (id) => id.toString() === userId.toString()
+        );
+        if (likedIdx === -1) {
+          post.likedBy.push(userId);
+        } else {
+          post.likedBy.splice(likedIdx, 1);
+        }
+        post.likes = post.likedBy.length;
+        await post.save();
+        io.emit("forum:post_updated", { _id: post._id, likes: post.likes });
+      } catch (err) {
+        socket.emit("error", { message: "Failed to toggle like." });
+      }
+    });
+    // --- END FORUM SOCKET EVENTS ---
   });
 
   return io;
