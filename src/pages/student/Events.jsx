@@ -15,7 +15,8 @@ import {
   ArrowUpRight,
   Users,
   Calendar as CalendarIcon,
-  MapPin
+  MapPin,
+  Target
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -46,10 +47,11 @@ const Events = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/admin/events`, {
+      const response = await axios.get(`${API_URL}/events`, {
         headers: { 'x-auth-token': token },
       });
       setEvents(response.data);
+      console.log('Fetched events:', response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
       toast({
@@ -155,7 +157,7 @@ const Events = () => {
       {filteredEvents.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => {
-            const isEventPast = new Date(event.eventDate) < new Date();
+            const isEventPast = new Date(event.date) < new Date();
             return (
               <Link
                 to={`/student/events/${event._id}`}
@@ -164,9 +166,9 @@ const Events = () => {
               >
                 <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
                   <div className="h-48 overflow-hidden relative">
-                    {event.flyer ? (
+                    {event.media ? (
                       <img
-                        src={event.flyer}
+                        src={event.media[0]}
                         alt={event.title}
                         className={`w-full h-full object-cover ${
                           isEventPast ? 'grayscale' : ''
@@ -185,10 +187,20 @@ const Events = () => {
                     )}
                     
                     <div className="absolute top-3 right-3 flex flex-col gap-2">
-                      {isEventPast ? (
-                        <Badge className="bg-gray-700">Past</Badge>
+                      {event.status === 'completed' ? (
+                        <Badge className="bg-gray-700">Completed</Badge>
+                      ) : event.status === 'ongoing' ? (
+                        <Badge className="bg-blue-600">Live</Badge>
                       ) : (
                         <Badge className="bg-green-600">Upcoming</Badge>
+                      )}
+                      
+                      {!event.isRegistrationOpen && (
+                        <Badge className="bg-red-600">Registration Closed</Badge>
+                      )}
+                      
+                      {event.capacity && !event.hasCapacity && (
+                        <Badge className="bg-orange-600">Full</Badge>
                       )}
                       
                       {event.eventTypeDetails && (
@@ -207,7 +219,7 @@ const Events = () => {
                     <div className="flex flex-col gap-2 mt-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        {formatEventDate(event.eventDate)}
+                        {formatEventDate(event.date)}
                       </div>
                       
                       {event.location && (
@@ -217,10 +229,18 @@ const Events = () => {
                         </div>
                       )}
                       
-                      {event.participantDetails && (
+                      {event.participants && (
                         <div className="flex items-center text-sm text-gray-500">
                           <Users className="h-4 w-4 mr-2 text-gray-400" />
-                          {event.participantDetails.length} participants
+                          {event.participants.length}
+                          {event.capacity && ` / ${event.capacity}`} participants
+                        </div>
+                      )}
+                      
+                      {event.remainingCapacity !== null && event.remainingCapacity < 5 && (
+                        <div className="flex items-center text-sm text-orange-500">
+                          <Target className="h-4 w-4 mr-2" />
+                          Only {event.remainingCapacity} spots left!
                         </div>
                       )}
                     </div>
