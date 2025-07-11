@@ -25,7 +25,8 @@ import {
   AlignCenter,
   AlignRight,
   Undo,
-  Redo
+  Redo,
+  Loader2
 } from 'lucide-react';
 
 const ContentEditor= ({
