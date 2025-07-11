@@ -1,10 +1,12 @@
+import React, { useCallback, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text } from 'react-native';
 import { Image } from 'expo-image';
-import { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 
-import { ThemedText } from './components/ThemedText';
-import { ThemedView } from './components/ThemedView';
+// If using context-based theming
+// import { ThemeProvider } from '@/contexts/ThemeContext'; 
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 
 export default function LandingPage() {
   const hasNavigated = useRef(false);
@@ -18,22 +20,18 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    // Clear any existing timer
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
 
-    // Set new timer
     timerRef.current = setTimeout(() => {
       navigateToLogin();
-    }, 3000);
+    }, 2000);
 
-    // Cleanup
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
-      hasNavigated.current = false;
     };
   }, [navigateToLogin]);
 
@@ -58,7 +56,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    borderRadius: 50,
+    backgroundColor: '#ffffff',
   },
   logo: {
     width: 200,
@@ -68,5 +66,8 @@ const styles = StyleSheet.create({
   welcomeText: {
     textAlign: 'center',
     fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    color: '#000000',
   },
-}); 
+});

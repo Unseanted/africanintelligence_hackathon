@@ -127,7 +127,13 @@ interface TourLMSContextType {
   awardXP: (amount: number, reason: string) => Promise<void>;
   fetchUserXP: () => Promise<void>;
   calculateLevel: (totalXP: number) => { level: number; currentLevelXP: number; nextLevelXP: number };
+  fetchEnrolledCourses: () => Promise<Course[]>;
+  fetchUserStats: () => Promise<void>;
+  fetchRecentActivities: () => Promise<void>;
+  fetchRecommendedCourses: () => Promise<Course[]>;
+  refreshDashboard: () => Promise<void>;
   checkAchievements: () => Promise<void>;
+  socket: any; 
 }
 
 const TourLMSContext = createContext<TourLMSContextType | undefined>(undefined);
@@ -603,6 +609,103 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     loadStoredAuth();
   }, [loadStoredAuth]);
 
+  const fetchEnrolledCourses = useCallback(async () => {
+    if (!state.token || !state.user) return [];
+    try {
+      const response = await fetch(`${API_URL}/learner/courses`, {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setState(prev => ({ ...prev, enrolledCourses: data }));
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching enrolled courses:', error);
+    }
+    return [];
+  }, [state.token, state.user]);
+  
+  const fetchUserStats = useCallback(async () => {
+    if (!state.token || !state.user) return;
+    try {
+      const response = await fetch(`${API_URL}/user/stats`, {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // You can set state if needed
+        console.log('User Stats:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  }, [state.token, state.user]);
+  
+  const fetchRecentActivities = useCallback(async () => {
+    if (!state.token || !state.user) return;
+    try {
+      const response = await fetch(`${API_URL}/user/activities`, {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Update state if necessary
+        console.log('Recent Activities:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+    }
+  }, [state.token, state.user]);
+  
+  const fetchRecommendedCourses = useCallback(async () => {
+    if (!state.token || !state.user) return [];
+    try {
+      const response = await fetch(`${API_URL}/courses/recommended`, {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching recommended courses:', error);
+    }
+    return [];
+  }, [state.token, state.user]);
+  
+
+  const refreshDashboard = useCallback(async () => {
+    await Promise.all([
+      fetchUserXP(),
+      fetchEnrolledCourses(),
+      fetchUserStats(),
+      fetchRecentActivities(),
+      fetchRecommendedCourses()
+    ]);
+  }, [
+    fetchUserXP,
+    fetchEnrolledCourses,
+    fetchUserStats,
+    fetchRecentActivities,
+    fetchRecommendedCourses
+  ]);
+
+  const socket = null;
+  
+
   const value = useMemo(() => ({
     ...state,
     API_URL,
@@ -618,6 +721,14 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     fetchUserXP,
     calculateLevel,
     checkAchievements,
+    // ✅ Add these missing properties
+    fetchEnrolledCourses,
+    fetchUserStats,
+    fetchRecentActivities,
+    fetchRecommendedCourses,
+    refreshDashboard, // ✅ Add this
+    socket,
+   
   }), [
     state,
     login,
@@ -630,9 +741,14 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
     awardXP,
     fetchUserXP,
     calculateLevel,
-    checkAchievements
+    checkAchievements,
+    fetchEnrolledCourses,
+    fetchUserStats,
+    fetchRecentActivities,
+    fetchRecommendedCourses,
+    refreshDashboard, // ✅ Add this
+    socket,
   ]);
-
   return (
     <TourLMSContext.Provider value={value}>
       {children}
