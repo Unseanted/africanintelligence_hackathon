@@ -690,3 +690,4 @@ const CreatePRModal = ({
     </Dialog>
   );
 };
+export default CreatePRModal
