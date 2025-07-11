@@ -3,7 +3,7 @@ import { TouchableRipple, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname, Tabs } from 'expo-router';
 import AIAssistant from '../../components/AIAssistant';
-
+import Sidebar from '../../components/Sidebar';
 // Color Constants
 const PRIMARY = '#FFBF00';
 const PRIMARY_LIGHT = 'rgba(255, 191, 0, 0.1)';
@@ -82,6 +82,8 @@ export default function Layout() {
       </Tabs>
       
       <AIAssistant />
+
+      <Sidebar />
       
       {/* Bottom Navigation Bar */}
       <View style={[styles.bottomNav, { backgroundColor: BACKGROUND }]}>
