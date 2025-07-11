@@ -198,6 +198,8 @@ const AIAssistantPage = () => {
     e.preventDefault();
     
     if (!message.trim() || isTyping || !socket || !chat) return;
+
+    // fix sending without creating a new conversation
     const userMessage = message.trim();
     setMessage('');
     const newMsg = {

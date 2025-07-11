@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { FileText, Upload, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Upload, CheckCircle, Clock, AlertCircle, Sparkles, Bot } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
+import { GamificationService } from '../../services/gamificationService';
 
 const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
   const [submission, setSubmission] = useState({
@@ -13,6 +15,7 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(challenge.timeLimit ? challenge.timeLimit * 60 : null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (challenge.submissionType === 'timed-quiz' && timeLeft !== null) {
@@ -58,6 +61,16 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
 
       await onSubmit(challenge.id, submissionData);
       setIsSubmitted(true);
+      // XP Award Logic
+      const xp = challenge.xpReward || challenge.maxScore || 0;
+      if (xp > 0) {
+        // Optionally, call backend or gamification service here
+        // GamificationService.getInstance().awardXp(userId, xp, challenge.type);
+        toast({
+          title: 'XP Awarded',
+          description: `You earned ${xp} XP for this challenge!`,
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -338,19 +351,44 @@ const ChallengeAttempt = ({ challenge, onClose, onSubmit }) => {
             <p className="text-blue-800">{challenge.requirements}</p>
           </div>
 
-          {renderSubmissionForm()}
+          <div className="space-y-6">
+            {/* Grand Prize & AI Powered Badges */}
+            {(challenge.isGrandPrize || challenge.type === 'ai-grand-prize' || challenge.grandPrize) && (
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-yellow-500" />
+                <span className="font-bold text-yellow-700">Grand Prize</span>
+                {challenge.grandPrize && (
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-semibold ml-1 text-xs">{challenge.grandPrize}</span>
+                )}
+              </div>
+            )}
+            {challenge.aiPowered && (
+              <div className="flex items-center gap-1 mb-2">
+                <Bot className="w-4 h-4 text-blue-500" />
+                <span className="font-bold text-blue-700 text-xs">AI Powered</span>
+              </div>
+            )}
+            {/* Submission Type Label */}
+            <div className="mb-4">
+              <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium text-xs">
+                Submission Type: {challenge.submissionType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </span>
+            </div>
+            {/* Render the dynamic submission form */}
+            {renderSubmissionForm()}
 
-          <div className="flex justify-end gap-4 mt-8">
-            <Button variant="outline" onClick={onClose} size="lg">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              size="lg"
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit Challenge'}
-            </Button>
+            <div className="flex justify-end gap-4 mt-8">
+              <Button variant="outline" onClick={onClose} size="lg">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                size="lg"
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Challenge'}
+              </Button>
+            </div>
           </div>
         </div>
       </Card>

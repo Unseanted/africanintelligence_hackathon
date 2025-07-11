@@ -181,8 +181,8 @@ export const getCourseStudents = async (courseId, token) => {
 export const getLearnerCourses = async (token) => {
   configureAxios(token);
   try {
-    const response = await axios.get(`${API_URL}/students/courses`);
-    console.log(response.data);
+    const response = await axios.get(`${API_URL}/students/me/courses`);
+    console.log("🔍 [CourseService] Response data:", response.data);
 
     return response.data;
   } catch (error) {

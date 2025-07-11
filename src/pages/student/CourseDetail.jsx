@@ -57,102 +57,52 @@ const CourseDetail = () => {
       try {
         setLoading(true);
         
-        // Find the course in CoursesHub by ID or key
+        // Always use courseId for lookups, fallback to _id if missing
         const foundCourse = CoursesHub?.find(c => 
-          c.courseId === id || 
-          c._id === id || 
-          c.courseId === params.id || 
-          c._id === params.id
+          (c.courseId && (c.courseId === id || c.courseId === params.id)) ||
+          (c._id && (c._id === id || c._id === params.id))
         );
         clg('🔍 [CourseDetail] Searching for courseId:', id);
-        clg('🔍 [CourseDetail] Found course by courseId:', foundCourse);
+        clg('🔍 [CourseDetail] Found course by courseId/_id:', foundCourse);
         
         if (!foundCourse) {
-          // Try finding by _id as fallback
-          const foundByMongoId = CoursesHub?.find(c => c._id === id);
-          clg('🔍 [CourseDetail] Found course by _id:', foundByMongoId);
-          
-          if (!foundByMongoId) {
-            clg('❌ [CourseDetail] Course not found in CoursesHub');
-            clg('❌ [CourseDetail] Available courseIds:', CoursesHub?.map(c => c.courseId));
-            clg('❌ [CourseDetail] Available _ids:', CoursesHub?.map(c => c._id));
-            clg('❌ [CourseDetail] Searching for ID:', id);
-            clg('❌ [CourseDetail] ID type:', typeof id);
-            toast({
-              title: 'Error',
-              description: 'Course not found',
-              variant: 'destructive',
-            });
-            return;
-          }
-        }
-        
-        if (foundCourse) {
-          clg('🔍 [CourseDetail] Course found, checking enrollment...');
-          clg('🔍 [CourseDetail] Found course details:', {
-            courseId: foundCourse.courseId,
-            _id: foundCourse._id,
-            title: foundCourse.title,
-            enrolledStudents: foundCourse.enrolledStudents,
-            enrollmentCount: foundCourse.enrollmentCount
-          });
-          
-          // Check enrollment status from server if user is logged in
-          if (token) {
-            try {
-              clg('🔍 [CourseDetail] Checking enrollment for user:', user.id);
-              clg('🔍 [CourseDetail] User object:', user);
-              clg('🔍 [CourseDetail] Found course enrolledStudents:', foundCourse.enrolledStudents);
-              
-              // Check if user is enrolled by comparing user ID with enrolledStudents array
-              const enrollmentStatus = foundCourse.enrolledStudents?.find(studentId => 
-                studentId == user.id || 
-                studentId == user._id || 
-                studentId == user.userId
-              );
-              clg('🔍 [CourseDetail] Enrollment status from enrolledStudents:', enrollmentStatus);
-              
-              setIsEnrolled(enrollmentStatus ? true : false);
-              
-              if (enrollmentStatus && ocn(enrolledCourses)) {
-                clg('🔍 [CourseDetail] User is enrolled, looking for course in enrolledCourses...');
-                const mycourse = enrolledCourses?.find(c => 
-                  c.courseId === id || 
-                  c._id === id || 
-                  c.courseId === params.id || 
-                  c._id === params.id
-                );
-                clg('🔍 [CourseDetail] Found in enrolledCourses:', mycourse);
-                setCourse(mycourse);
-                setLoading(false);
-              }
-              
-              if (!enrollmentStatus && foundCourse) {
-                clg('🔍 [CourseDetail] User not enrolled, using foundCourse');
-                setCourse(foundCourse);
-              }
-              
-              // If user is enrolled, default to content tab
-              if (enrollmentStatus) {
-                setActiveTab('content');
-              }
-            } catch (err) {
-              console.error("❌ [CourseDetail] Failed to check enrollment status:", err);
-              setIsEnrolled(false);
-            }
-          } else {
-            clg('🔍 [CourseDetail] No token, setting waiting course');
-            if (id) localStorage.setItem('waitingCourse', id);
-            setCourse(foundCourse);
-            setLoading(false);
-          }
-        } else {
           clg('❌ [CourseDetail] Course not found in CoursesHub');
+          clg('❌ [CourseDetail] Available courseIds:', CoursesHub?.map(c => c.courseId));
+          clg('❌ [CourseDetail] Available _ids:', CoursesHub?.map(c => c._id));
+          clg('❌ [CourseDetail] Searching for ID:', id);
+          clg('❌ [CourseDetail] ID type:', typeof id);
           toast({
             title: 'Error',
             description: 'Course not found',
             variant: 'destructive',
           });
+          return;
+        }
+        
+        // Check enrollment status from enrolledCourses
+        let enrollmentStatus = false;
+        if (token && Array.isArray(enrolledCourses) && user) {
+          enrollmentStatus = enrolledCourses.some(c =>
+            (c.courseId && (c.courseId === id || c.courseId === params.id)) ||
+            (c._id && (c._id === id || c._id === params.id))
+          );
+        }
+        setIsEnrolled(enrollmentStatus);
+        
+        // If enrolled, prefer enrolledCourses for up-to-date progress
+        if (enrollmentStatus && Array.isArray(enrolledCourses)) {
+          const mycourse = enrolledCourses.find(c => 
+            (c.courseId && (c.courseId === id || c.courseId === params.id)) ||
+            (c._id && (c._id === id || c._id === params.id))
+          );
+          clg('🔍 [CourseDetail] Found in enrolledCourses:', mycourse);
+          setCourse(mycourse || foundCourse);
+        } else {
+          setCourse(foundCourse);
+        }
+        // If user is enrolled, default to content tab
+        if (enrollmentStatus) {
+          setActiveTab('content');
         }
       } catch (error) {
         console.error('❌ [CourseDetail] Error fetching course details:', error);

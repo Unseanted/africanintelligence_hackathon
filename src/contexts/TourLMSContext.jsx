@@ -1,17 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { clg, ocn } from '../lib/basic';
 import { io } from 'socket.io-client';
 import notificationService from '../services/notificationService';
 
-// Required env: VITE_API_URL, VITE_SOCKET_URL
+// Environment configuration
 const API_URL = import.meta.env.VITE_API_URL || 'https://africanapi.onrender.com/api';
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://africanapi.onrender.com';
-// const API_URL = 'http://localhost:3031/api';
-const clientID='NOTIFICATION-CLIENT-ID'
+const CLIENT_ID = 'NOTIFICATION-CLIENT-ID';
+const Categories = [
+  'Digital Infrastructure',
+  'AI Talent & Education',
+  'Innovation & Entrepreneurship',
+  'Ethical & Regulatory Frameworks',
+  'AI for Key Sectors',
+  'Global Collaboration',
+  'Inclusivity & Digital Divide'
+];
 
+// Context creation
 const TourLMSContext = createContext(null);
 
+// Custom hook for context usage
 export const useTourLMS = () => {
   const context = useContext(TourLMSContext);
   if (!context) {
@@ -20,11 +29,8 @@ export const useTourLMS = () => {
   return context;
 };
 
-let ison = false;
-
-const Categories = 'Digital Infrastructure,AI Talent & Education,Innovation & Entrepreneurship,Ethical & Regulatory Frameworks,AI for Key Sectors,Global Collaboration,Inclusivity & Digital Divide'.split(',');
-
 export const TourLMSProvider = ({ children }) => {
+  // State initialization
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState({});
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -32,7 +38,7 @@ export const TourLMSProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [facilitatorCourses, setFacilitatorCourses] = useState([]);
-  const [coursesLoaded,setCoursesLoaded] = useState(false)
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [CoursesHub, setCoursesHub] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [facilitatorStats, setFacilitatorStats] = useState(null);
@@ -41,7 +47,7 @@ export const TourLMSProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
-  // Set up axios interceptors
+  // Axios interceptors setup
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use(
       config => {
@@ -50,16 +56,13 @@ export const TourLMSProvider = ({ children }) => {
         }
         return config;
       },
-      error => {
-        return Promise.reject(error);
-      }
+      error => Promise.reject(error)
     );
 
     const responseInterceptor = axios.interceptors.response.use(
       response => response,
       error => {
-        if (error.response && error.response.status === 401) {
-          // Auto logout if 401 response returned from api
+        if (error.response?.status === 401) {
           logout();
         }
         return Promise.reject(error);
@@ -72,37 +75,30 @@ export const TourLMSProvider = ({ children }) => {
     };
   }, [token]);
 
-  // Check if user is already logged in on app start
+  // Authentication check on mount
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
       try {
         if (token) {
           const storedUser = localStorage.getItem('user');
+          let userData;
+          
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
-            setIsAuthenticated(true);
-            const response = await axios.get(`${API_URL}/auth/me`, {
-              headers: { 'x-auth-token': token }
-            });
-            
-            setUser(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data));
-            
-          } else {
-            // Token exists but no user data, try to fetch user info
-            const response = await axios.get(`${API_URL}/auth/me`, {
-              headers: { 'x-auth-token': token }
-            });
-            
-            setUser(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data));
+            userData = JSON.parse(storedUser);
+            setUser(userData);
             setIsAuthenticated(true);
           }
+
+          const response = await axios.get(`${API_URL}/auth/me`, {
+            headers: { 'x-auth-token': token }
+          });
+          
+          setUser(response.data);
+          localStorage.setItem('user', JSON.stringify(response.data));
+          setIsAuthenticated(true);
         }
       } catch (err) {
-        console.error('Auth check failed:', err);
-        // Token might be invalid, clear it
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setToken(null);
@@ -116,43 +112,31 @@ export const TourLMSProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
-  useEffect(()=>{
-    console.log('🔍 [TourLMSContext] Initial useEffect triggered');
-    console.log('🔍 [TourLMSContext] ison value:', ison);
-    if(ison) {
-      console.log('🔍 [TourLMSContext] Already loaded, skipping packLoad');
-      return;
+  // Initial data load
+  useEffect(() => {
+    let isMounted = true;
+    if (isMounted) {
+      packLoad('', '');
     }
-    console.log('🔍 [TourLMSContext] Setting ison to true and calling packLoad');
-    ison=true;
-    packLoad('','');
-  },[])
+    return () => { isMounted = false; };
+  }, []);
 
-  // Load facilitator dashboard stats when user is logged in as facilitator
+  // Load facilitator data
   useEffect(() => {
     if (isAuthenticated && user?.role === 'facilitator') {
       loadFacilitatorStats();
       loadFacilitatorStudents();
     }
-    // if(user&&(user.role === 'student' || user.role === 'learner')&&token&&!ocn(CoursesHub)){
-    //   clg('calling courses for student',user)
-    //   packLoad(user,token)
-    // }
-  }, [isAuthenticated, user,token]);
+  }, [isAuthenticated, user]);
 
-  // Connect to socket.io when authenticated
+  // Socket.io connection setup
   useEffect(() => {
     let socketConnection = null;
     
     if (token) {
-      // Initialize socket connection
-      const socketURL = SOCKET_URL;
-      
-      socketConnection = io(socketURL, {
+      socketConnection = io(SOCKET_URL, {
         path: '/socket.io',
-        auth: {
-          token
-        },
+        auth: { token },
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
@@ -160,26 +144,21 @@ export const TourLMSProvider = ({ children }) => {
       });
 
       socketConnection.on('connect', () => {
-        console.log('Socket connected:', socketConnection.id);
+        setSocket(socketConnection);
       });
 
       socketConnection.on('connect_error', (err) => {
         console.error('Socket connection error:', err);
       });
-      
-      // Set up notification handling
+
       socketConnection.on('notification', (notificationData) => {
-        // Add to notifications list
         setNotifications(prev => [notificationData, ...prev]);
-        
-        // Increment unread count
         setUnreadNotificationsCount(prev => prev + 1);
         
-        // Display browser notification if available
         if (notificationService.permission === 'granted') {
           notificationService.displayNotification(
-            notificationData.title, 
-            { 
+            notificationData.title,
+            {
               body: notificationData.message,
               data: notificationData.data || {}
             }
@@ -187,17 +166,12 @@ export const TourLMSProvider = ({ children }) => {
         }
       });
 
-      setSocket(socketConnection);
-      
-      // Initialize notification service for browser notifications
       notificationService.initialize().then((initialized) => {
         if (initialized && notificationService.permission === 'granted') {
-          // Register the subscription with the server
           notificationService.registerWithServer(token);
         }
       });
-      
-      // Load notifications
+
       loadNotifications();
     }
 
@@ -208,12 +182,13 @@ export const TourLMSProvider = ({ children }) => {
     };
   }, [token]);
 
+  // Utility functions
   const configureAxios = (tok) => {
     if (tok) {
       axios.defaults.headers.common['x-auth-token'] = tok;
     }
   };
- 
+
   const getMe = async (tok) => {
     configureAxios(tok);
     try {
@@ -260,10 +235,7 @@ export const TourLMSProvider = ({ children }) => {
       });
       
       setNotifications(response.data);
-      
-      // Count unread notifications
-      const unreadCount = response.data.filter(notification => !notification.read).length;
-      setUnreadNotificationsCount(unreadCount);
+      setUnreadNotificationsCount(response.data.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error loading notifications:', error);
     }
@@ -277,14 +249,12 @@ export const TourLMSProvider = ({ children }) => {
         headers: { 'x-auth-token': token }
       });
       
-      // Update local state
       setNotifications(prev => prev.map(notification => 
         notification._id === notificationId 
           ? { ...notification, read: true, readAt: new Date() }
           : notification
       ));
       
-      // Decrement unread count
       setUnreadNotificationsCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -299,99 +269,61 @@ export const TourLMSProvider = ({ children }) => {
         headers: { 'x-auth-token': token }
       });
       
-      // Update local state
       setNotifications(prev => prev.map(notification => ({
         ...notification,
         read: true,
         readAt: new Date()
       })));
       
-      // Reset unread count
       setUnreadNotificationsCount(0);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
   };
-    
-  async function packLoad(newUser, tok) {
-    console.log('🔍 [TourLMSContext] packLoad called');
-    console.log('🔍 [TourLMSContext] newUser:', newUser);
-    console.log('🔍 [TourLMSContext] token exists:', !!tok);
-    
+
+  const packLoad = async (newUser, tok) => {
     try {
-      // Load courses based on user role
       if (newUser?.role === 'facilitator') {
-        console.log('🔍 [TourLMSContext] Loading facilitator courses...');
-        // Load facilitator courses
         const facilitatorResponse = await axios.get(`${API_URL}/facilitator/courses`, {
           headers: { 'x-auth-token': tok }
         });
-        console.log('🔍 [TourLMSContext] Facilitator courses response:', facilitatorResponse.data);
         setFacilitatorCourses(facilitatorResponse.data);
-        setCoursesLoaded(true)
-        // Load facilitator stats and students
-        await loadFacilitatorStats();
-        await loadFacilitatorStudents();
+        setCoursesLoaded(true);
+        await Promise.all([loadFacilitatorStats(), loadFacilitatorStudents()]);
       }
-      if (newUser?.role === 'student' || newUser?.role === 'learner') {
-        console.log('🔍 [TourLMSContext] Loading learner courses...');
-        clg('checking leaners courses')
-        const learnerResponse = await axios.get(`${API_URL}/students/courses`, {
+
+      if (newUser?.role === 'student') {
+        const learnerResponse = await axios.get(`${API_URL}/students/me/courses`, {
           headers: { 'x-auth-token': tok }
         });
-        console.log('🔍 [TourLMSContext] Learner courses response:', learnerResponse.data);
-        await setEnrolledCourses(learnerResponse.data);
+        setEnrolledCourses(learnerResponse.data);
       }
-      
-      // For both students and facilitators, load all courses
-      console.log('🔍 [TourLMSContext] Loading all courses...');
+
       const allCoursesResponse = await axios.get(`${API_URL}/courses`, {
         headers: { 'x-auth-token': tok }
       });
-      console.log('🔍 [TourLMSContext] All courses response length:', allCoursesResponse.data?.length);
-      if (allCoursesResponse.data && allCoursesResponse.data.length > 0) {
-        console.log('🔍 [TourLMSContext] First course sample:', {
-          courseId: allCoursesResponse.data[0].courseId,
-          _id: allCoursesResponse.data[0]._id,
-          title: allCoursesResponse.data[0].title,
-          keys: Object.keys(allCoursesResponse.data[0])
-        });
-        console.log('🔍 [TourLMSContext] All courseIds:', allCoursesResponse.data.map(c => c.courseId));
-        console.log('🔍 [TourLMSContext] All _ids:', allCoursesResponse.data.map(c => c._id));
-      }
-      console.log('🔍 [TourLMSContext] Setting CoursesHub...');
       setCoursesHub(allCoursesResponse.data);
-      
-      // For students, also get enrolled courses
-      
     } catch (error) {
-      console.error('❌ [TourLMSContext] Error in packLoad:', error);
-      console.error('❌ [TourLMSContext] Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data
-      });
+      console.error('Error in packLoad:', error);
     }
-  }
-  
+  };
+
   const register = async (userData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = (userData.token)?'':await axios.post(`${API_URL}/auth/register`, userData);
-      const { token: newToken, user: newUser } = (userData.token)?userData:response.data;
+      const response = userData.token ? userData : await axios.post(`${API_URL}/auth/register`, userData);
+      const { token: newToken, user: newUser } = response;
       
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
       
-      await setToken(newToken);
-      await setUser(newUser);
-      await setIsAuthenticated(true);
+      setToken(newToken);
+      setUser(newUser);
+      setIsAuthenticated(true);
       
       return { success: true, user: newUser };
     } catch (err) {
-      console.error('Registration failed:', err);
       const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -404,18 +336,18 @@ export const TourLMSProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = (credentials.token)?'':await axios.post(`${API_URL}/auth/login`, credentials);
-      const { token: newToken, user: newUser } = credentials.token?credentials:response.data;
+      const response = credentials.token ? credentials : await axios.post(`${API_URL}/auth/login`, credentials);
+      const { token: newToken, user: newUser } = response;
+      
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
       setToken(newToken);
       setUser(newUser);
-      packLoad(newUser, newToken);
+      await packLoad(newUser, newToken);
       setIsAuthenticated(true);
       
       return { success: true, user: newUser };
     } catch (err) {
-      console.error('Login failed:', err);
       const errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -438,7 +370,6 @@ export const TourLMSProvider = ({ children }) => {
     setNotifications([]);
     setUnreadNotificationsCount(0);
     
-    // Disconnect socket
     if (socket) {
       socket.disconnect();
       setSocket(null);
@@ -447,14 +378,20 @@ export const TourLMSProvider = ({ children }) => {
 
   const clearError = () => setError(null);
 
+  // Context value
   const value = {
-    isAuthenticated,coursesLoaded,
-    facilitatorCourses,clientID,
+    isAuthenticated,
+    coursesLoaded,
+    facilitatorCourses,
+    clientID: CLIENT_ID,
     setFacilitatorCourses,
-    user,theme,setTheme,
+    user,
+    theme,
+    setTheme,
     setUser,
     packLoad,
-    token,API_URL,
+    token,
+    API_URL,
     setToken,
     loading,
     error,

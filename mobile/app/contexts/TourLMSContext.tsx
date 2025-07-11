@@ -351,8 +351,8 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      if (user?.role === 'student' || user?.role === 'learner') {
-        const learnerResponse = await fetch(`${API_URL}/learner/courses`, {
+      if (user?.role === 'student') {
+        const learnerResponse = await fetch(`${API_URL}/students/me/courses`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -582,7 +582,7 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
   const enrollInCourse = useCallback(async (courseId: string) => {
     if (!state.token) return;
     try {
-      const response = await fetch(`${API_URL}/learner/courses/${courseId}/enroll`, {
+      const response = await fetch(`${API_URL}/courses/${courseId}/enroll`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${state.token}`,
@@ -612,7 +612,7 @@ export function TourLMSProvider({ children }: { children: React.ReactNode }) {
   const fetchEnrolledCourses = useCallback(async () => {
     if (!state.token || !state.user) return [];
     try {
-      const response = await fetch(`${API_URL}/learner/courses`, {
+      const response = await fetch(`${API_URL}/students/me/courses`, {
         headers: {
           'Authorization': `Bearer ${state.token}`,
           'Content-Type': 'application/json',

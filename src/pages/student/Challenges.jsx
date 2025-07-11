@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Trophy, Users, Clock, Book, Loader2, HeartPulse, Briefcase, Leaf, Globe, Brain, Music, Sparkles, Star, X } from 'lucide-react';
+import { Trophy, Users, Clock, Book, Loader2, HeartPulse, Briefcase, Leaf, Globe, Brain, Music, Sparkles, Star, X, Bot } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import ChallengeDetail from '../../components/challenge/ChallengeDetail';
 import ChallengeAttempt from '../../components/challenge/ChallengeAttempt';
@@ -416,8 +416,23 @@ const Challenges = () => {
     };
 
     return (
-      <Card key={challenge.id} className="group p-6 mb-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] border-2 border-transparent hover:border-blue-200 bg-gradient-to-br from-white to-gray-50"
-            onClick={() => setSelectedChallenge(challenge)}>
+      <Card key={challenge.id} className="mb-6 p-6 relative">
+        {/* Grand Prize & AI Powered Badges */}
+        {(challenge.isGrandPrize || challenge.type === 'ai-grand-prize' || challenge.grandPrize) && (
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <Sparkles className="w-5 h-5 text-yellow-500" />
+            <span className="font-bold text-yellow-700 text-xs">Grand Prize</span>
+            {challenge.grandPrize && (
+              <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-semibold ml-1 text-xs">{challenge.grandPrize}</span>
+            )}
+          </div>
+        )}
+        {challenge.aiPowered && (
+          <div className="absolute top-4 left-4 flex items-center gap-1 z-10">
+            <Bot className="w-4 h-4 text-blue-500" />
+            <span className="font-bold text-blue-700 text-xs">AI Powered</span>
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">

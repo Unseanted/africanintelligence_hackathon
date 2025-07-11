@@ -17,6 +17,18 @@ import { formatDistanceToNow } from 'date-fns';
 // Suggestion: WhatsApp share base URL and YouTube embed API could be made configurable via environment variables if needed.
 
 const CourseContent = ({ course }) => {
+  // Defensive normalization for different course shapes
+  const normalizedCourse = {
+    ...course,
+    fullDescription: course.fullDescription || course.longDescription || course.description || '',
+    courseId: course.courseId || course.id || course._id || '',
+    facilitator: course.facilitator || course.facilitatorName || '',
+    modules: Array.isArray(course.modules) ? course.modules : [],
+    enrollment: course.enrollment || {},
+  };
+  const modules = normalizedCourse.modules;
+  const enrollment = normalizedCourse.enrollment;
+  const moduleProgress = Array.isArray(enrollment.moduleProgress) ? enrollment.moduleProgress : [];
   const [completedContent, setCompletedContent] = useState({});
   const [videoDurations, setVideoDurations] = useState({});
   const [progressStats, setProgressStats] = useState({
@@ -187,7 +199,7 @@ const CourseContent = ({ course }) => {
     
     const completedContentCount = Object.keys(completedContent).length;
     const totalQuizzes = course.modules.filter(module => module.quiz).length;
-    const completedQuizzes = course.enrollment.moduleProgress.filter(mp => 
+    const completedQuizzes = moduleProgress.filter(mp => 
       mp.quizAttempt && Object.keys(mp.quizAttempt).length > 0
     ).length;
 
@@ -201,12 +213,12 @@ const CourseContent = ({ course }) => {
       totalQuizzes,
       lastActivity: 'Today'
     });
-  }, [course, completedContent]);
+  }, [course, completedContent, moduleProgress]);
 
   // Update progress stats when content completion changes
   useEffect(() => {
     calculateProgressStats();
-  }, [calculateProgressStats, completedContent]);
+  }, [calculateProgressStats, completedContent, moduleProgress]);
 
   // Enhanced markContentAsCompleted with real-time updates
   const markContentAsCompleted = async (moduleId, contentId) => {
@@ -244,7 +256,7 @@ const CourseContent = ({ course }) => {
       const data = await response.json();
 
       // Update module progress
-      const updatedModuleProgress = course.enrollment.moduleProgress.map(mp => {
+      const updatedModuleProgress = moduleProgress.map(mp => {
         if (mp.moduleId === moduleId) {
           return {
             ...mp,
@@ -304,7 +316,7 @@ const CourseContent = ({ course }) => {
     if (moduleIndex === 0) return true; // First module is always accessible
     for (let i = 0; i < moduleIndex; i++) {
       const prevModule = course.modules[i];
-      const prevModuleProgress = course.enrollment.moduleProgress.find(mp => mp.moduleId === prevModule.title);
+      const prevModuleProgress = moduleProgress.find(mp => mp.moduleId === prevModule.title);
       if (!isModuleFullyCompleted(prevModule, prevModuleProgress)) {
         return false; // A previous module is not completed
       }
@@ -627,11 +639,11 @@ const CourseContent = ({ course }) => {
   }
 
   const totalContent = course.modules.reduce((sum, module) => sum + (module.content ? module.content.length : 0), 0);
-  const completedContentCount = course.enrollment.moduleProgress.reduce((sum, module) => {
+  const completedContentCount = moduleProgress.reduce((sum, module) => {
     return sum + (Array.isArray(module.contentProgress) ? module.contentProgress.filter(cp => cp.completed).length : 0);
   }, 0);
   const totalQuizzes = course.modules.filter(module => module.quiz).length;
-  const completedQuizzes = course.enrollment.moduleProgress.filter(mp => mp.quizAttempt && Object.keys(mp.quizAttempt).length > 0).length;
+  const completedQuizzes = moduleProgress.filter(mp => mp.quizAttempt && Object.keys(mp.quizAttempt).length > 0).length;
   const lastActivityDate = new Date(course.enrollment.lastAccessedAt);
   const now = new Date();
   const diffDays = Math.floor((now - lastActivityDate) / (1000 * 60 * 60 * 24));
@@ -681,7 +693,7 @@ const CourseContent = ({ course }) => {
       {/* Module List */}
       <div className="md:col-span-3 order-2 space-y-3 w-full max-w-full">
         {course.modules.map((module, index) => {
-          const moduleProgress = course.enrollment.moduleProgress.find(mp => mp.moduleId === module.title);
+          const moduleProgress = moduleProgress.find(mp => mp.moduleId === module.title);
           const hasTakenQuiz = moduleProgress && moduleProgress.quizAttempt && Object.keys(moduleProgress.quizAttempt).length > 0;
           const isContentCompleted = isModuleContentCompleted(module);
           const isAccessible = isModuleAccessible(index);

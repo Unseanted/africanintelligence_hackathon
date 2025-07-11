@@ -206,7 +206,7 @@ router.get("/me/stats", auth, async (req, res) => {
 // --- COURSE ACTIONS ---
 /**
  * @swagger
- * /students/courses:
+ * /students/me/courses:
  *   get:
  *     summary: Get all courses the student is enrolled in
  *     tags: [Students]
@@ -227,7 +227,7 @@ router.get("/me/stats", auth, async (req, res) => {
  *         description: Server error
  */
 // Get all courses the student is enrolled in
-router.get("/courses", auth, async (req, res) => {
+router.get("/me/courses", auth, async (req, res) => {
   try {
     console.log("🔍 [Student Routes] GET /courses called");
     console.log("🔍 [Student Routes] User ID:", req.user.userId);
@@ -293,7 +293,7 @@ router.get("/courses", auth, async (req, res) => {
 
 /**
  * @swagger
- * /students/courses/{courseId}:
+ * /students/me/courses/{courseId}:
  *   get:
  *     summary: Get details and progress for a specific course
  *     tags: [Students]
@@ -328,7 +328,7 @@ router.get("/courses", auth, async (req, res) => {
  *         description: Server error
  */
 // Get details and progress for a specific course
-router.get("/courses/:courseId", auth, async (req, res) => {
+router.get("/me/courses/:courseId", auth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const student = await Student.findOne({ user: userId });
@@ -379,7 +379,7 @@ router.get("/courses/:courseId", auth, async (req, res) => {
  *         description: Server error
  */
 // Enroll in a course
-router.post("/courses/:courseId/enroll", auth, async (req, res) => {
+router.post("/me/courses/:courseId/enroll", auth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const student = await Student.findOne({ user: userId });
@@ -402,7 +402,7 @@ router.post("/courses/:courseId/enroll", auth, async (req, res) => {
 
 /**
  * @swagger
- * /students/courses/{courseId}/progress:
+ * /students/me/courses/{courseId}/progress:
  *   put:
  *     summary: Update progress in a course/module/content
  *     tags: [Students]
@@ -441,7 +441,7 @@ router.post("/courses/:courseId/enroll", auth, async (req, res) => {
  *         description: Server error
  */
 // Update progress in a course/module/content
-router.put("/courses/:courseId/progress", auth, async (req, res) => {
+router.put("/me/courses/:courseId/progress", auth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const student = await Student.findOne({ user: userId });
@@ -465,7 +465,7 @@ router.put("/courses/:courseId/progress", auth, async (req, res) => {
 
 /**
  * @swagger
- * /students/courses/{courseId}/watch-time:
+ * /students/me/courses/{courseId}/watch-time:
  *   post:
  *     summary: Track video watch time
  *     tags: [Students]
@@ -498,7 +498,7 @@ router.put("/courses/:courseId/progress", auth, async (req, res) => {
  *         description: Server error
  */
 // Track video watch time
-router.post("/courses/:courseId/watch-time", auth, async (req, res) => {
+router.post("/me/courses/:courseId/watch-time", auth, async (req, res) => {
   try {
     // Implement logic to track watch time
     res.json({ message: "Watch time tracked (not implemented)" });
@@ -509,7 +509,7 @@ router.post("/courses/:courseId/watch-time", auth, async (req, res) => {
 
 /**
  * @swagger
- * /students/courses/{courseId}/status:
+ * /students/me/courses/{courseId}/status:
  *   get:
  *     summary: Check if enrolled in a course
  *     tags: [Students]
@@ -538,7 +538,7 @@ router.post("/courses/:courseId/watch-time", auth, async (req, res) => {
  *         description: Server error
  */
 // Check if enrolled in a course
-router.get("/courses/:courseId/status", auth, async (req, res) => {
+router.get("/me/courses/:courseId/status", auth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const student = await Student.findOne({ user: userId });
