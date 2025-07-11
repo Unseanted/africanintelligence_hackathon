@@ -6,8 +6,7 @@ import { useTourLMS } from '../../contexts/TourLMSContext';
 import { PRIMARY, BACKGROUND, TEXT_PRIMARY } from '../constants/colors';
 
 export default function CourseContentScreen() {
-  const { id } = useLocalSearchParams();
-  const { lastModuleId, lastContentId } = useLocalSearchParams();
+  const { id, lastModuleId, lastContentId } = useLocalSearchParams();
   const { user, token, apiCall } = useTourLMS();
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
