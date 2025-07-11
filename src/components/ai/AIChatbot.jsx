@@ -1,21 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Bot, X, Send, Minimize2, Maximize2, MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTourLMS } from '@/contexts/TourLMSContext';
-import { useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import {
+  Bot,
+  X,
+  Send,
+  Minimize2,
+  Maximize2,
+  MessageSquare,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTourLMS } from "@/contexts/TourLMSContext";
+import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
+import { useToast } from "@/hooks/use-toast";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 const API_URL = import.meta.env.VITE_API_URL;
-const DEFAULT_MODEL = 'mistral-large-latest';
+const DEFAULT_MODEL = "mistral-large-latest";
 
 const AIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [socket, setSocket] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -30,22 +37,26 @@ const AIChatbot = () => {
     const createConversation = async () => {
       try {
         const res = await fetch(`${API_URL}/assistant/conversations`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            title: 'Popup Chat',
-            aiModel: DEFAULT_MODEL
-          })
+            title: "Popup Chat",
+            aiModel: DEFAULT_MODEL,
+          }),
         });
         const data = await res.json();
         if (data && data.conversation && data.conversation.id) {
           setConversationId(data.conversation.id);
         }
       } catch (err) {
-        toast({ title: 'Error', description: 'Failed to start chat', variant: 'destructive' });
+        toast({
+          title: "Error",
+          description: "Failed to start chat",
+          variant: "destructive",
+        });
       }
     };
     createConversation();
@@ -56,52 +67,63 @@ const AIChatbot = () => {
     if (!token || !isOpen) return;
 
     const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      auth: { token }
+      transports: ["websocket"],
+      auth: { token },
     });
 
-    newSocket.on('connect', () => {
-      console.log('Connected to AI chat');
+    newSocket.on("connect", () => {
+      console.log("Connected to AI chat");
     });
 
-    newSocket.on('ai:response', (data) => {
+    newSocket.on("ai:response", (data) => {
       const aiMsg = data.message;
+      console.log("AI response received:", aiMsg);
       if (aiMsg.conversationId !== conversationId) return;
-      setChat(prev => [...prev, { 
-        role: 'assistant', 
-        content: aiMsg.content,
-        timestamp: new Date(data.timestamp)
-      }]);
+      setChat((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: aiMsg.content,
+          timestamp: new Date(data.timestamp),
+        },
+      ]);
       setIsTyping(false);
+      // console.log("AI response received:", aiMsg.content);
     });
 
-    newSocket.on('ai:typing', (typing) => {
+    newSocket.on("ai:typing", (typing) => {
       setIsTyping(typing);
     });
 
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
-      
-      let errorMessage = "I apologize, but I'm having trouble connecting right now. Please try again.";
-      
-      if (error.code === 'RATE_LIMIT_EXCEEDED') {
-        errorMessage = "You've reached the message limit. Please wait a moment before sending more messages.";
-      } else if (error.code === 'OPENAI_RATE_LIMIT') {
-        errorMessage = "The AI service is currently busy. Please try again in a few moments.";
+    newSocket.on("error", (error) => {
+      console.error("Socket error:", error);
+
+      let errorMessage =
+        "I apologize, but I'm having trouble connecting right now. Please try again.";
+
+      if (error.code === "RATE_LIMIT_EXCEEDED") {
+        errorMessage =
+          "You've reached the message limit. Please wait a moment before sending more messages.";
+      } else if (error.code === "OPENAI_RATE_LIMIT") {
+        errorMessage =
+          "The AI service is currently busy. Please try again in a few moments.";
       }
 
-      setChat(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage,
-        timestamp: new Date(),
-        isError: true
-      }]);
+      setChat((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: errorMessage,
+          timestamp: new Date(),
+          isError: true,
+        },
+      ]);
       setIsTyping(false);
 
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     });
 
@@ -118,27 +140,27 @@ const AIChatbot = () => {
 
     // Add user message to chat
     const userMessage = {
-      role: 'user',
+      role: "user",
       content: message.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
-    setChat(prev => [...prev, userMessage]);
-    setMessage('');
+
+    setChat((prev) => [...prev, userMessage]);
+    setMessage("");
     setIsTyping(true);
 
     // Send message through WebSocket
-    socket.emit('ai:message', {
+    socket.emit("ai:message", {
       message: userMessage.content,
       context: {
         conversationId,
         aiModel: DEFAULT_MODEL,
-        role: 'user',
+        role: "user",
         tokenCount: 0,
         timestamp: Date.now(),
         courseId: currentCourse?.id,
-        lessonId: currentLesson?.id
-      }
+        lessonId: currentLesson?.id,
+      },
     });
   };
 
@@ -175,7 +197,7 @@ const AIChatbot = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate('/student/ai-assistant')}
+                  onClick={() => navigate("/student/ai-assistant")}
                   title="Open full chat"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -185,7 +207,11 @@ const AIChatbot = () => {
                   size="icon"
                   onClick={() => setIsMinimized(!isMinimized)}
                 >
-                  {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                  {isMinimized ? (
+                    <Maximize2 className="w-4 h-4" />
+                  ) : (
+                    <Minimize2 className="w-4 h-4" />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
@@ -207,7 +233,7 @@ const AIChatbot = () => {
                       <Button
                         variant="link"
                         className="mt-2 text-purple-500"
-                        onClick={() => navigate('/student/ai-assistant')}
+                        onClick={() => navigate("/student/ai-assistant")}
                       >
                         Open full chat
                       </Button>
@@ -216,15 +242,17 @@ const AIChatbot = () => {
                     chat.map((msg, index) => (
                       <div
                         key={index}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${
+                          msg.role === "user" ? "justify-end" : "justify-start"
+                        }`}
                       >
                         <div
                           className={`max-w-[80%] rounded-lg p-3 ${
-                            msg.role === 'user'
-                              ? 'bg-purple-600 text-white'
+                            msg.role === "user"
+                              ? "bg-purple-600 text-white"
                               : msg.isError
-                              ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                              : 'bg-gray-100 dark:bg-slate-700'
+                              ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                              : "bg-gray-100 dark:bg-slate-700"
                           }`}
                         >
                           {msg.content}
@@ -243,7 +271,10 @@ const AIChatbot = () => {
                   )}
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-4 border-t dark:border-slate-700">
+                <form
+                  onSubmit={handleSubmit}
+                  className="p-4 border-t dark:border-slate-700"
+                >
                   <div className="flex gap-2">
                     <Input
                       value={message}
@@ -252,7 +283,11 @@ const AIChatbot = () => {
                       className="flex-1"
                       disabled={isTyping}
                     />
-                    <Button type="submit" size="icon" disabled={isTyping || !message.trim()}>
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={isTyping || !message.trim()}
+                    >
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
@@ -266,4 +301,4 @@ const AIChatbot = () => {
   );
 };
 
-export default AIChatbot; 
+export default AIChatbot;

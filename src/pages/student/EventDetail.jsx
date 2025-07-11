@@ -435,7 +435,7 @@ const EventDetail = () => {
                                 Learn More
                               </Button>
                             </div>
-                          </div>
+                        </div>
                         );
                       })}
                     </div>

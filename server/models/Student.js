@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Enrollment = require("./Enrollment");
 
+const eventsList = [{event: "student.streak.updated", description: "Triggered when student's streak is changed", checker: function(student) {
+  return student.streak === 0;
+
+}},]
+
 const studentSchema = new Schema(
   {
     user: {
@@ -100,6 +105,10 @@ studentSchema.pre("save", async function (next) {
     this.xpToNextLevel = this.xp.allTime + 100;
   }
   next();
+});
+
+studentSchema.post("save", async function (doc) {
+
 });
 
 // TODO: Update badges

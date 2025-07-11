@@ -27,6 +27,7 @@ import { checkEnrollmentStatus, getCourseById, deleteCourse } from '@/api/course
 import EnrollButton from './EnrollButton';
 import { useToast } from '@/hooks/use-toast';
 import CourseForum from './CourseForum';
+import { getLearnerCourses } from '@/api/courseService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +49,7 @@ const CourseDetail = () => {
   const [courseDetails, setCourseDetails] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -55,6 +57,9 @@ const CourseDetail = () => {
   const course = CoursesHub?.find(c => c._id === id) || courseDetails || null;
   const isFacilitator = user?.role === 'facilitator';
   const isCourseFacilitator = isFacilitator && course?.facilitator === user?._id;
+
+
+  console.log(`course details`, course);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -70,8 +75,34 @@ const CourseDetail = () => {
         console.error('Error fetching course details:', error);
       }
     };
-    
+
+    const fetchEnrolledCourses = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const courses = await getLearnerCourses(token);
+        
+        if (courses && courses.length > 0) {
+        }
+        
+        setEnrolledCourses(courses || []);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load your enrolled course",
+          variant: "destructive",
+        });
+        setEnrolledCourses([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCourseDetails();
+    fetchEnrolledCourses();
   }, [id, token]);
 
   useEffect(() => {
@@ -82,7 +113,7 @@ const CourseDetail = () => {
       }
       
       try {
-        const enrolled = course.enrolledStudents.find(id=>id==user.id);
+        const enrolled = enrolledCourses.find(enrolledCourse=>enrolledCourse.courseId==course.courseId);
         setIsEnrolled(enrolled?true:false);
       } catch (error) {
         console.error('Error checking enrollment:', error);
@@ -152,7 +183,7 @@ const CourseDetail = () => {
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                <span>{course.enrolled || 0} enrolled</span>
+                <span>{course.enrollmentCount || 0} enrolled</span>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />

@@ -147,22 +147,13 @@ const StudentCourses = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrolledCourses.map((course) => { 
                 if (course) {
-                  console.log('🔍 [StudentCourses] Rendering enrolled course:', {
-                    courseId: course.courseId,
-                    _id: course._id,
-                    title: course.title,
-                    keys: Object.keys(course)
-                  });
-                  
-                  // Use courseId if available, otherwise fall back to _id
+                  // Always use courseId for navigation, fallback to _id if missing
                   const courseIdentifier = course.courseId || course._id;
-                  
                   // Skip rendering if no valid identifier
                   if (!courseIdentifier) {
                     console.log('❌ [StudentCourses] Skipping course with no valid identifier:', course);
                     return null;
                   }
-                  
                   const link = `/student/courses/${courseIdentifier}`;
                   console.log(`🔍 [StudentCourses] Generated link: ${link} for course: ${course.title}`);
                   return (

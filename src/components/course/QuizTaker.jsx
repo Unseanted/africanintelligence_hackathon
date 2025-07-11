@@ -230,7 +230,7 @@ const QuizTaker = ({
         });
         Course.enrollment.progress = updatedProgress;
         setEnrolledCourses(prev => (
-          prev.map(crs => (crs.key === Course.key ? Course : crs))
+          prev.map(crs => (crs.courseId === Course.courseId || crs._id === Course._id ? Course : crs))
         ));
       }
 

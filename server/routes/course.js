@@ -1093,14 +1093,10 @@ router.get(
 
       console.log("🔍 [Course Routes] Final query:", query);
 
-      let db = req.app.locals.db;
-      let courses = await db
-        .collection("courses")
-        .find(query)
-        .sort({ createdAt: -1 })
-        .toArray();
+      // Use Mongoose for all course queries
+      let courses = await Course.find(query).sort({ createdAt: -1 }).lean();
 
-      console.log("🔍 [Course Routes] Raw courses from DB:", courses.length);
+      console.log("🔍 [Course Routes] Courses from Mongoose:", courses.length);
       if (courses.length > 0) {
         console.log("🔍 [Course Routes] First course sample:", {
           courseId: courses[0].courseId,
@@ -1113,11 +1109,7 @@ router.get(
       // Get facilitator names
       let facilitatorIds = [
         ...new Set(
-          courses
-            .map((course) =>
-              course.facilitator ? new ObjectId(course.facilitator) : null
-            )
-            .filter((id) => id !== null)
+          courses.map((course) => course.facilitator).filter((id) => id)
         ),
       ];
 
@@ -1125,11 +1117,10 @@ router.get(
 
       let facilitators =
         facilitatorIds.length > 0
-          ? await db
-              .collection("users")
-              .find({ _id: { $in: facilitatorIds } })
-              .project({ _id: 1, name: 1 })
-              .toArray()
+          ? await User.find(
+              { _id: { $in: facilitatorIds } },
+              { _id: 1, name: 1 }
+            ).lean()
           : [];
 
       console.log(
@@ -1144,27 +1135,38 @@ router.get(
 
       let sanitizedCourses = courses.map((course) => {
         let facilitatorName =
-          course.facilitator && facilitatorMap[course.facilitator]
-            ? facilitatorMap[course.facilitator]
+          course.facilitator && facilitatorMap[course.facilitator?.toString()]
+            ? facilitatorMap[course.facilitator?.toString()]
             : "Unknown";
         if (!course.enrolledStudents) course.enrolledStudents = [];
-        // Remove quiz answers
+        // Remove quiz answers (deep clone to avoid mutation)
         if (course.modules) {
-          course.modules.forEach((module) => {
-            if (module.quiz && module.quiz.questions) {
-              module.quiz.questions.forEach((question) => {
-                if (question.answer !== "" || question.answer !== null)
-                  question.answer = "";
-                if (question.options) {
-                  question.options = question.options.map((option) => ({
-                    text: option.text,
-                  }));
-                }
-              });
+          course.modules = course.modules.map((module) => {
+            let sanitizedModule = { ...module };
+            if (sanitizedModule.quiz && sanitizedModule.quiz.questions) {
+              sanitizedModule.quiz = { ...sanitizedModule.quiz };
+              sanitizedModule.quiz.questions =
+                sanitizedModule.quiz.questions.map((question) => {
+                  let sanitizedQuestion = { ...question };
+                  if (
+                    sanitizedQuestion.answer !== "" &&
+                    sanitizedQuestion.answer !== null
+                  ) {
+                    sanitizedQuestion.answer = "";
+                  }
+                  if (sanitizedQuestion.options) {
+                    sanitizedQuestion.options = sanitizedQuestion.options.map(
+                      (option) => ({
+                        text: option.text,
+                      })
+                    );
+                  }
+                  return sanitizedQuestion;
+                });
             }
+            return sanitizedModule;
           });
         }
-
         return {
           ...course,
           facilitatorName,
@@ -1186,7 +1188,6 @@ router.get(
 // Get course ratings
 router.get("/:id/ratings", auth, async (req, res) => {
   try {
-    let db = req.app.locals.db;
     let courseId = req.params.id;
 
     // Get course with reviews
@@ -1204,13 +1205,10 @@ router.get("/:id/ratings", auth, async (req, res) => {
 
     // Get user details for each review
     let userIds = course.reviews.map((review) => review.user);
-    let users = await db
-      .collection("users")
-      .find(
-        { _id: { $in: userIds } },
-        { projection: { _id: 1, name: 1, profilePicture: 1 } }
-      )
-      .toArray();
+    let users = await User.find(
+      { _id: { $in: userIds } },
+      { projection: { _id: 1, name: 1, profilePicture: 1 } }
+    ).lean();
 
     // Create a map of user details
     let userMap = {};
@@ -1245,25 +1243,14 @@ router.get("/:id", async (req, res) => {
     console.log("🔍 [Course Routes] Requested ID:", req.params.id);
     console.log("🔍 [Course Routes] ID type:", typeof req.params.id);
 
-    let db = req.app.locals.db;
     let courseId = req.params.id;
-
-    // let objectId = courseId;
-    // try {
-    //   objectId = courseId;
-    // } catch (error) {
-    //   return res.status(400).json({ message: "Invalid course ID format" });
-    // }
-
-    console.log("🔍 [Course Routes] Searching for courseId:", courseId);
-    let course = await db.collection("courses").findOne({ courseId });
+    let course = await Course.findOne({ courseId }).lean();
     console.log("🔍 [Course Routes] Course found by courseId:", !!course);
 
     if (!course) {
       console.log("🔍 [Course Routes] Trying to find by _id...");
       try {
-        const objectId = new ObjectId(courseId);
-        course = await db.collection("courses").findOne({ _id: objectId });
+        course = await Course.findById(courseId).lean();
         console.log("🔍 [Course Routes] Course found by _id:", !!course);
       } catch (error) {
         console.log(
@@ -1289,12 +1276,10 @@ router.get("/:id", async (req, res) => {
     let facilitatorInfo = { name: "Unknown", email: "" };
     if (course.facilitator) {
       try {
-        let facilitator = await db
-          .collection("users")
-          .findOne(
-            { _id: new ObjectId(course.facilitator) },
-            { projection: { name: 1, email: 1 } }
-          );
+        let facilitator = await User.findById(
+          course.facilitator,
+          "name email"
+        ).lean();
         if (facilitator) {
           facilitatorInfo = {
             name: facilitator.name,
@@ -1307,16 +1292,25 @@ router.get("/:id", async (req, res) => {
     }
 
     if (course.modules) {
-      course.modules.forEach((module) => {
-        if (module.quiz && module.quiz.questions) {
-          module.quiz.questions.forEach((question) => {
-            if (question.options) {
-              question.options = question.options.map((option) => ({
-                text: option.text,
-              }));
+      course.modules = course.modules.map((module) => {
+        let sanitizedModule = { ...module };
+        if (sanitizedModule.quiz && sanitizedModule.quiz.questions) {
+          sanitizedModule.quiz = { ...sanitizedModule.quiz };
+          sanitizedModule.quiz.questions = sanitizedModule.quiz.questions.map(
+            (question) => {
+              let sanitizedQuestion = { ...question };
+              if (sanitizedQuestion.options) {
+                sanitizedQuestion.options = sanitizedQuestion.options.map(
+                  (option) => ({
+                    text: option.text,
+                  })
+                );
+              }
+              return sanitizedQuestion;
             }
-          });
+          );
         }
+        return sanitizedModule;
       });
     }
 
@@ -1333,10 +1327,8 @@ router.get("/:id", async (req, res) => {
 // Get course with full details (including quiz answers)
 router.get("/:id/full", auth, async (req, res) => {
   try {
-    let db = req.app.locals.db;
     let courseId = req.params.id;
-
-    let course = await db.collection("courses").findOne({ courseId });
+    let course = await Course.findOne({ courseId }).lean();
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -1346,12 +1338,11 @@ router.get("/:id/full", auth, async (req, res) => {
     let facilitatorInfo = { name: "Unknown", email: "" };
     if (course.facilitator) {
       try {
-        let facilitator = await db
-          .collection("courses")
-          .findOne(
-            { _id: new ObjectId(course.facilitator) },
-            { projection: { name: 1, email: 1 } }
-          );
+        // FIX: Use users collection, not courses
+        let facilitator = await User.findById(
+          course.facilitator,
+          "name email"
+        ).lean();
         if (facilitator) {
           facilitatorInfo = {
             name: facilitator.name,
@@ -1365,7 +1356,7 @@ router.get("/:id/full", auth, async (req, res) => {
 
     if (
       req.user.role === "facilitator" &&
-      course.facilitator !== req.user.userId
+      course.facilitator.toString() !== req.user.userId
     ) {
       return res
         .status(403)
@@ -1385,16 +1376,16 @@ router.get("/:id/full", auth, async (req, res) => {
 // Create a new course
 router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
   try {
-    let db = req.app.locals.db;
-
     let courseData = {
       ...req.body,
       courseId: uuidv4(),
       facilitator: req.user.userId,
+      enrollmentCount: 0, // Ensure enrollmentCount is set
     };
-    let pluged = await db
-      .collection("courses")
-      .findOne({ facilitator: req.user.userId, title: courseData.title });
+    let pluged = await Course.findOne({
+      facilitator: req.user.userId,
+      title: courseData.title,
+    });
     if (pluged)
       return res.status(500).json({
         message:
@@ -1402,19 +1393,6 @@ router.post("/", auth, roleAuth(["facilitator", "admin"]), async (req, res) => {
       });
 
     let result = await Course.create(courseData);
-
-    // should be facilitator's createdCourses
-    // await db
-    //   .collection("users")
-    //   .updateOne(
-    //     { _id: new ObjectId(req.user.userId) },
-    //     { $push: { createdCourses: result.insertedId.toString() } }
-    //   );
-
-    // let insertedCourse = await db
-    //   .collection("courses")
-    //   .findOne({ _id: result.insertedId }, { _id: 0 });
-
     res.status(201).json(result);
   } catch (error) {
     console.error("Error creating course:", error);
@@ -1429,36 +1407,27 @@ router.put(
   roleAuth(["facilitator", "admin"]),
   async (req, res) => {
     try {
-      let db = req.app.locals.db;
       let { courseId } = req.params;
-
-      let course = await db.collection("courses").findOne({ courseId });
-
+      let course = await Course.findOne({ courseId });
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-
       if (
         req.user.role === "facilitator" &&
-        course.facilitator !== req.user.userId
+        course.facilitator.toString() !== req.user.userId
       ) {
         return res
           .status(403)
           .json({ message: "Not authorized to update this course" });
       }
-
       let updateData = {
         ...req.body,
         updatedAt: datemap(),
       };
       delete updateData.facilitator;
-
-      await db
-        .collection("courses")
-        .updateOne({ courseId }, { $set: updateData });
+      await Course.updateOne({ courseId }, { $set: updateData });
       clg(`${courseId} was updated successfully...`);
-      let updatedCourse = await db.collection("courses").findOne({ courseId });
-
+      let updatedCourse = await Course.findOne({ courseId });
       res.json(updatedCourse);
     } catch (error) {
       console.error("Error updating course:", error);
@@ -1474,33 +1443,24 @@ router.delete(
   roleAuth(["facilitator", "admin"]),
   async (req, res) => {
     try {
-      let db = req.app.locals.db;
       let { courseId } = req.params;
-
-      let course = await db.collection("courses").findOne({ courseId });
-
+      let course = await Course.findOne({ courseId });
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-
       if (
         req.user.role === "facilitator" &&
-        course.facilitator !== req.user.userId
+        course.facilitator.toString() !== req.user.userId
       ) {
         return res
           .status(403)
           .json({ message: "Not authorized to delete this course" });
       }
-
-      await db.collection("courses").deleteOne({ courseId });
-
-      await db
-        .collection("users")
-        .updateOne(
-          { _id: new ObjectId(course.facilitator) },
-          { $pull: { createdCourses: courseId } }
-        );
-
+      await Course.deleteOne({ courseId });
+      await User.updateOne(
+        { _id: course.facilitator },
+        { $pull: { createdCourses: courseId } }
+      );
       res.json({ message: "Course deleted successfully" });
     } catch (error) {
       console.error("Error deleting course:", error);
@@ -1516,7 +1476,6 @@ router.post(
   roleAuth(["student"]),
   async (req, res) => {
     try {
-      let db = req.app.locals.db;
       let { courseId } = req.params;
       let userId = req.user.userId;
 
@@ -1590,7 +1549,6 @@ router.put(
   roleAuth(["student"]),
   async (req, res) => {
     try {
-      let db = req.app.locals.db;
       let { courseId } = req.params;
       let { moduleId, contentId, completed } = req.body;
 
@@ -1692,63 +1650,51 @@ router.post(
   roleAuth(["student"]),
   async (req, res) => {
     try {
-      let db = req.app.locals.db;
       let { courseId, moduleId } = req.params;
       let { answers } = req.body;
-
-      const student = User.findOne({ _id: req.user.userId }, "roleData");
+      // FIX: Add missing await
+      const student = await User.findOne({ _id: req.user.userId }, "roleData");
       if (!student) {
         return res.status(404).json({ message: "Student not found" });
       }
-
       const course = await Course.findOne({ courseId });
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-
       let enrollment = await Enrollment.findOne({
         student: student.roleData,
         course: course._id,
       });
-
       if (!enrollment) {
         return res.status(404).json({ message: "Enrollment not found" });
       }
-
       let module = course.modules.find((m) => m.title === moduleId);
       if (!module || !module.quiz) {
         return res.status(404).json({ message: "Module or quiz not found" });
       }
-
       let score = 0;
       let quiz = module.quiz;
-
       answers.forEach((answer, index) => {
         if (index < quiz.questions.length) {
           let question = quiz.questions[index];
           let correctOptionIndex = question.options.findIndex(
             (option) => option.isCorrect
           );
-
           if (answer === correctOptionIndex) {
             score++;
           }
         }
       });
-
       let scorePercentage = Math.round((score / quiz.questions.length) * 100);
-
       let moduleIndex = enrollment.moduleProgress.findIndex(
         (m) => m.moduleId === moduleId
       );
-
       if (moduleIndex !== -1) {
         let quizAttempt = {
           score: scorePercentage,
           answers,
           completedAt: new Date(),
         };
-
         await Enrollment.updateOne(
           { _id: enrollment._id },
           {
@@ -1758,30 +1704,25 @@ router.post(
             $set: { lastAccessed: new Date() },
           }
         );
-
         if (scorePercentage >= 70) {
           await Enrollment.updateOne(
             { _id: enrollment._id },
             { $set: { [`moduleProgress.${moduleIndex}.completed`]: true } }
           );
         }
-
         let updatedEnrollment = await Enrollment.findOne({
           _id: enrollment._id,
         });
-
         let totalModules = updatedEnrollment.moduleProgress.length;
         let completedModules = updatedEnrollment.moduleProgress.filter(
           (m) => m.completed
         ).length;
         let progress = Math.round((completedModules / totalModules) * 100);
-
         await Enrollment.updateOne(
           { _id: enrollment._id },
           { $set: { progress } }
         );
       }
-
       res.json({
         score: scorePercentage,
         passed: scorePercentage >= 70,
@@ -1796,7 +1737,6 @@ router.post(
 // Rate a course
 router.post("/:courseId/rate", auth, async (req, res) => {
   try {
-    let db = req.app.locals.db;
     let { courseId } = req.params;
     let { rating, comment } = req.body;
 

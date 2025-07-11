@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Trophy, Users, Clock, Book, FileText, AlertCircle, HeartPulse, Briefcase, Leaf, Globe, Brain, Music, X } from 'lucide-react';
+import { Trophy, Users, Clock, Book, FileText, AlertCircle, HeartPulse, Briefcase, Leaf, Globe, Brain, Music, X, Sparkles, Bot } from 'lucide-react';
 
 const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted, onJoinWaitlist }) => {
   const categoryIcons = {
@@ -69,6 +69,23 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="p-8">
+          {/* Grand Prize & AI Powered Badges */}
+          {(challenge.isGrandPrize || challenge.type === 'ai-grand-prize' || challenge.grandPrize) && (
+            <div className="flex items-center gap-3 mb-4">
+              <Sparkles className="w-6 h-6 text-yellow-500" />
+              <span className="font-bold text-yellow-700 text-lg">Grand Prize Challenge</span>
+              {challenge.grandPrize && (
+                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-semibold ml-2">Prize: {challenge.grandPrize}</span>
+              )}
+            </div>
+          )}
+          {challenge.aiPowered && (
+            <div className="flex items-center gap-2 mb-4">
+              <Bot className="w-5 h-5 text-blue-500" />
+              <span className="font-bold text-blue-700">AI Powered</span>
+            </div>
+          )}
+
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
@@ -112,7 +129,7 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
                   <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-blue-500" />
                     <div>
-                      <div className="font-medium text-gray-900">{challenge.participants.toLocaleString()}</div>
+                      <div className="font-medium text-gray-900">{challenge.participants?.toLocaleString?.() ?? challenge.participants}</div>
                       <div className="text-sm text-gray-600">Participants</div>
                     </div>
                   </div>
@@ -155,7 +172,7 @@ const ChallengeDetail = ({ challenge, onClose, onJoin, isSubmitted, isWaitlisted
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-200">
                   <h3 className="font-semibold text-amber-800 mb-2">Ready to start?</h3>
                   <p className="text-amber-700 text-sm mb-4">
-                    Join {challenge.participants.toLocaleString()} others in this challenge and earn up to {challenge.maxScore} XP!
+                    Join {challenge.participants?.toLocaleString?.() ?? challenge.participants} others in this challenge and earn up to {challenge.maxScore} XP!
                   </p>
                 </div>
               )}

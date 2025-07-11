@@ -33,6 +33,7 @@ import {
 import { useSocket } from '@/services/socketService';
 import { useXP } from "@/contexts/XPContext";
 import XPProgress from "@/components/xp/XPProgress";
+import axios from 'axios';
 
 // Required env: VITE_UNSPLASH_URL
 const UNSPLASH_URL = import.meta.env.VITE_UNSPLASH_URL || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80';
@@ -68,18 +69,29 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchEnrolledCourses = async () => {
+    const fetchUserStats = async () => {
       if (!token) return;
       
       try {
         setLoading(true);
         const courses = enrolledCourses || [];
+
+        const axiosInstance = axios.create({
+          baseURL: API_URL,
+          timeout: 1000,
+          headers: {'x-auth-token': token}
+        });
+
+        let response = await axiosInstance.get('/students/me/stats');
+        // console.log('student data', response.data);
+        const userData = response.data;
         
         // Extract unique categories from enrolled courses
         const uniqueCategories = [...new Set(courses.map(course => (course.category || "").toLowerCase()).filter(cat => cat))];
         setCategories(uniqueCategories);
 
         // Update user stats
+        /*
         setUserStats({
           totalPoints: courses.reduce((sum, course) => sum + (course.points || 0), 0),
           rank: Math.floor(Math.random() * 100) + 1, // Placeholder for actual rank
@@ -97,6 +109,27 @@ const Dashboard = () => {
           lastActive: new Date(courses[0]?.lastAccessedAt || new Date()),
           streakDays: calculateStreak(courses),
         });
+        */
+
+        setUserStats({
+          totalPoints: userData.totalPoints,
+          rank: userData.rank, // Placeholder for actual rank
+          completedChallenges: userData.completedChallenges,
+          activeChallenges: userData.activeChallenges,
+          currentStreak: userData.currentStreak,
+          totalXp: userData.totalXp,
+          totalEnrolled: userData.totalEnrolled,
+          certificatesEarned: userData.certificatesEarned,
+          completedLessons: userData.completedLessons,
+          totalLessons: userData.totalLessons,
+          completedQuizzes: userData.completedQuizzes,
+          totalQuizzes: userData.totalQuizzes,
+          averageScore: userData.averageScore,
+          lastActive: userData.lastActive,
+          streakDays: userData.streakDays,
+        });
+
+        console.log(`userStats: ${userStats}`);
 
         // Find related courses
         const enrolledCourseIds = new Set(courses.map(course => course._id));
@@ -107,7 +140,8 @@ const Dashboard = () => {
         setRelatedCourses(related);
 
         // Calculate recent activities
-        const activities = [];
+        let activities = [];
+        /*
         courses.forEach(course => {
           const enrollment = course.enrollment || {};
           const moduleProgress = enrollment.moduleProgress || [];
@@ -124,6 +158,10 @@ const Dashboard = () => {
             });
           });
         });
+        */
+        response = await axiosInstance.get('students/me/activity');
+        console.log(`activity ${response.data}`);
+        activities = response.data;
         activities.sort((a, b) => b.lastAccessedAt - a.lastAccessedAt);
         setRecentActivities(activities.slice(0, 3));
       } catch (error) {
@@ -138,7 +176,7 @@ const Dashboard = () => {
       }
     };
     
-    fetchEnrolledCourses();
+    fetchUserStats();
   }, [enrolledCourses, CoursesHub, token, toast, user.id]);
 
   useEffect(() => {
