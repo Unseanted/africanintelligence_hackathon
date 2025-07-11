@@ -55,14 +55,13 @@
 // });
 
 
-
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 
-export default function LandingPage() {
+export default function Index() {
   return (
     <ThemedView style={styles.container}>
       <Image
