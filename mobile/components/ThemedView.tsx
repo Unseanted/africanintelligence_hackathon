@@ -1,38 +1,45 @@
-import { View, type ViewProps } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from "react";
+import { View, ViewProps } from "react-native";
 
-import { useThemeColor } from '@/hooks/useThemeColor';
+// Color Constants
+const BACKGROUND = "#111827";
+const CARD_BACKGROUND = "rgba(255, 255, 255, 0.05)";
+const BORDER_COLOR = "rgba(255, 255, 255, 0.1)";
+const PRIMARY = "#3B82F6";
 
-export type ThemedViewProps = ViewProps & {
-  lightColor?: string;
-  darkColor?: string;
-  gradient?: boolean;
-  gradientColors?: string[];
-};
-
-export function ThemedView({ 
-  style, 
-  lightColor, 
-  darkColor, 
-  gradient = false,
-  gradientColors,
-  ...otherProps 
-}: ThemedViewProps) {
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
-  const primaryColor = useThemeColor({}, 'primary');
-  const secondaryColor = useThemeColor({}, 'secondary');
-  const accentColor = useThemeColor({}, 'accent');
-
-  if (gradient) {
-    const colors = gradientColors || [backgroundColor, accentColor, primaryColor];
-    return (
-      <LinearGradient
-        colors={colors}
-        style={[{ flex: 1 }, style]}
-        {...otherProps}
-      />
-    );
-  }
-
-  return <View style={[{ backgroundColor }, style]} {...otherProps} />;
+interface ThemedViewProps extends ViewProps {
+  type?: "default" | "card" | "header";
 }
+
+export function ThemedView({
+  style,
+  type = "default",
+  ...props
+}: ThemedViewProps) {
+  const getBackgroundColor = () => {
+    switch (type) {
+      case "card":
+        return CARD_BACKGROUND;
+      case "header":
+        return PRIMARY;
+      default:
+        return BACKGROUND;
+    }
+  };
+
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: type === "card" ? BORDER_COLOR : "transparent",
+          borderWidth: type === "card" ? 1 : 0,
+        },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
+
+export default ThemedView;

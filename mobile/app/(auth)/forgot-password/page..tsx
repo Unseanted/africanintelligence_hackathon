@@ -2,25 +2,17 @@ import { router } from "expo-router";
 import React, { useState, useCallback } from "react";
 import { Image, ScrollView, StyleSheet, View, KeyboardAvoidingView, Platform } from "react-native";
 import { Button, Text, TextInput, HelperText } from "react-native-paper";
-import {
-  BACKGROUND,
-  CARD_BACKGROUND,
-  PRIMARY,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-} from "../../constants/Colors";
-import { useToast } from "../../hooks/use-toast";
-import { useTourLMS } from "../../contexts/TourLMSContext";
+import { useTheme } from "../../../contexts/ThemeContext";
+import { useToast } from "../../../hooks/use-toast";
+import { useTourLMS } from "../../../contexts/TourLMSContext";
 
 // Types
-interface LoginFormData {
+interface ForgotPasswordFormData {
   email: string;
-  password: string;
 }
 
 interface FormErrors {
   email?: string;
-  password?: string;
   general?: string;
 }
 
@@ -32,40 +24,31 @@ const validateEmail = (email: string): string | undefined => {
   return undefined;
 };
 
-const validatePassword = (password: string): string | undefined => {
-  if (!password) return "Password is required";
-  if (password.length < 6) return "Password must be at least 6 characters";
-  return undefined;
-};
-
-const validateForm = (formData: LoginFormData): FormErrors => {
+const validateForm = (formData: ForgotPasswordFormData): FormErrors => {
   const errors: FormErrors = {};
   
   const emailError = validateEmail(formData.email);
   if (emailError) errors.email = emailError;
   
-  const passwordError = validatePassword(formData.password);
-  if (passwordError) errors.password = passwordError;
-  
   return errors;
 };
 
-export default function Login() {
+export default function ForgotPassword() {
   // State management
-  const [formData, setFormData] = useState<LoginFormData>({
+  const [formData, setFormData] = useState<ForgotPasswordFormData>({
     email: "",
-    password: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
   
   // Hooks
-  const { login } = useTourLMS();
+  const { colors } = useTheme();
+  const { forgotPassword } = useTourLMS();
   const { toast } = useToast();
 
   // Handlers
-  const handleInputChange = useCallback((field: keyof LoginFormData, value: string) => {
+  const handleInputChange = useCallback((field: keyof ForgotPasswordFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear field-specific error when user starts typing
@@ -88,23 +71,23 @@ export default function Login() {
 
       setIsLoading(true);
       
-      // Attempt login
-      await login(formData.email.trim(), formData.password);
+      // Attempt password reset
+      await forgotPassword(formData.email.trim());
+      
+      // Success state
+      setIsEmailSent(true);
       
       // Success toast
       toast({
-        title: "Welcome Back!",
-        description: "You've entered African Intelligence. Continue your ascent!",
+        title: "Reset Link Sent!",
+        description: "Check your email for password reset instructions.",
       });
       
-      // Navigate to student dashboard
-      router.replace("/screens/(tabs)/student");
-      
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Forgot password error:", error);
       
       // Handle different error types
-      let errorMessage = "The tribe couldn't verify your path. Try again.";
+      let errorMessage = "Unable to send reset email. Please try again.";
       
       if (error && typeof error === "object" && "message" in error) {
         const errorMsg = (error as { message?: string }).message;
@@ -116,29 +99,88 @@ export default function Login() {
       // Set general error and show toast
       setErrors({ general: errorMessage });
       toast({
-        title: "Entry Denied",
+        title: "Reset Failed",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [formData, login, toast]);
+  }, [formData, forgotPassword, toast]);
 
-  const handleForgotPassword = useCallback(() => {
-    router.push("/(auth)/forgot-password" as any);
+  const handleBackToLogin = useCallback(() => {
+    router.push("/(auth)/login");
   }, []);
 
-  const handleRegister = useCallback(() => {
-    router.push("/(auth)/register");
-  }, []);
-
-  const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
-  }, []);
+  const handleResendEmail = useCallback(() => {
+    setIsEmailSent(false);
+    setErrors({});
+    handleSubmit();
+  }, [handleSubmit]);
 
   // Check if form is valid
-  const isFormValid = !validateEmail(formData.email) && !validatePassword(formData.password);
+  const isFormValid = !validateEmail(formData.email);
+
+  // Success screen after email is sent
+  if (isEmailSent) {
+    return (
+      <KeyboardAvoidingView 
+        style={styles.container} 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView 
+          style={[styles.scrollView, { backgroundColor: colors.background }]}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <View style={[styles.formContainer, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+              {/* Header Section */}
+              <View style={styles.header}>
+                <View style={[styles.logoContainer, { backgroundColor: colors.primary + "20" }]}>
+                  <Image
+                    source={require("../../assets/images/logo1.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text style={[styles.title, { color: colors.text }]}>
+                  Check Your Email
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                  We've sent password reset instructions to {formData.email}
+                </Text>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.form}>
+                <Button
+                  mode="contained"
+                  onPress={handleResendEmail}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  style={[styles.button, { backgroundColor: colors.primary }]}
+                  contentStyle={styles.buttonContent}
+                >
+                  Resend Email
+                </Button>
+
+                <Button
+                  mode="text"
+                  onPress={handleBackToLogin}
+                  disabled={isLoading}
+                  style={styles.textButton}
+                  labelStyle={{ color: colors.primary }}
+                >
+                  Back to Login
+                </Button>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -146,26 +188,26 @@ export default function Login() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView 
-        style={[styles.scrollView, { backgroundColor: BACKGROUND }]}
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <View style={styles.formContainer}>
+          <View style={[styles.formContainer, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
             {/* Header Section */}
             <View style={styles.header}>
-              <View style={styles.logoContainer}>
+              <View style={[styles.logoContainer, { backgroundColor: colors.primary + "20" }]}>
                 <Image
                   source={require("../../assets/images/logo1.png")}
                   style={styles.logo}
                   resizeMode="contain"
                 />
               </View>
-              <Text style={[styles.title, { color: TEXT_PRIMARY }]}>
-                Enter African Intelligence
+              <Text style={[styles.title, { color: colors.text }]}>
+                Reset Your Password
               </Text>
-              <Text style={[styles.subtitle, { color: TEXT_SECONDARY }]}>
-                Continue your path in the tribe&apos;s ascent
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Enter your email address and we'll send you instructions to reset your password
               </Text>
             </View>
 
@@ -173,15 +215,15 @@ export default function Login() {
             <View style={styles.form}>
               {/* General Error */}
               {errors.general && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{errors.general}</Text>
+                <View style={[styles.errorContainer, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}>
+                  <Text style={[styles.errorText, { color: colors.primary }]}>{errors.general}</Text>
                 </View>
               )}
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
                 <TextInput
-                  label="Email"
+                  label="Email Address"
                   value={formData.email}
                   onChangeText={(value) => handleInputChange("email", value)}
                   mode="outlined"
@@ -191,9 +233,10 @@ export default function Login() {
                   autoCorrect={false}
                   style={[
                     styles.input,
-                    errors.email && styles.inputError
+                    { backgroundColor: colors.cardBackground },
+                    errors.email && { borderColor: colors.primary }
                   ]}
-                  theme={{ colors: { primary: PRIMARY } }}
+                  theme={{ colors: { primary: colors.primary, outline: colors.borderColor } }}
                   disabled={isLoading}
                   placeholder="you@africanintelligence.com"
                   error={!!errors.email}
@@ -203,74 +246,32 @@ export default function Login() {
                 </HelperText>
               </View>
 
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <TextInput
-                  label="Password"
-                  value={formData.password}
-                  onChangeText={(value) => handleInputChange("password", value)}
-                  mode="outlined"
-                  secureTextEntry={!showPassword}
-                  autoComplete="password"
-                  autoCorrect={false}
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? "eye-off" : "eye"}
-                      onPress={togglePasswordVisibility}
-                      disabled={isLoading}
-                    />
-                  }
-                  style={[
-                    styles.input,
-                    errors.password && styles.inputError
-                  ]}
-                  theme={{ colors: { primary: PRIMARY } }}
-                  disabled={isLoading}
-                  placeholder="••••••••"
-                  error={!!errors.password}
-                />
-                <HelperText type="error" visible={!!errors.password}>
-                  {errors.password}
-                </HelperText>
-              </View>
-
-              {/* Login Button */}
+              {/* Reset Button */}
               <Button
                 mode="contained"
                 onPress={handleSubmit}
                 loading={isLoading}
                 disabled={isLoading || !isFormValid}
                 style={[
-                  styles.loginButton,
-                  (!isFormValid || isLoading) && styles.loginButtonDisabled
+                  styles.button,
+                  { backgroundColor: colors.primary },
+                  (!isFormValid || isLoading) && styles.buttonDisabled
                 ]}
-                theme={{ colors: { primary: PRIMARY } }}
-                contentStyle={styles.loginButtonContent}
+                contentStyle={styles.buttonContent}
               >
-                {isLoading ? "Entering..." : "Enter the Tribe"}
+                {isLoading ? "Sending..." : "Send Reset Instructions"}
               </Button>
 
-              {/* Forgot Password Link */}
-              <View style={styles.forgotPasswordContainer}>
-                <Text
-                  style={[styles.forgotPasswordText, { color: PRIMARY }]}
-                  onPress={handleForgotPassword}
-                  disabled={isLoading}
-                >
-                  Forgot your password?
-                </Text>
-              </View>
-
-              {/* Register Link */}
-              <View style={styles.registerContainer}>
-                <Text style={[styles.registerText, { color: TEXT_SECONDARY }]}>
-                  Not yet in the tribe?{" "}
+              {/* Back to Login Link */}
+              <View style={styles.linkContainer}>
+                <Text style={[styles.linkText, { color: colors.textSecondary }]}>
+                  Remember your password?{" "}
                   <Text
-                    style={[styles.registerLink, { color: PRIMARY }]}
-                    onPress={handleRegister}
+                    style={[styles.link, { color: colors.primary }]}
+                    onPress={handleBackToLogin}
                     disabled={isLoading}
                   >
-                    Join Now
+                    Back to Login
                   </Text>
                 </Text>
               </View>
@@ -298,11 +299,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   formContainer: {
-    backgroundColor: CARD_BACKGROUND,
     borderRadius: 20,
     padding: 24,
     borderWidth: 1,
-    borderColor: "rgba(234, 179, 8, 0.2)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -314,7 +313,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoContainer: {
-    backgroundColor: "rgba(234, 179, 8, 0.2)",
     padding: 16,
     borderRadius: 30,
     marginBottom: 20,
@@ -341,53 +339,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderColor: "rgba(234, 179, 8, 0.2)",
-  },
-  inputError: {
-    borderColor: "#ef4444",
+    borderRadius: 8,
   },
   errorContainer: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "#ef4444",
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   errorText: {
-    color: "#ef4444",
     fontSize: 14,
     textAlign: "center",
   },
-  loginButton: {
+  button: {
     marginTop: 16,
     borderRadius: 12,
   },
-  loginButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.6,
   },
-  loginButtonContent: {
+  buttonContent: {
     paddingVertical: 8,
   },
-  forgotPasswordContainer: {
-    marginTop: 16,
-    alignItems: "center",
+  textButton: {
+    marginTop: 8,
   },
-  forgotPasswordText: {
-    fontSize: 16,
-    fontWeight: "500",
-    textDecorationLine: "underline",
-  },
-  registerContainer: {
+  linkContainer: {
     marginTop: 20,
     alignItems: "center",
   },
-  registerText: {
+  linkText: {
     fontSize: 16,
     textAlign: "center",
   },
-  registerLink: {
+  link: {
     fontWeight: "bold",
     textDecorationLine: "underline",
   },

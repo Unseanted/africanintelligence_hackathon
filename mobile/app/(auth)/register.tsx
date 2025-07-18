@@ -1,98 +1,97 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
-import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
-import { router } from 'expo-router';
-import { useTourLMS } from '../contexts/TourLMSContext';
-import { useToast } from '../hooks/use-toast';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND } from '../constants/colors';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+// import {
+//   GoogleSignin,
+//   statusCodes,
+// } from "@react-native-google-signin/google-signin";
+import { router } from "expo-router";
+import React, { useState } from "react";
+import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { Button, Checkbox, Text, TextInput } from "react-native-paper";
+import {
+  BACKGROUND,
+  CARD_BACKGROUND,
+  PRIMARY,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "../../constants/Colors";
+import { useTourLMS } from "../../contexts/TourLMSContext";
+import { useToast } from "../../hooks/use-toast";
 
 export default function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('student');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("student");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register, API_URL } = useTourLMS();
+  const { register } = useTourLMS();
   const { toast } = useToast();
 
-  // Configure Google Sign-In
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: 'YOUR_WEB_CLIENT_ID', // From Google Cloud Console
-      iosClientId: 'YOUR_IOS_CLIENT_ID', // Optional, if you have a separate iOS client ID
-      scopes: ['profile', 'email'],
-      offlineAccess: true,
-      hostedDomain: '', // Optional
-      forceCodeForRefreshToken: true,
-    });
-  }, []);
+  // Google Sign-In logic is commented out for now
+  // useEffect(() => {
+  //   GoogleSignin.configure({
+  //     webClientId: "YOUR_WEB_CLIENT_ID",
+  //     iosClientId: "YOUR_IOS_CLIENT_ID",
+  //     scopes: ["profile", "email"],
+  //     offlineAccess: true,
+  //     hostedDomain: "",
+  //     forceCodeForRefreshToken: true,
+  //   });
+  // }, []);
 
-  const handleGoogleSignIn = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check if your device supports Google Play
-      await GoogleSignin.hasPlayServices();
-      
-      // Get the user's ID token
-      const userInfo = await GoogleSignin.signIn();
-      
-      // Send the ID token to your backend
-      const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: userInfo.idToken || userInfo.user?.idToken,
-          role,
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.user && result.token) {
-        await register({
-          name: result.user.name,
-          email: result.user.email,
-          password: '',
-          role: result.user.role
-        });
-        toast({
-          title: "Tribe Welcomes You!",
-          description: "You've joined African Intelligence. Onward to greatness!",
-        });
-        router.replace('/../screens/(tabs)/student');
-      } else {
-        throw new Error(result.message || 'Google signup failed');
-      }
-    } catch (error: any) {
-      console.error("Google Sign-In error:", error);
-      
-      let errorMessage = "Failed to signup with Google. Please try again.";
-      
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        errorMessage = "Google sign-in was cancelled.";
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        errorMessage = "Google sign-in is already in progress.";
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        errorMessage = "Google Play Services is not available or outdated.";
-      }
-      
-      toast({
-        title: "Entry Denied",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [API_URL, role, register, toast]);
+  // const handleGoogleSignIn = useCallback(async () => {
+  //   try {
+  //     setIsLoading(true);
+  //     await GoogleSignin.hasPlayServices();
+  //     const userInfo = await GoogleSignin.signIn();
+  //     const response = await fetch(`${API_URL}/auth/google`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         token: userInfo.idToken || userInfo.user?.idToken,
+  //         role,
+  //       }),
+  //     });
+  //     const result = await response.json();
+  //     if (response.ok && result.user && result.token) {
+  //       await register({
+  //         name: result.user.name,
+  //         email: result.user.email,
+  //         password: "",
+  //         role: result.user.role,
+  //       });
+  //       toast({
+  //         title: "Tribe Welcomes You!",
+  //         description:
+  //           "You've joined African Intelligence. Onward to greatness!",
+  //       });
+  //       router.replace("/../screens/(tabs)/student");
+  //     } else {
+  //       throw new Error(result.message || "Google signup failed");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Google Sign-In error:", error);
+  //     let errorMessage = "Failed to signup with Google. Please try again.";
+  //     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+  //       errorMessage = "Google sign-in was cancelled.";
+  //     } else if (error.code === statusCodes.IN_PROGRESS) {
+  //       errorMessage = "Google sign-in is already in progress.";
+  //     } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+  //       errorMessage = "Google Play Services is not available or outdated.";
+  //     }
+  //     toast({
+  //       title: "Entry Denied",
+  //       description: errorMessage,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [API_URL, role, register, toast]);
 
   const handleSubmit = async () => {
     if (password !== confirmPassword) {
@@ -103,7 +102,6 @@ export default function Register() {
       });
       return;
     }
-
     if (!agreeTerms) {
       toast({
         title: "Tribal Pact",
@@ -112,7 +110,6 @@ export default function Register() {
       });
       return;
     }
-
     setIsLoading(true);
     try {
       const userData = { name, email, password, role };
@@ -121,12 +118,13 @@ export default function Register() {
         title: "Tribe Welcomes You!",
         description: "You've joined African Intelligence. Onward to greatness!",
       });
-      router.replace('/screens/(tabs)/student');
+      router.replace("/screens/(tabs)/student");
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
         title: "Entry Denied",
-        description: error.message || "The tribe couldn't forge your path. Try again.",
+        description:
+          error.message || "The tribe couldn't forge your path. Try again.",
         variant: "destructive",
       });
     } finally {
@@ -141,7 +139,7 @@ export default function Register() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../assets/images/logo1.png')}
+                source={require("../../assets/images/logo1.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -187,7 +185,7 @@ export default function Register() {
               secureTextEntry={!showPassword}
               right={
                 <TextInput.Icon
-                  icon={showPassword ? 'eye-off' : 'eye'}
+                  icon={showPassword ? "eye-off" : "eye"}
                   onPress={() => setShowPassword(!showPassword)}
                 />
               }
@@ -205,7 +203,7 @@ export default function Register() {
               secureTextEntry={!showConfirmPassword}
               right={
                 <TextInput.Icon
-                  icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                  icon={showConfirmPassword ? "eye-off" : "eye"}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 />
               }
@@ -216,11 +214,13 @@ export default function Register() {
             />
 
             <View style={styles.roleContainer}>
-              <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>I join as a</Text>
+              <Text style={[styles.roleLabel, { color: TEXT_PRIMARY }]}>
+                I join as a
+              </Text>
               <View style={styles.roleButtons}>
                 <Button
-                  mode={role === 'facilitator' ? 'contained' : 'outlined'}
-                  onPress={() => setRole('facilitator')}
+                  mode={role === "facilitator" ? "contained" : "outlined"}
+                  onPress={() => setRole("facilitator")}
                   style={styles.roleButton}
                   theme={{ colors: { primary: PRIMARY } }}
                   disabled={isLoading}
@@ -228,8 +228,8 @@ export default function Register() {
                   Griot (Facilitator)
                 </Button>
                 <Button
-                  mode={role === 'student' ? 'contained' : 'outlined'}
-                  onPress={() => setRole('student')}
+                  mode={role === "student" ? "contained" : "outlined"}
+                  onPress={() => setRole("student")}
                   style={styles.roleButton}
                   theme={{ colors: { primary: PRIMARY } }}
                   disabled={isLoading}
@@ -241,18 +241,24 @@ export default function Register() {
 
             <View style={styles.termsContainer}>
               <Checkbox
-                status={agreeTerms ? 'checked' : 'unchecked'}
+                status={agreeTerms ? "checked" : "unchecked"}
                 onPress={() => setAgreeTerms(!agreeTerms)}
                 color={PRIMARY}
                 disabled={isLoading}
               />
               <Text style={[styles.termsText, { color: TEXT_SECONDARY }]}>
-                I pledge to the{' '}
-                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/terms' as any)}>
+                I pledge to the{" "}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => router.push("/(auth)/terms" as any)}
+                >
                   Tribal Code
-                </Text>{' '}
-                and{' '}
-                <Text style={styles.termsLink} onPress={() => router.push('/(auth)/privacy' as any)}>
+                </Text>{" "}
+                and{" "}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => router.push("/(auth)/privacy" as any)}
+                >
                   Sacred Pact
                 </Text>
               </Text>
@@ -266,12 +272,12 @@ export default function Register() {
               style={styles.registerButton}
               theme={{ colors: { primary: PRIMARY } }}
             >
-              {isLoading ? 'Forging Your Path...' : 'Join the Tribe'}
+              {isLoading ? "Forging Your Path..." : "Join the Tribe"}
             </Button>
 
             <Button
               mode="outlined"
-              onPress={handleGoogleSignIn}
+              // onPress={handleGoogleSignIn}
               disabled={isLoading}
               style={styles.googleButton}
               icon="google"
@@ -281,10 +287,10 @@ export default function Register() {
 
             <View style={styles.loginContainer}>
               <Text style={[styles.loginText, { color: TEXT_SECONDARY }]}>
-                Already in the tribe?{' '}
+                Already in the tribe?{" "}
                 <Text
                   style={styles.loginLink}
-                  onPress={() => router.push('/(auth)/login')}
+                  onPress={() => router.push("/(auth)/login")}
                 >
                   Enter Now
                 </Text>
@@ -310,14 +316,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.2)',
+    borderColor: "rgba(234, 179, 8, 0.2)",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
   },
   logoContainer: {
-    backgroundColor: 'rgba(234, 179, 8, 0.2)',
+    backgroundColor: "rgba(234, 179, 8, 0.2)",
     padding: 15,
     borderRadius: 30,
     marginBottom: 20,
@@ -328,19 +334,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
-    borderColor: 'rgba(234, 179, 8, 0.2)',
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
+    borderColor: "rgba(234, 179, 8, 0.2)",
   },
   roleContainer: {
     marginVertical: 10,
@@ -350,15 +356,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   roleButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   roleButton: {
     flex: 1,
   },
   termsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
   },
   termsText: {
@@ -367,7 +373,7 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: PRIMARY,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   registerButton: {
     marginTop: 20,
@@ -379,13 +385,13 @@ const styles = StyleSheet.create({
   },
   loginContainer: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loginText: {
     fontSize: 16,
   },
   loginLink: {
     color: PRIMARY,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

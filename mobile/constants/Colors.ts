@@ -1,44 +1,51 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+// Primary Colors
+export const PRIMARY = "#FFBF00";
+export const PRIMARY_LIGHT = "rgba(255, 191, 0, 0.1)";
+export const PRIMARY_DARK = "#FF8C00"; // Dark Amber
 
-const tintColorLight = '#eab308'; // Gold-500
-const tintColorDark = '#facc15'; // Gold-400
+// Background Colors
+export const BACKGROUND = "#111827"; // gray-900
+export const BACKGROUND_DARK = "#0F172A"; // Black
+
+// Text Colors
+export const TEXT_PRIMARY = "#FFFFFF";
+export const TEXT_SECONDARY = "#9CA3AF"; // Gray
+export const TEXT_INACTIVE = "#9CA3AF"; // Gray
+
+// Border Colors
+export const BORDER = "rgba(255, 191, 0, 0.2)"; // Amber with opacity
+export const BORDER_LIGHT = "rgba(0, 0, 0, 0.1)"; // Black with opacity
+export const BORDER_COLOR = "rgba(255, 255, 255, 0.1)"; // gold-300 with opacity
+
+// Status Colors
+export const SUCCESS = "#4CAF50"; // Green
+export const INFO = "#2196F3"; // Blue
+export const WARNING = "#FFC107"; // Amber
+export const ERROR = "#F44336"; // Red
+
+// Shadow
+export const SHADOW = "#000000";
+
+// Card Background
+export const CARD_BACKGROUND = "rgba(255, 255, 255, 0.05)"; // slate-800 with opacity
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-    primary: '#eab308', // Gold-500
-    secondary: '#facc15', // Gold-400
-    accent: '#fef3c7', // Gold-100
-    muted: '#fef9c3', // Yellow-100
-    card: '#fff',
-    border: '#fde68a', // Amber-200
+    PRIMARY,
+    BACKGROUND: "#ffffff",
+    TEXT_PRIMARY: "#000000",
+    TEXT_SECONDARY,
+    CARD_BACKGROUND,
+    BORDER_COLOR,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-    primary: '#facc15', // Gold-400
-    secondary: '#eab308', // Gold-500
-    accent: '#78350f', // Amber-900
-    muted: '#92400e', // Amber-800
-    card: '#1f2937', // Slate-800
-    border: '#92400e', // Amber-800
+    PRIMARY,
+    BACKGROUND,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+    CARD_BACKGROUND,
+    BORDER_COLOR,
   },
 };
 
-export const PRIMARY = '#FF4B4B';
-export const SECONDARY = '#4B4BFF';
-export const BACKGROUND = '#FFFFFF';
-export const TEXT = '#000000';
-export const TEXT_SECONDARY = '#666666';
+export default Colors;

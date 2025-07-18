@@ -43,47 +43,16 @@ export default function AIAssistant() {
     setInput('');
     setLoading(true);
 
-    try {
-      const systemMessage: ChatMessage = {
-        role: 'system',
-        content: 'You are a helpful AI assistant for an educational platform. Provide clear, concise, and accurate responses.'
-      };
-
-      const historyMessages: ChatMessage[] = messages.map(msg => ({
-        role: msg.isUser ? 'user' : 'assistant',
-        content: msg.text
-      }));
-
-      const newUserMessage: ChatMessage = {
-        role: 'user',
-        content: userMessage.text
-      };
-
-      const chatMessages: ChatMessage[] = [
-        systemMessage,
-        ...historyMessages,
-        newUserMessage
-      ];
-
-      const response = await aiService.chat(chatMessages);
-
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response,
-        isUser: false,
-      };
+    // Always return a simulated response
+    const aiResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: "I'm a simulated AI response. In a real implementation, this would connect to an AI service.",
+      isUser: false,
+    };
+    setTimeout(() => {
       setMessages(prev => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "I apologize, but I'm having trouble connecting right now. Please try again later.",
-        isUser: false,
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleKeyPress = (e: any) => {

@@ -8,18 +8,6 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.herkintormiwer.africanintelligence"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo1.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.herkintormiwer.africanintelligence"
-    },
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -35,28 +23,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ],
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
-        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "d7a69108-c6ad-4f1e-a061-006f63f54d22"
-      },
-      "googleAuth": {
-        "androidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
-        "iosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
-        "webClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
-      }
-    },
-    "owner": "herkintormiwer"
-  }
+    "googleAuth": {
+      "webClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
+    }
+  },
+  "owner": "herkintormiwer"
 }

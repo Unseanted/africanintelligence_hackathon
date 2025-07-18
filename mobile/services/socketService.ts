@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { API_URL } from "../constants/api";
+import { API_URL } from "../app/constants/api";
 import { useTourLMS } from "../contexts/TourLMSContext";
 
 let socket: Socket | null = null;
@@ -54,5 +54,3 @@ export const useSocket = () => {
 
   return socketInstance;
 };
-
-export default {};

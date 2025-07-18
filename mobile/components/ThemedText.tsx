@@ -1,71 +1,57 @@
-import { StyleSheet, Text, type TextProps } from 'react-native';
+import React from "react";
+import { Text, TextProps } from "react-native";
 
-import { useThemeColor } from '@/hooks/useThemeColor';
+// Color Constants
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_SECONDARY = "#9CA3AF";
+const PRIMARY = "#3B82F6";
 
-export type ThemedTextProps = TextProps & {
-  lightColor?: string;
-  darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'gradient' | 'gold';
-};
+interface ThemedTextProps extends TextProps {
+  type?: "default" | "primary" | "secondary" | "accent";
+  size?: "small" | "medium" | "large";
+}
 
 export function ThemedText({
   style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
+  type = "default",
+  size = "medium",
+  ...props
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
-  const primaryColor = useThemeColor({}, 'primary');
-  const secondaryColor = useThemeColor({}, 'secondary');
+  const getTextColor = () => {
+    switch (type) {
+      case "primary":
+        return PRIMARY;
+      case "secondary":
+        return TEXT_SECONDARY;
+      case "accent":
+        return PRIMARY;
+      default:
+        return TEXT_PRIMARY;
+    }
+  };
+
+  const getTextSize = () => {
+    switch (size) {
+      case "small":
+        return 12;
+      case "large":
+        return 18;
+      default:
+        return 14;
+    }
+  };
 
   return (
     <Text
       style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? [styles.link, { color: primaryColor }] : undefined,
-        type === 'gold' ? [styles.gold, { color: primaryColor }] : undefined,
-        type === 'gradient' ? styles.gradient : undefined,
+        {
+          color: getTextColor(),
+          fontSize: getTextSize(),
+        },
         style,
       ]}
-      {...rest}
+      {...props}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-  },
-  gold: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  gradient: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});
+export default ThemedText
