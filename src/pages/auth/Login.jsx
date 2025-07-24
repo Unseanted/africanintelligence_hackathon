@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useTourLMS } from "@/contexts/TourLMSContext";
 import { image_01 } from "../../js/Data";
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from "@react-oauth/google";
 import { clg } from "../../lib/basic";
 
 const Login = () => {
@@ -31,18 +31,19 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const result = await login({ email, password, role });
-      const courseId = localStorage.getItem('waitingCourse');
-      
+      console.log(`result is ${JSON.stringify(result)}`);
+      const courseId = localStorage.getItem("waitingCourse");
+
       if (result.success) {
         toast({
           title: "Access Granted!",
           description: `Welcome back, ${result.user.name}, to African Intelligence!`,
         });
-        if (courseId && role === 'student') {
-          localStorage.removeItem('waitingCourse');
+        if (courseId && role === "student") {
+          localStorage.removeItem("waitingCourse");
           navigate(`/student/courses/${courseId}`);
         } else {
           navigate(role === "facilitator" ? "/facilitator" : "/student");
@@ -58,7 +59,8 @@ const Login = () => {
       console.error("Login error:", error);
       toast({
         title: "Access Denied",
-        description: "Something went wrong. Verify your credentials and try again.",
+        description:
+          "Something went wrong. Verify your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -68,12 +70,12 @@ const Login = () => {
 
   const handleGoogleLogin = async (credentialResponse) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           token: credentialResponse.credential,
@@ -85,7 +87,7 @@ const Login = () => {
       if (response.ok && result.user && result.token) {
         const loginResult = await login({
           email: result.user.email,
-          password: '',
+          password: "",
           role: result.user.role,
           user: result.user,
           token: result.token,
@@ -96,24 +98,25 @@ const Login = () => {
             title: "Access Granted!",
             description: `Welcome back, ${result.user.name}, to African Intelligence!`,
           });
-          const courseId = localStorage.getItem('waitingCourse');
-          if (courseId && role === 'student') {
-            localStorage.removeItem('waitingCourse');
+          const courseId = localStorage.getItem("waitingCourse");
+          if (courseId && role === "student") {
+            localStorage.removeItem("waitingCourse");
             navigate(`/student/courses/${courseId}`);
           } else {
             navigate(role === "facilitator" ? "/facilitator" : "/student");
           }
         } else {
-          throw new Error('Failed to process Google login');
+          throw new Error("Failed to process Google login");
         }
       } else {
-        throw new Error(result.message || 'Google login failed');
+        throw new Error(result.message || "Google login failed");
       }
     } catch (error) {
       console.error("Google Login error:", error);
       toast({
         title: "Access Denied",
-        description: error.message || "Failed to login with Google. Please try again.",
+        description:
+          error.message || "Failed to login with Google. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -132,7 +135,8 @@ const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent flex flex-col justify-center px-12">
           <div className="max-w-md">
             <p className="text-xl text-amber-300 mb-8">
-              Unleash the genius of Africa’s mind—where tourism meets technology, and knowledge fuels ascendancy.
+              Unleash the genius of Africa’s mind—where tourism meets
+              technology, and knowledge fuels ascendancy.
             </p>
             <div className="flex flex-col space-y-6">
               <div className="flex items-center">
@@ -140,8 +144,12 @@ const Login = () => {
                   <Compass className="text-amber-100 h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-amber-100 font-medium">Griot-Guided Paths</p>
-                  <p className="text-amber-300 text-sm">Wisdom from Africa’s tech pioneers</p>
+                  <p className="text-amber-100 font-medium">
+                    Griot-Guided Paths
+                  </p>
+                  <p className="text-amber-300 text-sm">
+                    Wisdom from Africa’s tech pioneers
+                  </p>
                 </div>
               </div>
               <div className="flex items-center">
@@ -149,8 +157,12 @@ const Login = () => {
                   <MapPin className="text-amber-100 h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-amber-100 font-medium">Pan-African Vision</p>
-                  <p className="text-amber-300 text-sm">Insights rooted in our continent</p>
+                  <p className="text-amber-100 font-medium">
+                    Pan-African Vision
+                  </p>
+                  <p className="text-amber-300 text-sm">
+                    Insights rooted in our continent
+                  </p>
                 </div>
               </div>
               <div className="flex items-center">
@@ -159,7 +171,9 @@ const Login = () => {
                 </div>
                 <div>
                   <p className="text-amber-100 font-medium">Smart Innovation</p>
-                  <p className="text-amber-300 text-sm">AI shaping Africa’s future</p>
+                  <p className="text-amber-300 text-sm">
+                    AI shaping Africa’s future
+                  </p>
                 </div>
               </div>
             </div>
@@ -180,13 +194,19 @@ const Login = () => {
                     </div>
                   </Link>
                 </div>
-                <h1 className="text-3xl font-bold text-amber-100">African Intelligence Login</h1>
-                <p className="text-amber-300 mt-2">Reclaim your place in Africa’s digital ascent</p>
+                <h1 className="text-3xl font-bold text-amber-100">
+                  African Intelligence Login
+                </h1>
+                <p className="text-amber-300 mt-2">
+                  Reclaim your place in Africa’s digital ascent
+                </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-amber-100 font-medium">Email</Label>
+                  <Label htmlFor="email" className="text-amber-100 font-medium">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -201,8 +221,16 @@ const Login = () => {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-amber-100 font-medium">Password</Label>
-                    <Link to="/forgot-password" className="text-sm text-amber-500 hover:text-amber-400 transition-colors">
+                    <Label
+                      htmlFor="password"
+                      className="text-amber-100 font-medium"
+                    >
+                      Password
+                    </Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-amber-500 hover:text-amber-400 transition-colors"
+                    >
                       Forgot Password?
                     </Link>
                   </div>
@@ -222,20 +250,40 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-amber-500 hover:text-amber-400 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role" className="text-amber-100 font-medium">I am a</Label>
-                  <Select value={role} onValueChange={setRole} disabled={isLoading}>
+                  <Label htmlFor="role" className="text-amber-100 font-medium">
+                    I am a
+                  </Label>
+                  <Select
+                    value={role}
+                    onValueChange={setRole}
+                    disabled={isLoading}
+                  >
                     <SelectTrigger className="bg-slate-800 border-gold-300/20 text-amber-100 focus:ring-2 focus:ring-amber-500 shadow-inner hover:bg-amber-500/10 transition-all">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-gold-300/20 text-amber-100 backdrop-blur-md">
-                      <SelectItem value="facilitator" className="hover:bg-amber-500/30">Facilitator</SelectItem>
-                      <SelectItem value="student" className="hover:bg-amber-500/30">Student</SelectItem>
+                      <SelectItem
+                        value="facilitator"
+                        className="hover:bg-amber-500/30"
+                      >
+                        Facilitator
+                      </SelectItem>
+                      <SelectItem
+                        value="student"
+                        className="hover:bg-amber-500/30"
+                      >
+                        Student
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -262,7 +310,8 @@ const Login = () => {
                       onError={() => {
                         toast({
                           title: "Google Login Failed",
-                          description: "Unable to authenticate with Google. Please try again.",
+                          description:
+                            "Unable to authenticate with Google. Please try again.",
                           variant: "destructive",
                         });
                         setIsLoading(false);
@@ -279,7 +328,10 @@ const Login = () => {
 
               <p className="text-center mt-6 text-amber-300">
                 New to the tribe?{" "}
-                <Link to="/register" className="text-amber-500 hover:text-amber-400 font-medium transition-colors">
+                <Link
+                  to="/register"
+                  className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
+                >
                   Join Now
                 </Link>
               </p>

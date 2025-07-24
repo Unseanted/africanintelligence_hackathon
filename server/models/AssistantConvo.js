@@ -21,7 +21,7 @@ const messageSchema = new Schema(
     },
     aiModel: {
       type: String,
-      enum: ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku", "mistral-large-latest"],
+      //enum: ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku", "mistral-large-latest"],
       required: function () {
         return this.role === "assistant"; // Only required for assistant messages
       },
@@ -53,7 +53,7 @@ const aiConversationSchema = new Schema(
     messages: [messageSchema],
     aiModel: {
       type: String,
-      enum: ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku", "mistral-large-latest"],
+      //enum: ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku", "mistral-large-latest"],
       default: "mistral-large-latest",
     },
     metadata: {

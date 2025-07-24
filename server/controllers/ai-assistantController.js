@@ -55,7 +55,7 @@ async function createConversation(req, res) {
 
 async function getConversations(req, res) {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
 
     const conversations = await AIConversation.find({ userId })
       .sort({ lastMessageAt: -1 })
@@ -70,7 +70,7 @@ async function getConversations(req, res) {
 async function getMessages(req, res) {
   try {
     const { conversationId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.userId;
 
     // Verify conversation ownership
     const conversation = await AIConversation.findOne({
@@ -96,7 +96,7 @@ async function getMessages(req, res) {
 async function deleteConversation(req, res) {
   try {
     const { conversationId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user.userId;
 
     // Verify conversation ownership
     const conversation = await AIConversation.findOne({

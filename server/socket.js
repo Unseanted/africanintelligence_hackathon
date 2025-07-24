@@ -3,33 +3,41 @@ const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 const axios = require("axios");
 const { Conversation, AIChatMessage } = require("./models/AssistantConvo");
-const { vapid_private_key, mistral_api_key } = require("./configs/config");
+const {
+  vapid_private_key,
+  mistral_api_key,
+  groq_api_key,
+} = require("./configs/config");
 const { Mistral } = require("@mistralai/mistralai");
 const Student = require("./models/Student");
 const ForumPost = require("./models/Forum");
 const { sendForumNotification } = require("./routes/notification");
+const Groq = require("groq-sdk");
+const { LLMContext, LLMStrategy } = require("./llmContext");
 
-class LLMStrategy {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
+class GroqLLM extends LLMStrategy {
+  constructor(apiKey, jsonSchema = { text: "Content here" }) {
+    super(apiKey);
+    this.model = "llama-3.3-70b-versatile";
+    this.groq = new Groq({ apiKey });
+    this.temperature = 0.7;
+    this.type = "json-schema";
+    this.jsonSchema = jsonSchema;
   }
-
+  async checkAvailableModels() {
+    const models = await this.groq.models.list();
+  }
   async generateResponse(message) {
-    throw new Error("Not implemented");
-  }
-}
+    const response = await this.groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: message }],
+    });
 
-class LLMContext {
-  constructor(strategy) {
-    this.strategy = strategy;
-  }
-
-  setStrategy(strategy) {
-    this.strategy = strategy;
-  }
-
-  async generateResponse(message) {
-    return this.strategy.generateResponse(message);
+    if (response.choices && response.choices.length > 0) {
+      return response.choices[0].message.content;
+    } else {
+      throw new Error("No response from Groq API");
+    }
   }
 }
 
@@ -183,7 +191,9 @@ const setupSocket = (server, db) => {
       // For now, we will use MistralLLM and local model as the default strategy
 
       // const llmContext = new LLMContext(new MistralLLM(mistral_api_key));
-      const llmContext = new LLMContext(new MockLLM(mistral_api_key));
+      // const llmContext = new LLMContext(new MockLLM(mistral_api_key));
+      console.log("Using GroqLLM with API key:", groq_api_key);
+      const llmContext = new LLMContext(new GroqLLM(groq_api_key));
       const response = await llmContext.generateResponse(message);
       const aiMessage = {
         conversationId: conversationId,

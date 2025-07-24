@@ -1,18 +1,53 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Sparkles, BookOpen, Brain, Code, HelpCircle, MessageSquare, Loader2, Upload, File, X, Settings, Plus, Clock, Trash2, WifiOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { offlineStorage } from '@/utils/offlineStorage';
-import { notificationService } from '@/utils/notificationService';
-import { io } from 'socket.io-client';
-import { useAuth } from '@/contexts/AuthContext';
-import axios from 'axios';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Bot,
+  Send,
+  Sparkles,
+  BookOpen,
+  Brain,
+  Code,
+  HelpCircle,
+  MessageSquare,
+  Loader2,
+  Upload,
+  File,
+  X,
+  Settings,
+  Plus,
+  Clock,
+  Trash2,
+  WifiOff,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { offlineStorage } from "@/utils/offlineStorage";
+import { notificationService } from "@/utils/notificationService";
+import { io } from "socket.io-client";
+import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 const API_URL = import.meta.env.VITE_API_URL;
@@ -38,18 +73,22 @@ const API_URL = import.meta.env.VITE_API_URL;
   - mark as archived
 
  */
+// TODO: Conversations created on page load
+// TODO: Fetch existing conversations from server
+// TODO: Text display not good
+
 const AIAssistantPage = () => {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [chat, setChat] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('mistral-large-latest');
+  const [selectedModel, setSelectedModel] = useState("mistral-large-latest");
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const fileInputRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [syncStatus, setSyncStatus] = useState('idle');
+  const [syncStatus, setSyncStatus] = useState("idle");
   const [socket, setSocket] = useState(null);
   const { token } = useAuth();
 
@@ -58,11 +97,11 @@ const AIAssistantPage = () => {
   const currentLesson = { title: "Custom Hooks and Context API" };
 
   const aiModels = [
-    { id: 'gpt-4', name: 'GPT-4'},
-    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo'},
-    { id: 'claude-3', name: 'Claude 3'},
-    { id: 'gemini-pro', name: 'Gemini Pro' },
-    { id: 'mistral-large-latest', name: 'Mistral Large' }
+    { id: "gpt-4", name: "GPT-4" },
+    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+    { id: "claude-3", name: "Claude 3" },
+    { id: "gemini-pro", name: "Gemini Pro" },
+    { id: "mistral-large-latest", name: "Mistral Large" },
   ];
 
   const oldSuggestedQuestions = [
@@ -71,13 +110,13 @@ const AIAssistantPage = () => {
     "Help me debug my code",
     "Summarize today's learning objectives",
     "What are the key takeaways?",
-    "Give me related resources"
+    "Give me related resources",
   ];
 
   const suggestedQuestions = [
     "Create a practice quiz for me",
     "Help me debug my code",
-  ]
+  ];
 
   // Fetch all conversations and their messages on mount
   useEffect(() => {
@@ -85,23 +124,32 @@ const AIAssistantPage = () => {
     const fetchChats = async () => {
       try {
         const res = await axios.get(`${API_URL}/assistant/conversations`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         const conversations = Array.isArray(res.data) ? res.data : [];
         // Fetch messages for each conversation
-        const chatsWithMessages = await Promise.all(conversations.map(async (conv) => {
-          const msgRes = await axios.get(`${API_URL}/assistant/conversations/${conv._id}/messages`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          return { ...conv, id: conv._id, messages: Array.isArray(msgRes.data) ? msgRes.data : [] };
-        }));
+        const chatsWithMessages = await Promise.all(
+          conversations.map(async (conv) => {
+            const msgRes = await axios.get(
+              `${API_URL}/assistant/conversations/${conv._id}/messages`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            return {
+              ...conv,
+              id: conv._id,
+              messages: Array.isArray(msgRes.data) ? msgRes.data : [],
+            };
+          })
+        );
         setChatHistory(chatsWithMessages);
         if (chatsWithMessages.length > 0) {
           setCurrentChatId(chatsWithMessages[0].id);
           setChat(chatsWithMessages[0]);
         }
       } catch (err) {
-        console.error('Failed to fetch chat history:', err);
+        console.error("Failed to fetch chat history:", err);
       }
     };
     fetchChats();
@@ -109,8 +157,11 @@ const AIAssistantPage = () => {
 
   // Update current chat when currentChatId changes
   useEffect(() => {
-    if (!currentChatId) { setChat(null); return; }
-    const found = chatHistory.find(c => c.id === currentChatId);
+    if (!currentChatId) {
+      setChat(null);
+      return;
+    }
+    const found = chatHistory.find((c) => c.id === currentChatId);
     setChat(found || null);
   }, [currentChatId, chatHistory]);
 
@@ -118,34 +169,41 @@ const AIAssistantPage = () => {
   useEffect(() => {
     if (!token) return;
     const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      auth: { token }
+      transports: ["websocket"],
+      auth: { token },
     });
 
-    newSocket.on('connect', () => { setIsOnline(true); console.log('connected to wss'); });
-    newSocket.on('disconnect', () => setIsOnline(false));
-    newSocket.on('pong', (data) => {
-      console.log('pong');
+    newSocket.on("connect", () => {
+      setIsOnline(true);
+      console.log("connected to wss");
     });
-    newSocket.on('ai:response', (data) => {
+    newSocket.on("disconnect", () => setIsOnline(false));
+    newSocket.on("pong", (data) => {
+      console.log("pong");
+    });
+    newSocket.on("ai:response", (data) => {
       const aiMsg = data.message;
-      setChatHistory(prev => prev.map(c =>
-        c.id === aiMsg.conversationId
-          ? { ...c, messages: [...c.messages, aiMsg] }
-          : c
-      ));
+      setChatHistory((prev) =>
+        prev.map((c) =>
+          c.id === aiMsg.conversationId
+            ? { ...c, messages: [...c.messages, aiMsg] }
+            : c
+        )
+      );
       if (chat && chat.id === aiMsg.conversationId) {
-        setChat(prev => ({ ...prev, messages: [...prev.messages, aiMsg] }));
+        setChat((prev) => ({ ...prev, messages: [...prev.messages, aiMsg] }));
       }
       setIsTyping(false);
     });
-    newSocket.on('ai:typing', (typing) => setIsTyping(typing));
-    newSocket.on('error', (error) => {
+    newSocket.on("ai:typing", (typing) => setIsTyping(typing));
+    newSocket.on("error", (error) => {
       setIsTyping(false);
       // Optionally show notification
     });
     setSocket(newSocket);
-    return () => { newSocket.close(); };
+    return () => {
+      newSocket.close();
+    };
   }, [token]);
 
   useEffect(() => {
@@ -157,17 +215,21 @@ const AIAssistantPage = () => {
   // Create new chat
   const createNewChat = async () => {
     try {
-      const newChatReq = { title: 'New Conversation', aiModel: selectedModel };
-      const res = await axios.post(`${API_URL}/assistant/conversations`, newChatReq, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const newChatReq = { title: "New Conversation", aiModel: selectedModel };
+      const res = await axios.post(
+        `${API_URL}/assistant/conversations`,
+        newChatReq,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.data.success) {
         const conv = res.data.conversation;
         const chatObj = { ...conv, id: conv.id, messages: [] };
-        setChatHistory(prev => [chatObj, ...prev]);
+        setChatHistory((prev) => [chatObj, ...prev]);
         setCurrentChatId(chatObj.id);
         setChat(chatObj);
-        setMessage('');
+        setMessage("");
         setAttachedFiles([]);
       }
     } catch (err) {
@@ -179,13 +241,13 @@ const AIAssistantPage = () => {
   const deleteChat = async (chatId) => {
     try {
       await axios.delete(`${API_URL}/assistant/conversations/${chatId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setChatHistory(prev => prev.filter(c => c.id !== chatId));
+      setChatHistory((prev) => prev.filter((c) => c.id !== chatId));
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setChat(null);
-        setMessage('');
+        setMessage("");
         setAttachedFiles([]);
       }
     } catch (err) {
@@ -196,29 +258,40 @@ const AIAssistantPage = () => {
   // Send message
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!message.trim() || isTyping || !socket || !chat) return;
 
     // fix sending without creating a new conversation
     const userMessage = message.trim();
-    setMessage('');
+    setMessage("");
     const newMsg = {
       conversationId: chat.id,
-      role: 'user',
+      role: "user",
       content: userMessage,
       timestamp: new Date(),
-      model: selectedModel
+      model: selectedModel,
     };
-    setChat(prev => ({ ...prev, messages: [...prev.messages, newMsg] }));
+    setChat((prev) => ({ ...prev, messages: [...prev.messages, newMsg] }));
     console.log("chat", chat);
-    setChatHistory(prev => prev.map(c =>
-      c.id === chat.id ? { ...c, messages: [...c.messages, newMsg] } : c
-    ));
+    setChatHistory((prev) =>
+      prev.map((c) =>
+        c.id === chat.id ? { ...c, messages: [...c.messages, newMsg] } : c
+      )
+    );
     setIsTyping(true);
     try {
-      console.log('sending message');
-      socket.emit('ai:message', { message: userMessage, context: { conversationId: chat.id, aiModel: selectedModel, role: 'user', tokenCount: 0, timestamp: Date.now() } });
-      console.log('message sent');
+      console.log("sending message");
+      socket.emit("ai:message", {
+        message: userMessage,
+        context: {
+          conversationId: chat.id,
+          aiModel: selectedModel,
+          role: "user",
+          tokenCount: 0,
+          timestamp: Date.now(),
+        },
+      });
+      console.log("message sent");
     } catch (err) {
       setIsTyping(false);
     }
@@ -226,18 +299,18 @@ const AIAssistantPage = () => {
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
-    const newFiles = files.map(file => ({
+    const newFiles = files.map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
       size: file.size,
       type: file.type,
-      file: file
+      file: file,
     }));
-    setAttachedFiles(prev => [...prev, ...newFiles]);
+    setAttachedFiles((prev) => [...prev, ...newFiles]);
   };
 
   const removeFile = (fileId) => {
-    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+    setAttachedFiles((prev) => prev.filter((file) => file.id !== fileId));
   };
 
   const handleSuggestedQuestion = (question) => {
@@ -245,26 +318,29 @@ const AIAssistantPage = () => {
   };
 
   const formatTime = (timestamp) => {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return timestamp.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const formatChatTime = (timestamp) => {
     const now = new Date();
     const diff = now - new Date(timestamp);
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (days === 0) {
-      return 'Today';
+      return "Today";
     } else if (days === 1) {
-      return 'Yesterday';
+      return "Yesterday";
     } else if (days < 7) {
       return `${days} days ago`;
     } else {
@@ -285,12 +361,17 @@ const AIAssistantPage = () => {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 AI Learning Assistant
               </h1>
-              <p className="text-sm text-muted-foreground">Your intelligent study companion</p>
+              <p className="text-sm text-muted-foreground">
+                Your intelligent study companion
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {!isOnline && (
-              <Badge variant="outline" className="flex items-center gap-1 text-yellow-600">
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 text-yellow-600"
+              >
                 <WifiOff className="w-3 h-3" />
                 Offline
               </Badge>
@@ -329,17 +410,22 @@ const AIAssistantPage = () => {
                     <div
                       key={chatItem.id}
                       className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
-                        currentChatId === chatItem.id ? 'bg-muted' : ''
+                        currentChatId === chatItem.id ? "bg-muted" : ""
                       }`}
                       onClick={() => setCurrentChatId(chatItem.id)}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{chatItem.title}</p>
+                        <p className="text-sm font-medium truncate">
+                          {chatItem.title}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
-                          <span>{formatChatTime(chatItem.timestamp)}</span>
+                          <span>{formatChatTime(chatItem.lastMessageAt)}</span>
                           <Badge variant="outline" className="text-xs">
-                            {aiModels.find(m => m.id === chatItem.model)?.name}
+                            {
+                              aiModels.find((m) => m.id === chatItem.model)
+                                ?.name
+                            }
                           </Badge>
                         </div>
                       </div>
@@ -370,17 +456,33 @@ const AIAssistantPage = () => {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { icon: HelpCircle, label: "Get Help", color: "text-blue-500" },
+                  {
+                    icon: HelpCircle,
+                    label: "Get Help",
+                    color: "text-blue-500",
+                  },
                   { icon: Code, label: "Debug Code", color: "text-green-500" },
-                  { icon: BookOpen, label: "Summarize", color: "text-purple-500" },
-                  { icon: MessageSquare, label: "Practice Quiz", color: "text-orange-500" }
+                  {
+                    icon: BookOpen,
+                    label: "Summarize",
+                    color: "text-purple-500",
+                  },
+                  {
+                    icon: MessageSquare,
+                    label: "Practice Quiz",
+                    color: "text-orange-500",
+                  },
                 ].map((action, index) => (
                   <Button
                     key={index}
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start h-8"
-                    onClick={() => handleSuggestedQuestion(`${action.label.toLowerCase()} with current lesson`)}
+                    onClick={() =>
+                      handleSuggestedQuestion(
+                        `${action.label.toLowerCase()} with current lesson`
+                      )
+                    }
                   >
                     <action.icon className={`w-3 h-3 mr-2 ${action.color}`} />
                     {action.label}
@@ -401,18 +503,22 @@ const AIAssistantPage = () => {
                       Chat Assistant Boo
                     </CardTitle>
                     <CardDescription>
-                      Ask me anything about your courses, concepts, or get help with assignments
+                      Ask me anything about your courses, concepts, or get help
+                      with assignments
                     </CardDescription>
                   </div>
                   {isTyping && (
-                    <Badge variant="outline" className="flex items-center gap-1">
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1"
+                    >
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Thinking...
                     </Badge>
                   )}
                 </div>
               </CardHeader>
-              
+
               <CardContent className="flex flex-col flex-1 p-0">
                 {/* Chat Messages */}
                 <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
@@ -421,9 +527,12 @@ const AIAssistantPage = () => {
                       <div className="p-4 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full mb-4">
                         <Bot className="w-12 h-12 text-purple-500" />
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">Ready to help you learn!</h3>
+                      <h3 className="text-lg font-semibold mb-2">
+                        Ready to help you learn!
+                      </h3>
                       <p className="text-muted-foreground mb-6 max-w-md">
-                        I can help with explanations, practice questions, code debugging, and more.
+                        I can help with explanations, practice questions, code
+                        debugging, and more.
                       </p>
                       {/* Suggested Questions */}
                       <div className="w-full max-w-2xl">
@@ -448,42 +557,72 @@ const AIAssistantPage = () => {
                       {chat.messages.map((msg, index) => (
                         <div
                           key={index}
-                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${
+                            msg.role === "user"
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
                         >
-                          <div className={`flex items-start gap-2 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`p-2 rounded-full ${msg.role === 'user' ? 'bg-purple-500' : 'bg-muted'}`}>
-                              {msg.role === 'user' ? (
+                          <div
+                            className={`flex items-start gap-2 max-w-[80%] ${
+                              msg.role === "user" ? "flex-row-reverse" : ""
+                            }`}
+                          >
+                            <div
+                              className={`p-2 rounded-full ${
+                                msg.role === "user"
+                                  ? "bg-purple-500"
+                                  : "bg-muted"
+                              }`}
+                            >
+                              {msg.role === "user" ? (
                                 <div className="w-4 h-4 bg-white rounded-full" />
                               ) : (
                                 <Bot className="w-4 h-4" />
                               )}
                             </div>
-                            <div className={`rounded-lg p-3 ${
-                              msg.role === 'user'
-                                ? 'bg-purple-500 text-white'
-                                : msg.isError
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                                  : 'bg-muted'
-                            }`}>
+                            <div
+                              className={`rounded-lg p-3 ${
+                                msg.role === "user"
+                                  ? "bg-purple-500 text-white"
+                                  : msg.isError
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                  : "bg-muted"
+                              }`}
+                            >
                               {msg.files && msg.files.length > 0 && (
                                 <div className="mb-2 space-y-1">
-                                  {msg.files.map(file => (
-                                    <div key={file.id} className="flex items-center gap-2 text-xs bg-white/10 rounded px-2 py-1">
+                                  {msg.files.map((file) => (
+                                    <div
+                                      key={file.id}
+                                      className="flex items-center gap-2 text-xs bg-white/10 rounded px-2 py-1"
+                                    >
                                       <File className="w-3 h-3" />
                                       <span>{file.name}</span>
-                                      <span className="text-muted-foreground">({formatFileSize(file.size)})</span>
+                                      <span className="text-muted-foreground">
+                                        ({formatFileSize(file.size)})
+                                      </span>
                                     </div>
                                   ))}
                                 </div>
                               )}
                               <p className="text-sm">{msg.content}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                <p className={`text-xs opacity-70 ${msg.role === 'user' ? 'text-purple-100' : 'text-muted-foreground'}`}>
+                                <p
+                                  className={`text-xs opacity-70 ${
+                                    msg.role === "user"
+                                      ? "text-purple-100"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
                                   {formatTime(new Date(msg.timestamp))}
                                 </p>
                                 {msg.model && (
                                   <Badge variant="outline" className="text-xs">
-                                    {aiModels.find(m => m.id === msg.model)?.name}
+                                    {
+                                      aiModels.find((m) => m.id === msg.model)
+                                        ?.name
+                                    }
                                   </Badge>
                                 )}
                               </div>
@@ -500,8 +639,14 @@ const AIAssistantPage = () => {
                             <div className="bg-muted rounded-lg p-3">
                               <div className="flex items-center gap-1">
                                 <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                <div
+                                  className="w-2 h-2 bg-current rounded-full animate-bounce"
+                                  style={{ animationDelay: "0.1s" }}
+                                />
+                                <div
+                                  className="w-2 h-2 bg-current rounded-full animate-bounce"
+                                  style={{ animationDelay: "0.2s" }}
+                                />
                               </div>
                             </div>
                           </div>
@@ -519,15 +664,19 @@ const AIAssistantPage = () => {
                     {/* File Preview Area */}
                     {attachedFiles.length > 0 && (
                       <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
-                        {attachedFiles.map(file => (
-                          <Badge 
-                            key={file.id} 
-                            variant="secondary" 
+                        {attachedFiles.map((file) => (
+                          <Badge
+                            key={file.id}
+                            variant="secondary"
                             className="flex items-center gap-1.5 px-2 py-1.5"
                           >
                             <File className="w-3.5 h-3.5" />
-                            <span className="text-xs max-w-[150px] truncate">{file.name}</span>
-                            <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
+                            <span className="text-xs max-w-[150px] truncate">
+                              {file.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({formatFileSize(file.size)})
+                            </span>
                             <button
                               onClick={() => removeFile(file.id)}
                               className="ml-1 hover:text-destructive transition-colors"
@@ -572,7 +721,7 @@ const AIAssistantPage = () => {
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               handleSubmit(e);
                             }
@@ -582,12 +731,15 @@ const AIAssistantPage = () => {
                           disabled={isTyping}
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                          <Select value={selectedModel} onValueChange={setSelectedModel}>
+                          <Select
+                            value={selectedModel}
+                            onValueChange={setSelectedModel}
+                          >
                             <SelectTrigger className="h-7 w-[8vw] text-xs border-0 bg-transparent hover:bg-transparent focus:ring-0">
                               <SelectValue placeholder="Select Model" />
                             </SelectTrigger>
                             <SelectContent>
-                              {aiModels.map(model => (
+                              {aiModels.map((model) => (
                                 <SelectItem key={model.id} value={model.id}>
                                   <div className="flex flex-col">
                                     <span>{model.name}</span>
@@ -596,7 +748,7 @@ const AIAssistantPage = () => {
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button 
+                          <Button
                             onClick={handleSubmit}
                             size="icon"
                             disabled={!message.trim() || isTyping}
