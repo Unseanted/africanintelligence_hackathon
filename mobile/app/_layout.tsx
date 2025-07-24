@@ -1,32 +1,30 @@
+// app/_layout.tsx or app/RootLayout.tsx
 import React, { useEffect, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { PaperProvider } from 'react-native-paper';
-import { TourLMSProvider, useTourLMS } from './contexts/TourLMSContext';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Platform, View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
-import ThemeProvider from './context/ThemeContext';
+import { TourLMSProvider, useTourLMS } from './contexts/TourLMSContext';
+import { ThemeProvider } from './context/ThemeContext';
 
-// Color Constants
 const BACKGROUND = '#111827';
 
-// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 function useProtectedRoute() {
+  const { user, token, loading } = useTourLMS();
   const segments = useSegments();
   const router = useRouter();
-  const { user, token, loading } = useTourLMS();
   const isNavigating = useRef(false);
 
   useEffect(() => {
-    // Don't run the auth check while still loading
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const isLandingPage = segments.length === 0; // Check for empty segments array
+    const isLandingPage = segments.length === 0;
 
     if (isNavigating.current) return;
 
@@ -41,7 +39,7 @@ function useProtectedRoute() {
     return () => {
       isNavigating.current = false;
     };
-  }, [user, token, segments, router, loading]);
+  }, [user, token, loading, segments]);
 }
 
 function AppContent() {
@@ -49,10 +47,7 @@ function AppContent() {
   useProtectedRoute();
 
   useEffect(() => {
-    if (!loading) {
-      // Hide splash screen once we're done loading
-      SplashScreen.hideAsync().catch(console.warn);
-    }
+    if (!loading) SplashScreen.hideAsync().catch(console.warn);
   }, [loading]);
 
   return (
@@ -66,19 +61,13 @@ function AppContent() {
   );
 }
 
-function RootLayoutNav() {
-  return (
-    <PaperProvider>
-      <AppContent />
-    </PaperProvider>
-  );
-}
-
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <TourLMSProvider>
-        <RootLayoutNav />
+        <PaperProvider>
+          <AppContent />
+        </PaperProvider>
       </TourLMSProvider>
     </ThemeProvider>
   );

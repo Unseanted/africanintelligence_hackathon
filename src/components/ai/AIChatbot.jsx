@@ -60,6 +60,7 @@ const AIChatbot = () => {
       }
     };
     createConversation();
+    console.log("Creating conversation on open:", conversationId);
   }, [isOpen, conversationId, token, API_URL, toast]);
 
   // Initialize WebSocket connection
@@ -77,8 +78,7 @@ const AIChatbot = () => {
 
     newSocket.on("ai:response", (data) => {
       const aiMsg = data.message;
-      console.log("AI response received:", aiMsg);
-      if (aiMsg.conversationId !== conversationId) return;
+      //if (aiMsg.conversationId !== conversationId) return;
       setChat((prev) => [
         ...prev,
         {
@@ -87,6 +87,7 @@ const AIChatbot = () => {
           timestamp: new Date(data.timestamp),
         },
       ]);
+      console.log("Messages:", chat);
       setIsTyping(false);
       // console.log("AI response received:", aiMsg.content);
     });

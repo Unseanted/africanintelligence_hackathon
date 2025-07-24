@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -6,6 +8,7 @@ import { useToast } from '../../hooks/use-toast';
 import ChallengeDetail from '../../components/challenge/ChallengeDetail';
 import ChallengeAttempt from '../../components/challenge/ChallengeAttempt';
 import { XPProgress } from '../../components/challenge/XPProgress';
+import LiveCompetition from '../../components/challenge/LiveChallenge';
 import aiChallengeService from '../../services/aiChallegeService';
 
 const Challenges = () => {
@@ -15,6 +18,7 @@ const Challenges = () => {
   const [submittedChallenges, setSubmittedChallenges] = useState(new Set());
   const [waitlistedChallengeId, setWaitlistedChallengeId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('individual');
   const [userStats, setUserStats] = useState({
     level: 7,
     currentXp: 2150,
@@ -538,16 +542,42 @@ const Challenges = () => {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Transform your life through personalized challenges designed by AI to help you grow, learn, and achieve your goals.
           </p>
-          <div className="mt-6">
-            <Button onClick={handleRegenerateChallenge} variant="outline" className="mr-4">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate New Challenges
-            </Button>
-          </div>
         </div>
 
-        {/* User Stats */}
+        {/* Challenge Type Tabs */}
         <div className="mb-12">
+          <div className="flex justify-center">
+            <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-200">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab('individual')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === 'individual'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Trophy className="w-4 h-4 mr-2 inline" />
+                  Individual Challenges
+                </button>
+                <button
+                  onClick={() => setActiveTab('live')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === 'live'
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Users className="w-4 h-4 mr-2 inline" />
+                  Live Competition
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* User Stats */}
+        {activeTab === 'individual' && (
+          <div className="mb-12">
           <XPProgress 
             currentXp={userStats.currentXp}
             nextLevelXp={userStats.nextLevelXp}
@@ -576,10 +606,14 @@ const Challenges = () => {
               <div className="text-sm text-purple-700">Total Challenges</div>
             </Card>
           </div>
-        </div>
+          </div>
+        )}
 
-        {/* Active Challenges Section */}
-        <div className="mb-12">
+        {/* Individual Challenges */}
+        {activeTab === 'individual' && (
+          <>
+            {/* Active Challenges Section */}
+            <div className="mb-12">
           <div className="flex items-center gap-3 mb-6">
             <Star className="w-6 h-6 text-yellow-500" />
             <h2 className="text-2xl font-bold text-gray-900">Active Challenges</h2>
@@ -596,10 +630,10 @@ const Challenges = () => {
               <p className="text-gray-500">New challenges are being generated daily!</p>
             </Card>
           )}
-        </div>
+            </div>
 
-        {/* Upcoming Challenges Section */}
-        <div className="mb-12">
+            {/* Upcoming Challenges Section */}
+            <div className="mb-12">
           <div className="flex items-center gap-3 mb-6">
             <Clock className="w-6 h-6 text-blue-500" />
             <h2 className="text-2xl font-bold text-gray-900">Upcoming Challenges</h2>
@@ -616,10 +650,10 @@ const Challenges = () => {
               <p className="text-blue-600">Check back soon for exciting new opportunities!</p>
             </Card>
           )}
-        </div>
+            </div>
 
-        {/* Completed Challenges Section */}
-        <div className="mb-12">
+            {/* Completed Challenges Section */}
+            <div className="mb-12">
           <div className="flex items-center gap-3 mb-6">
             <Trophy className="w-6 h-6 text-amber-500" />
             <h2 className="text-2xl font-bold text-gray-900">Completed Challenges</h2>
@@ -636,7 +670,22 @@ const Challenges = () => {
               <p className="text-amber-600">Start your first challenge to see your progress!</p>
             </Card>
           )}
-        </div>
+            </div>
+          </>
+        )}
+
+        {/* Live Competition */}
+        {activeTab === 'live' && (
+          <LiveCompetition 
+            userStats={userStats}
+            onJoinCompetition={(competitionId) => {
+              toast({
+                title: "Joined Competition!",
+                description: "You've successfully joined the live competition.",
+              });
+            }}
+          />
+        )}
 
         {/* Modals */}
         {selectedChallenge && (

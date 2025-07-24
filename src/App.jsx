@@ -47,6 +47,8 @@ import Challenges from "@/pages/student/Challenges";
 import AIAssistant from "@/pages/student/Ai-assistant";
 import ContentManagementPage from "./pages/student/Content-management";
 import Analytics from "./pages/student/Analytics";
+import CompetitionPage from "./pages/student/CompetitionPage";
+
 
 const VITE_GOOGLE_CLIENT = import.meta.env.VITE_GOOGLE_CLIENT;
 
@@ -152,6 +154,8 @@ const App = () => {
                       element={<ContentManagementPage />}
                     />
                     <Route path="analytics" element={<Analytics />} />
+                    <Route path="competition/:id" element={<CompetitionPage />} />
+                    <Route path="competition" element={<Challenges activeTab="live" />} />
                   </Route>
                 </Routes>
                 <Toaster />
