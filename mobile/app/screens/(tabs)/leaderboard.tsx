@@ -17,20 +17,8 @@ import {
   ProgressBar,
   Text,
 } from "react-native-paper";
-// Removed: import { useTourLMS } from "../../../contexts/TourLMSContext";
-import { ThemedText } from "../../components/ThemedText";
-import { ThemedView } from "../../components/ThemedView";
-import {
-  BACKGROUND,
-  BORDER_COLOR,
-  CARD_BACKGROUND,
-  INFO,
-  PRIMARY,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-  WARNING,
-} from "../../constants/colors";
-import { useToast } from "../../hooks/use-toast";
+import { useTheme } from '../../contexts/ThemeContext'; // Adjust the import path
+import { useToast } from "../../../hooks/use-toast";
 
 const { width } = Dimensions.get("window");
 
@@ -118,19 +106,19 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 8,
     badges: ["medal", "trophy", "star"],
     streak: 15,
-    lastActive: "2023-05-15T10:30:00Z",
+    lastActive: "2025-07-27T10:30:00Z",
     achievements: [
       {
         name: "Course Master",
         icon: "book",
         description: "Completed 10 courses",
-        unlockedAt: "2023-04-20",
+        unlockedAt: "2025-06-20",
       },
       {
         name: "Streak Champion",
         icon: "fire",
         description: "7-day activity streak",
-        unlockedAt: "2023-05-10",
+        unlockedAt: "2025-07-10",
       },
     ],
     level: 8,
@@ -154,13 +142,13 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 7,
     badges: ["medal", "certificate"],
     streak: 12,
-    lastActive: "2023-05-15T09:15:00Z",
+    lastActive: "2025-07-27T09:15:00Z",
     achievements: [
       {
         name: "Quick Learner",
         icon: "lightning-bolt",
         description: "Completed 5 courses in one week",
-        unlockedAt: "2023-04-15",
+        unlockedAt: "2025-06-15",
       },
     ],
     level: 7,
@@ -184,13 +172,13 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 5,
     badges: ["trophy"],
     streak: 8,
-    lastActive: "2023-05-14T14:45:00Z",
+    lastActive: "2025-07-26T14:45:00Z",
     achievements: [
       {
         name: "Creative Mind",
         icon: "palette",
         description: "Completed all design courses",
-        unlockedAt: "2023-03-28",
+        unlockedAt: "2025-05-28",
       },
     ],
     level: 6,
@@ -214,13 +202,13 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 4,
     badges: ["star"],
     streak: 5,
-    lastActive: "2023-05-14T11:20:00Z",
+    lastActive: "2025-07-26T11:20:00Z",
     achievements: [
       {
         name: "Data Wizard",
         icon: "chart-bar",
         description: "Completed all analytics courses",
-        unlockedAt: "2023-04-05",
+        unlockedAt: "2025-06-05",
       },
     ],
     level: 5,
@@ -243,7 +231,7 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 3,
     badges: [],
     streak: 4,
-    lastActive: "2023-05-13T16:10:00Z",
+    lastActive: "2025-07-25T16:10:00Z",
     achievements: [],
     level: 5,
     nextLevelXp: 6000,
@@ -266,13 +254,13 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 3,
     badges: ["star"],
     streak: 3,
-    lastActive: "2023-05-13T10:45:00Z",
+    lastActive: "2025-07-25T10:45:00Z",
     achievements: [
       {
         name: "Marketing Guru",
         icon: "bullhorn",
         description: "Completed all marketing courses",
-        unlockedAt: "2023-03-15",
+        unlockedAt: "2025-05-15",
       },
     ],
     level: 4,
@@ -296,7 +284,7 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 2,
     badges: [],
     streak: 2,
-    lastActive: "2023-05-12T15:30:00Z",
+    lastActive: "2025-07-24T15:30:00Z",
     achievements: [],
     level: 4,
     nextLevelXp: 5000,
@@ -319,7 +307,7 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 2,
     badges: [],
     streak: 1,
-    lastActive: "2023-05-12T09:20:00Z",
+    lastActive: "2025-07-24T09:20:00Z",
     achievements: [],
     level: 3,
     nextLevelXp: 4000,
@@ -341,7 +329,7 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 1,
     badges: [],
     streak: 1,
-    lastActive: "2023-05-11T14:15:00Z",
+    lastActive: "2025-07-23T14:15:00Z",
     achievements: [],
     level: 3,
     nextLevelXp: 4000,
@@ -364,7 +352,7 @@ const dummyEntries: LeaderboardEntry[] = [
     completedChallenges: 1,
     badges: [],
     streak: 1,
-    lastActive: "2023-05-11T10:05:00Z",
+    lastActive: "2025-07-23T10:05:00Z",
     achievements: [],
     level: 2,
     nextLevelXp: 3000,
@@ -386,19 +374,19 @@ const dummyStats: LeaderboardStats = {
       type: "course",
       user: "Alex Johnson",
       points: 50,
-      timestamp: "2023-05-15T10:30:00Z",
+      timestamp: "2025-07-27T10:30:00Z",
     },
     {
       type: "challenge",
       user: "Sarah Williams",
       points: 100,
-      timestamp: "2023-05-15T09:15:00Z",
+      timestamp: "2025-07-27T09:15:00Z",
     },
     {
       type: "course",
       user: "Michael Brown",
       points: 25,
-      timestamp: "2023-05-14T14:45:00Z",
+      timestamp: "2025-07-26T14:45:00Z",
     },
   ],
   distribution: [
@@ -414,7 +402,7 @@ const dummyStats: LeaderboardStats = {
 };
 
 export default function LeaderboardScreen() {
-  // Removed: const { user } = useTourLMS();
+  const { colors } = useTheme();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -430,7 +418,7 @@ export default function LeaderboardScreen() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
 
-  // For highlighting current user, use a hardcoded user id (e.g., "1")
+  // Hardcoded user id for highlighting
   const currentUserId = "1";
 
   const fetchLeaderboard = useCallback(async () => {
@@ -470,8 +458,8 @@ export default function LeaderboardScreen() {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.topThreeScroll}
-      contentContainerStyle={styles.topThreeScrollContent}
+      style={styles(colors).topThreeScroll}
+      contentContainerStyle={styles(colors).topThreeScrollContent}
     >
       {entries.slice(0, 3).map((entry, idx) => (
         <TouchableOpacity
@@ -481,21 +469,21 @@ export default function LeaderboardScreen() {
             setShowUserModal(true);
           }}
           style={[
-            styles.topThreeCard,
-            idx === 0 && styles.firstPlace,
-            idx === 1 && styles.secondPlace,
-            idx === 2 && styles.thirdPlace,
+            styles(colors).topThreeCard,
+            idx === 0 && styles(colors).firstPlace,
+            idx === 1 && styles(colors).secondPlace,
+            idx === 2 && styles(colors).thirdPlace,
           ]}
         >
           <View
             style={[
-              styles.rankBadge,
-              idx === 0 && styles.firstPlaceBadge,
-              idx === 1 && styles.secondPlaceBadge,
-              idx === 2 && styles.thirdPlaceBadge,
+              styles(colors).rankBadge,
+              idx === 0 && styles(colors).firstPlaceBadge,
+              idx === 1 && styles(colors).secondPlaceBadge,
+              idx === 2 && styles(colors).thirdPlaceBadge,
             ]}
           >
-            <Text style={styles.rankNumber}>{idx + 1}</Text>
+            <Text style={styles(colors).rankNumber}>{idx + 1}</Text>
           </View>
           {entry.user.avatar ? (
             <Avatar.Image
@@ -506,27 +494,27 @@ export default function LeaderboardScreen() {
             <DefaultAvatar size={60 + (idx === 0 ? 16 : 0)} />
           )}
           {idx === 0 && (
-            <View style={styles.crownIcon}>
-              <MaterialCommunityIcons name="crown" size={24} color={WARNING} />
+            <View style={styles(colors).crownIcon}>
+              <MaterialCommunityIcons name="crown" size={24} color={colors.warning} />
             </View>
           )}
-          <Text style={styles.userName}>{entry.user.name}</Text>
-          <Text style={styles.userPoints}>{entry.points} points</Text>
-          <View style={styles.levelContainer}>
-            <Text style={styles.levelText}>Level {entry.level}</Text>
+          <Text style={styles(colors).userName}>{entry.user.name}</Text>
+          <Text style={styles(colors).userPoints}>{entry.points} points</Text>
+          <View style={styles(colors).levelContainer}>
+            <Text style={styles(colors).levelText}>Level {entry.level}</Text>
             <ProgressBar
               progress={entry.currentLevelXp / entry.nextLevelXp}
-              color={PRIMARY}
-              style={styles.levelProgress}
+              color={colors.primary}
+              style={styles(colors).levelProgress}
             />
           </View>
-          <View style={styles.badgesContainer}>
+          <View style={styles(colors).badgesContainer}>
             {entry.badges.slice(0, 3).map((badge, i) => (
               <MaterialCommunityIcons
                 key={i}
                 name={getBadgeIcon(badge)}
                 size={18}
-                color={PRIMARY}
+                color={colors.primary}
               />
             ))}
           </View>
@@ -535,27 +523,26 @@ export default function LeaderboardScreen() {
     </ScrollView>
   );
 
-  // Move renderFilters here so styles is in scope
   const renderFilters = () => (
-    <View style={styles.filtersContainer}>
+    <View style={styles(colors).filtersContainer}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filtersScrollContainer}
-        contentContainerStyle={styles.filtersContentContainer}
+        style={styles(colors).filtersScrollContainer}
+        contentContainerStyle={styles(colors).filtersContentContainer}
       >
-        <View style={styles.filterGroup}>
+        <View style={styles(colors).filterGroup}>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              timeFrame === "all" && styles.activeFilter,
+              styles(colors).filterButton,
+              timeFrame === "all" && styles(colors).activeFilter,
             ]}
             onPress={() => setTimeFrame("all")}
           >
             <Text
               style={[
-                styles.filterText,
-                timeFrame === "all" && styles.activeFilterText,
+                styles(colors).filterText,
+                timeFrame === "all" && styles(colors).activeFilterText,
               ]}
             >
               All Time
@@ -563,15 +550,15 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              timeFrame === "week" && styles.activeFilter,
+              styles(colors).filterButton,
+              timeFrame === "week" && styles(colors).activeFilter,
             ]}
             onPress={() => setTimeFrame("week")}
           >
             <Text
               style={[
-                styles.filterText,
-                timeFrame === "week" && styles.activeFilterText,
+                styles(colors).filterText,
+                timeFrame === "week" && styles(colors).activeFilterText,
               ]}
             >
               This Week
@@ -579,15 +566,15 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              timeFrame === "month" && styles.activeFilter,
+              styles(colors).filterButton,
+              timeFrame === "month" && styles(colors).activeFilter,
             ]}
             onPress={() => setTimeFrame("month")}
           >
             <Text
               style={[
-                styles.filterText,
-                timeFrame === "month" && styles.activeFilterText,
+                styles(colors).filterText,
+                timeFrame === "month" && styles(colors).activeFilterText,
               ]}
             >
               This Month
@@ -595,20 +582,20 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.filterDivider} />
+        <View style={styles(colors).filterDivider} />
 
-        <View style={styles.filterGroup}>
+        <View style={styles(colors).filterGroup}>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              category === "all" && styles.activeFilter,
+              styles(colors).filterButton,
+              category === "all" && styles(colors).activeFilter,
             ]}
             onPress={() => setCategory("all")}
           >
             <Text
               style={[
-                styles.filterText,
-                category === "all" && styles.activeFilterText,
+                styles(colors).filterText,
+                category === "all" && styles(colors).activeFilterText,
               ]}
             >
               All
@@ -616,15 +603,15 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              category === "engineering" && styles.activeFilter,
+              styles(colors).filterButton,
+              category === "engineering" && styles(colors).activeFilter,
             ]}
             onPress={() => setCategory("engineering")}
           >
             <Text
               style={[
-                styles.filterText,
-                category === "engineering" && styles.activeFilterText,
+                styles(colors).filterText,
+                category === "engineering" && styles(colors).activeFilterText,
               ]}
             >
               Engineering
@@ -632,15 +619,15 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              category === "sales" && styles.activeFilter,
+              styles(colors).filterButton,
+              category === "sales" && styles(colors).activeFilter,
             ]}
             onPress={() => setCategory("sales")}
           >
             <Text
               style={[
-                styles.filterText,
-                category === "sales" && styles.activeFilterText,
+                styles(colors).filterText,
+                category === "sales" && styles(colors).activeFilterText,
               ]}
             >
               Sales
@@ -648,15 +635,15 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.filterButton,
-              category === "marketing" && styles.activeFilter,
+              styles(colors).filterButton,
+              category === "marketing" && styles(colors).activeFilter,
             ]}
             onPress={() => setCategory("marketing")}
           >
             <Text
               style={[
-                styles.filterText,
-                category === "marketing" && styles.activeFilterText,
+                styles(colors).filterText,
+                category === "marketing" && styles(colors).activeFilterText,
               ]}
             >
               Marketing
@@ -677,29 +664,29 @@ export default function LeaderboardScreen() {
     >
       <Card
         style={[
-          styles.entryCard,
-          entry.user._id === currentUserId && styles.currentUserCard,
+          styles(colors).entryCard,
+          entry.user._id === currentUserId && styles(colors).currentUserCard,
         ]}
       >
-        <Card.Content style={styles.entryContent}>
-          <View style={styles.rankContainerRow}>
-            <Text style={[styles.rankText, index < 3 && styles.topRankText]}>
+        <Card.Content style={styles(colors).entryContent}>
+          <View style={styles(colors).rankContainerRow}>
+            <Text style={[styles(colors).rankText, index < 3 && styles(colors).topRankText]}>
               #{index + 1}
             </Text>
           </View>
 
-          <View style={styles.userInfoRow}>
+          <View style={styles(colors).userInfoRow}>
             {entry.user.avatar ? (
               <Avatar.Image size={48} source={{ uri: entry.user.avatar }} />
             ) : (
               <DefaultAvatar size={48} />
             )}
-            <View style={styles.userDetailsRow}>
-              <Text style={styles.userName}>{entry.user.name}</Text>
-              <View style={styles.userMetaRow}>
-                <Text style={styles.userRole}>{entry.user.role}</Text>
+            <View style={styles(colors).userDetailsRow}>
+              <Text style={styles(colors).userName}>{entry.user.name}</Text>
+              <View style={styles(colors).userMetaRow}>
+                <Text style={styles(colors).userRole}>{entry.user.role}</Text>
                 {entry.user.department && (
-                  <Text style={styles.userDepartment}>
+                  <Text style={styles(colors).userDepartment}>
                     • {entry.user.department}
                   </Text>
                 )}
@@ -707,22 +694,22 @@ export default function LeaderboardScreen() {
             </View>
           </View>
 
-          <View style={styles.statsContainerRow}>
-            <View style={styles.statRow}>
-              <MaterialCommunityIcons name="star" size={16} color={PRIMARY} />
-              <Text style={styles.statText}>{entry.points}</Text>
+          <View style={styles(colors).statsContainerRow}>
+            <View style={styles(colors).statRow}>
+              <MaterialCommunityIcons name="star" size={16} color={colors.primary} />
+              <Text style={styles(colors).statText}>{entry.points}</Text>
             </View>
-            <View style={styles.statRow}>
-              <MaterialCommunityIcons name="trophy" size={16} color={PRIMARY} />
-              <Text style={styles.statText}>{entry.xp}</Text>
+            <View style={styles(colors).statRow}>
+              <MaterialCommunityIcons name="trophy" size={16} color={colors.primary} />
+              <Text style={styles(colors).statText}>{entry.xp}</Text>
             </View>
-            <View style={styles.statRow}>
+            <View style={styles(colors).statRow}>
               <MaterialCommunityIcons
                 name="book-check"
                 size={16}
-                color={PRIMARY}
+                color={colors.primary}
               />
-              <Text style={styles.statText}>{entry.completedCourses}</Text>
+              <Text style={styles(colors).statText}>{entry.completedCourses}</Text>
             </View>
           </View>
         </Card.Content>
@@ -736,73 +723,73 @@ export default function LeaderboardScreen() {
       animationType="slide"
       onRequestClose={() => setShowUserModal(false)}
     >
-      <View style={styles.modalContainer}>
+      <View style={styles(colors).modalContainer}>
         {selectedUser && (
           <>
-            <View style={styles.modalHeader}>
+            <View style={styles(colors).modalHeader}>
               <IconButton
                 icon="close"
                 size={24}
                 onPress={() => setShowUserModal(false)}
-                style={styles.closeButton}
+                style={styles(colors).closeButton}
               />
-              <Text style={styles.modalTitle}>User Profile</Text>
+              <Text style={styles(colors).modalTitle}>User Profile</Text>
             </View>
 
-            <ScrollView style={styles.modalContent}>
-              <View style={styles.userProfileHeader}>
+            <ScrollView style={styles(colors).modalContent}>
+              <View style={styles(colors).userProfileHeader}>
                 {selectedUser.user.avatar ? (
                   <Avatar.Image
                     size={120}
                     source={{ uri: selectedUser.user.avatar }}
-                    style={styles.profileAvatar}
+                    style={styles(colors).profileAvatar}
                   />
                 ) : (
-                  <DefaultAvatar size={120} style={styles.profileAvatar} />
+                  <DefaultAvatar size={120} style={styles(colors).profileAvatar} />
                 )}
 
-                <Text style={styles.profileName}>{selectedUser.user.name}</Text>
-                <Text style={styles.profileRole}>{selectedUser.user.role}</Text>
+                <Text style={styles(colors).profileName}>{selectedUser.user.name}</Text>
+                <Text style={styles(colors).profileRole}>{selectedUser.user.role}</Text>
                 {selectedUser.user.department && (
-                  <Text style={styles.profileDepartment}>
+                  <Text style={styles(colors).profileDepartment}>
                     {selectedUser.user.department}
                   </Text>
                 )}
 
-                <View style={styles.profileRank}>
+                <View style={styles(colors).profileRank}>
                   <MaterialCommunityIcons
                     name="numeric-1-circle"
                     size={24}
-                    color={WARNING}
+                    color={colors.warning}
                   />
-                  <Text style={styles.profileRankText}>
+                  <Text style={styles(colors).profileRankText}>
                     Rank #{selectedUser.rank}
                   </Text>
                 </View>
               </View>
 
-              <Card style={styles.profileCard}>
+              <Card style={styles(colors).profileCard}>
                 <Card.Content>
-                  <View style={styles.statsGrid}>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>Points</Text>
-                      <Text style={styles.statValue}>
+                  <View style={styles(colors).statsGrid}>
+                    <View style={styles(colors).statItem}>
+                      <Text style={styles(colors).statLabel}>Points</Text>
+                      <Text style={styles(colors).statValue}>
                         {selectedUser.points}
                       </Text>
                     </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>Total XP</Text>
-                      <Text style={styles.statValue}>{selectedUser.xp}</Text>
+                    <View style={styles(colors).statItem}>
+                      <Text style={styles(colors).statLabel}>Total XP</Text>
+                      <Text style={styles(colors).statValue}>{selectedUser.xp}</Text>
                     </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>Courses</Text>
-                      <Text style={styles.statValue}>
+                    <View style={styles(colors).statItem}>
+                      <Text style={styles(colors).statLabel}>Courses</Text>
+                      <Text style={styles(colors).statValue}>
                         {selectedUser.completedCourses}
                       </Text>
                     </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>Challenges</Text>
-                      <Text style={styles.statValue}>
+                    <View style={styles(colors).statItem}>
+                      <Text style={styles(colors).statLabel}>Challenges</Text>
+                      <Text style={styles(colors).statValue}>
                         {selectedUser.completedChallenges}
                       </Text>
                     </View>
@@ -810,39 +797,38 @@ export default function LeaderboardScreen() {
                 </Card.Content>
               </Card>
 
-              <Card style={styles.profileCard}>
+              <Card style={styles(colors).profileCard}>
                 <Card.Content>
-                  <Text style={styles.sectionTitle}>Level Progress</Text>
-                  <View style={styles.levelProgressContainer}>
-                    <Text style={styles.levelText}>
+                  <Text style={styles(colors).sectionTitle}>Level Progress</Text>
+                  <View style={styles(colors).levelProgressContainer}>
+                    <Text style={styles(colors).levelText}>
                       Level {selectedUser.level}
                     </Text>
                     <ProgressBar
                       progress={
                         selectedUser.currentLevelXp / selectedUser.nextLevelXp
                       }
-                      color={PRIMARY}
-                      style={styles.levelProgressBar}
+                      color={colors.primary}
+                      style={styles(colors).levelProgressBar}
                     />
-                    <Text style={styles.xpText}>
-                      {selectedUser.currentLevelXp} / {selectedUser.nextLevelXp}{" "}
-                      XP
+                    <Text style={styles(colors).xpText}>
+                      {selectedUser.currentLevelXp} / {selectedUser.nextLevelXp} XP
                     </Text>
                   </View>
                 </Card.Content>
               </Card>
 
               {selectedUser.badges.length > 0 && (
-                <Card style={styles.profileCard}>
+                <Card style={styles(colors).profileCard}>
                   <Card.Content>
-                    <Text style={styles.sectionTitle}>Badges</Text>
-                    <View style={styles.badgesGrid}>
+                    <Text style={styles(colors).sectionTitle}>Badges</Text>
+                    <View style={styles(colors).badgesGrid}>
                       {selectedUser.badges.map((badge, index) => (
-                        <View key={index} style={styles.badgeItem}>
+                        <View key={index} style={styles(colors).badgeItem}>
                           <MaterialCommunityIcons
                             name={getBadgeIcon(badge)}
                             size={36}
-                            color={PRIMARY}
+                            color={colors.primary}
                           />
                         </View>
                       ))}
@@ -852,29 +838,27 @@ export default function LeaderboardScreen() {
               )}
 
               {selectedUser.achievements.length > 0 && (
-                <Card style={styles.profileCard}>
+                <Card style={styles(colors).profileCard}>
                   <Card.Content>
-                    <Text style={styles.sectionTitle}>Achievements</Text>
+                    <Text style={styles(colors).sectionTitle}>Achievements</Text>
                     {selectedUser.achievements.map((achievement, index) => (
-                      <View key={index} style={styles.achievementItem}>
+                      <View key={index} style={styles(colors).achievementItem}>
                         <MaterialCommunityIcons
                           name={achievement.icon as any}
                           size={24}
-                          color={PRIMARY}
-                          style={styles.achievementIcon}
+                          color={colors.primary}
+                          style={styles(colors).achievementIcon}
                         />
-                        <View style={styles.achievementDetails}>
-                          <Text style={styles.achievementName}>
+                        <View style={styles(colors).achievementDetails}>
+                          <Text style={styles(colors).achievementName}>
                             {achievement.name}
                           </Text>
-                          <Text style={styles.achievementDescription}>
+                          <Text style={styles(colors).achievementDescription}>
                             {achievement.description}
                           </Text>
-                          <Text style={styles.achievementDate}>
+                          <Text style={styles(colors).achievementDate}>
                             Unlocked:{" "}
-                            {new Date(
-                              achievement.unlockedAt
-                            ).toLocaleDateString()}
+                            {new Date(achievement.unlockedAt).toLocaleDateString()}
                           </Text>
                         </View>
                       </View>
@@ -895,67 +879,67 @@ export default function LeaderboardScreen() {
       animationType="slide"
       onRequestClose={() => setShowStatsModal(false)}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+      <View style={styles(colors).modalContainer}>
+        <View style={styles(colors).modalHeader}>
           <IconButton
             icon="close"
             size={24}
             onPress={() => setShowStatsModal(false)}
-            style={styles.closeButton}
+            style={styles(colors).closeButton}
           />
-          <Text style={styles.modalTitle}>Leaderboard Statistics</Text>
+          <Text style={styles(colors).modalTitle}>Leaderboard Statistics</Text>
         </View>
 
-        <ScrollView style={styles.modalContent}>
-          <Card style={styles.profileCard}>
+        <ScrollView style={styles(colors).modalContent}>
+          <Card style={styles(colors).profileCard}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>General Stats</Text>
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Total Participants</Text>
-                  <Text style={styles.statValue}>
+              <Text style={styles(colors).sectionTitle}>General Stats</Text>
+              <View style={styles(colors).statsGrid}>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Total Participants</Text>
+                  <Text style={styles(colors).statValue}>
                     {stats.totalParticipants}
                   </Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Average Points</Text>
-                  <Text style={styles.statValue}>{stats.averagePoints}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Average Points</Text>
+                  <Text style={styles(colors).statValue}>{stats.averagePoints}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Top Score</Text>
-                  <Text style={styles.statValue}>{stats.topScore}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Top Score</Text>
+                  <Text style={styles(colors).statValue}>{stats.topScore}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Active Users</Text>
-                  <Text style={styles.statValue}>{stats.activeUsers}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Active Users</Text>
+                  <Text style={styles(colors).statValue}>{stats.activeUsers}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Total XP</Text>
-                  <Text style={styles.statValue}>{stats.totalXp}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Total XP</Text>
+                  <Text style={styles(colors).statValue}>{stats.totalXp}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Average Level</Text>
-                  <Text style={styles.statValue}>{stats.averageLevel}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Average Level</Text>
+                  <Text style={styles(colors).statValue}>{stats.averageLevel}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Top Streak</Text>
-                  <Text style={styles.statValue}>{stats.topStreak}</Text>
+                <View style={styles(colors).statItem}>
+                  <Text style={styles(colors).statLabel}>Top Streak</Text>
+                  <Text style={styles(colors).statValue}>{stats.topStreak}</Text>
                 </View>
               </View>
             </Card.Content>
           </Card>
 
-          <Card style={styles.profileCard}>
+          <Card style={styles(colors).profileCard}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>Level Distribution</Text>
-              <View style={styles.chartContainer}>
+              <Text style={styles(colors).sectionTitle}>Level Distribution</Text>
+              <View style={styles(colors).chartContainer}>
                 {stats.distribution.map((item, index) => (
-                  <View key={index} style={styles.chartItem}>
-                    <Text style={styles.chartLabel}>Lvl {item.level}</Text>
-                    <View style={styles.chartBarContainer}>
+                  <View key={index} style={styles(colors).chartItem}>
+                    <Text style={styles(colors).chartLabel}>Lvl {item.level}</Text>
+                    <View style={styles(colors).chartBarContainer}>
                       <View
                         style={[
-                          styles.chartBar,
+                          styles(colors).chartBar,
                           {
                             width: `${
                               (item.count /
@@ -964,12 +948,12 @@ export default function LeaderboardScreen() {
                                 )) *
                               100
                             }%`,
-                            backgroundColor: index % 2 === 0 ? PRIMARY : INFO,
+                            backgroundColor: index % 2 === 0 ? colors.primary : colors.info,
                           },
                         ]}
                       />
                     </View>
-                    <Text style={styles.chartValue}>{item.count}</Text>
+                    <Text style={styles(colors).chartValue}>{item.count}</Text>
                   </View>
                 ))}
               </View>
@@ -977,22 +961,22 @@ export default function LeaderboardScreen() {
           </Card>
 
           {stats.recentActivity.length > 0 && (
-            <Card style={styles.profileCard}>
+            <Card style={styles(colors).profileCard}>
               <Card.Content>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
+                <Text style={styles(colors).sectionTitle}>Recent Activity</Text>
                 {stats.recentActivity.map((activity, index) => (
-                  <View key={index} style={styles.activityItem}>
+                  <View key={index} style={styles(colors).activityItem}>
                     <MaterialCommunityIcons
                       name={activity.type === "course" ? "book" : "sword-cross"}
                       size={20}
-                      color={TEXT_SECONDARY}
+                      color={colors.textSecondary}
                     />
-                    <Text style={styles.activityText}>
-                      <Text style={styles.activityUser}>{activity.user}</Text>{" "}
+                    <Text style={styles(colors).activityText}>
+                      <Text style={styles(colors).activityUser}>{activity.user}</Text>{" "}
                       earned {activity.points} points for completing a{" "}
                       {activity.type}
                     </Text>
-                    <Text style={styles.activityTime}>
+                    <Text style={styles(colors).activityTime}>
                       {new Date(activity.timestamp).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -1017,76 +1001,74 @@ export default function LeaderboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PRIMARY} />
+      <View style={styles(colors).loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText style={styles.header}>Leaderboard</ThemedText>
-      <View style={styles.actionsContainer}>
+    <View style={styles(colors).container}>
+      <Text style={styles(colors).header}>Leaderboard</Text>
+      <View style={styles(colors).actionsContainer}>
         <TouchableOpacity
-          style={styles.statsButton}
+          style={styles(colors).statsButton}
           onPress={() => setShowStatsModal(true)}
         >
           <MaterialCommunityIcons
             name="chart-bar"
             size={20}
-            color={TEXT_PRIMARY}
+            color={colors.text}
           />
-          <Text style={styles.statsButtonText}>View Stats</Text>
+          <Text style={styles(colors).statsButtonText}>View Stats</Text>
         </TouchableOpacity>
 
-        <View style={styles.viewToggle}>
+        <View style={styles(colors).viewToggle}>
           <TouchableOpacity
             style={[
-              styles.viewToggleButton,
-              viewMode === "grid" && styles.activeViewToggle,
+              styles(colors).viewToggleButton,
+              viewMode === "grid" && styles(colors).activeViewToggle,
             ]}
             onPress={() => setViewMode("grid")}
           >
             <MaterialCommunityIcons
               name="view-grid"
               size={20}
-              color={viewMode === "grid" ? TEXT_PRIMARY : TEXT_SECONDARY}
+              color={viewMode === "grid" ? colors.text : colors.textSecondary}
             />
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.viewToggleButton,
-              viewMode === "list" && styles.activeViewToggle,
+              styles(colors).viewToggleButton,
+              viewMode === "list" && styles(colors).activeViewToggle,
             ]}
             onPress={() => setViewMode("list")}
           >
             <MaterialCommunityIcons
               name="format-list-bulleted"
               size={20}
-              color={viewMode === "list" ? TEXT_PRIMARY : TEXT_SECONDARY}
+              color={viewMode === "list" ? colors.text : colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
       </View>
 
       {renderFilters()}
-      <View style={styles.filterDividerLine} />
+      <View style={styles(colors).filterDividerLine} />
 
-      {/* Make the whole content below vertically scrollable */}
       <ScrollView
-        style={styles.leaderboardContainer}
+        style={styles(colors).leaderboardContainer}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={fetchLeaderboard}
+            tintColor={colors.primary}
           />
         }
         contentContainerStyle={{ paddingBottom: 32 }}
       >
-        {/* Top 3 Section */}
         {renderTopThree()}
-        {/* Scrollable list for the rest */}
-        <View style={styles.entriesContainer}>
+        <View style={styles(colors).entriesContainer}>
           {filteredEntries
             .slice(3)
             .map((entry, index) => renderLeaderboardEntry(entry, index + 3))}
@@ -1095,23 +1077,21 @@ export default function LeaderboardScreen() {
 
       {renderUserModal()}
       {renderStatsModal()}
-    </ThemedView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: colors.background,
   },
   header: {
     marginBottom: 16,
-  },
-  headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: TEXT_PRIMARY,
-    marginBottom: 0,
+    color: colors.text,
   },
   actionsContainer: {
     flexDirection: "row",
@@ -1119,7 +1099,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     marginTop: -10,
     marginHorizontal: 16,
     borderRadius: 12,
@@ -1135,17 +1115,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: `${colors.primary}26`, // ~0.15 opacity
   },
   statsButtonText: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     marginLeft: 8,
     fontWeight: "600",
     fontSize: 15,
   },
   viewToggle: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: `${colors.primary}26`, // ~0.15 opacity
     borderRadius: 10,
     overflow: "hidden",
   },
@@ -1153,26 +1133,11 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   activeViewToggle: {
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-  },
-  searchBar: {
-    backgroundColor: CARD_BACKGROUND,
-    elevation: 2,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  searchInput: {
-    color: TEXT_PRIMARY,
-    fontSize: 16,
+    backgroundColor: `${colors.primary}40`, // ~0.25 opacity
   },
   filtersContainer: {
     paddingVertical: 12,
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 12,
@@ -1194,12 +1159,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
   },
-  filterGroupLabel: {
-    color: TEXT_SECONDARY,
-    fontSize: 12,
-    fontWeight: "600",
-    marginRight: 8,
-  },
   filterButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1207,32 +1166,32 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: BORDER_COLOR,
+    borderColor: colors.borderColor,
     justifyContent: "center",
     alignItems: "center",
     height: 32,
   },
   activeFilter: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterText: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 14,
   },
   activeFilterText: {
-    color: TEXT_PRIMARY,
+    color: colors.onPrimary,
     fontWeight: "bold",
   },
   filterDivider: {
     width: 1,
     height: 24,
-    backgroundColor: BORDER_COLOR,
+    backgroundColor: colors.borderColor,
     marginRight: 8,
   },
   filterDividerLine: {
     height: 1,
-    backgroundColor: BORDER_COLOR,
+    backgroundColor: colors.borderColor,
     marginHorizontal: 16,
     marginBottom: 8,
   },
@@ -1241,23 +1200,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 20,
   },
-  topThreeContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    padding: 16,
-    backgroundColor: CARD_BACKGROUND,
-    marginHorizontal: 16,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
   topThreeScroll: {
     padding: 16,
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     marginHorizontal: 16,
     borderRadius: 16,
     elevation: 3,
@@ -1273,10 +1218,10 @@ const styles = StyleSheet.create({
   topThreeCard: {
     alignItems: "center",
     padding: 16,
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: BORDER_COLOR,
+    borderColor: colors.borderColor,
     width: 180,
     marginHorizontal: 4,
     elevation: 2,
@@ -1288,7 +1233,7 @@ const styles = StyleSheet.create({
   firstPlace: {
     height: 300,
     marginBottom: -20,
-    borderColor: WARNING,
+    borderColor: colors.warning,
     borderWidth: 2,
     elevation: 4,
   },
@@ -1305,22 +1250,22 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
   },
   firstPlaceBadge: {
-    backgroundColor: WARNING,
+    backgroundColor: colors.warning,
   },
   secondPlaceBadge: {
-    backgroundColor: TEXT_SECONDARY,
+    backgroundColor: colors.textSecondary,
   },
   thirdPlaceBadge: {
-    backgroundColor: "#CD7F32",
+    backgroundColor: "#CD7F32", // Bronze
   },
   rankNumber: {
-    color: TEXT_PRIMARY,
+    color: colors.onPrimary,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -1330,14 +1275,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   userName: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontWeight: "bold",
     marginTop: 8,
     textAlign: "center",
-    fontSize: 18, // increased font size
+    fontSize: 18,
   },
   userPoints: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     marginTop: 4,
     fontSize: 14,
   },
@@ -1347,7 +1292,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   levelText: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 12,
     marginBottom: 4,
   },
@@ -1355,7 +1300,7 @@ const styles = StyleSheet.create({
     height: 6,
     width: "100%",
     borderRadius: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: `${colors.primary}1A`, // ~0.1 opacity
   },
   badgesContainer: {
     flexDirection: "row",
@@ -1368,10 +1313,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   entryCard: {
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: BORDER_COLOR,
+    borderColor: colors.borderColor,
     borderRadius: 12,
     elevation: 2,
     shadowColor: "#000",
@@ -1380,110 +1325,89 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
   },
   currentUserCard: {
-    borderColor: PRIMARY,
+    borderColor: colors.primary,
     borderWidth: 2,
     elevation: 3,
   },
   entryContent: {
     flexDirection: "column",
     alignItems: "flex-start",
-    paddingVertical: 28, // further increased padding
-    paddingHorizontal: 20, // further increased padding
-    gap: 20, // further increased vertical gap between sections
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    gap: 20,
   },
   rankContainerRow: {
     width: "100%",
     alignItems: "flex-start",
-    marginBottom: 18, // more space below rank
+    marginBottom: 18,
   },
   userInfoRow: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    marginBottom: 18, // more space below user info
+    marginBottom: 18,
   },
   userDetailsRow: {
-    marginLeft: 24, // more space between avatar and details
+    marginLeft: 24,
     flex: 1,
   },
   userMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    marginTop: 4, // add space above meta
+    marginTop: 4,
   },
   statsContainerRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
     width: "100%",
-    marginTop: 16, // more space above stats
-    gap: 32, // more space between stats
+    marginTop: 16,
+    gap: 32,
   },
   statRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 32, // more space between stat items
+    marginRight: 32,
   },
   rankText: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontWeight: "bold",
     fontSize: 16,
   },
   topRankText: {
-    color: WARNING,
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  userDetails: {
-    marginLeft: 12,
-  },
-  userMeta: {
-    flexDirection: "row",
-    alignItems: "center",
+    color: colors.warning,
   },
   userRole: {
-    color: TEXT_SECONDARY,
-    fontSize: 14, // increased font size
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   userDepartment: {
-    color: TEXT_SECONDARY,
-    fontSize: 14, // increased font size
+    color: colors.textSecondary,
+    fontSize: 14,
     marginLeft: 4,
   },
-  statsContainer: {
-    flexDirection: "row",
-    marginLeft: 16,
-  },
-  stat: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
-  },
   statText: {
-    color: TEXT_SECONDARY,
-    marginLeft: 8, // more space between icon and text
-    fontSize: 16, // increased font size
+    color: colors.textSecondary,
+    marginLeft: 8,
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: BACKGROUND,
+    backgroundColor: colors.background,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     paddingTop: 48,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
   },
   closeButton: {
     marginRight: 16,
@@ -1491,7 +1415,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: TEXT_PRIMARY,
+    color: colors.onPrimary,
   },
   modalContent: {
     flex: 1,
@@ -1507,17 +1431,17 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: TEXT_PRIMARY,
+    color: colors.text,
     marginBottom: 4,
   },
   profileRole: {
     fontSize: 16,
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   profileDepartment: {
     fontSize: 14,
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   profileRank: {
@@ -1526,12 +1450,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   profileRankText: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontWeight: "bold",
     marginLeft: 8,
   },
   profileCard: {
-    backgroundColor: CARD_BACKGROUND,
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
     marginBottom: 16,
   },
@@ -1545,17 +1469,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statLabel: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 14,
     marginBottom: 4,
   },
   statValue: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontSize: 18,
     fontWeight: "bold",
   },
   sectionTitle: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 16,
@@ -1566,11 +1490,11 @@ const styles = StyleSheet.create({
   levelProgressBar: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: `${colors.primary}1A`, // ~0.1 opacity
     marginVertical: 8,
   },
   xpText: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 12,
     textAlign: "center",
   },
@@ -1585,7 +1509,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     margin: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: `${colors.primary}1A`, // ~0.1 opacity
     borderRadius: 30,
   },
   achievementItem: {
@@ -1601,17 +1525,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   achievementName: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontWeight: "bold",
     marginBottom: 4,
   },
   achievementDescription: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 14,
     marginBottom: 4,
   },
   achievementDate: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 12,
     fontStyle: "italic",
   },
@@ -1624,14 +1548,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chartLabel: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     width: 50,
     fontSize: 12,
   },
   chartBarContainer: {
     flex: 1,
     height: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: `${colors.primary}1A`, // ~0.1 opacity
     borderRadius: 8,
     overflow: "hidden",
     marginHorizontal: 8,
@@ -1641,7 +1565,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   chartValue: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     width: 30,
     textAlign: "right",
     fontSize: 12,
@@ -1653,17 +1577,17 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   activityText: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 14,
     marginLeft: 8,
     flex: 1,
   },
   activityUser: {
-    color: TEXT_PRIMARY,
+    color: colors.text,
     fontWeight: "bold",
   },
   activityTime: {
-    color: TEXT_SECONDARY,
+    color: colors.textSecondary,
     fontSize: 12,
     width: "100%",
     marginLeft: 28,

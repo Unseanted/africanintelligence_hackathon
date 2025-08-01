@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, NativeSyntheticEvent, TextInputSubmitEditingEventData, Keyboard } from 'react-native';
-import { ThemedText } from './ThemedText';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
+import { useTheme } from '../app/contexts/ThemeContext';
 import { AIService } from '../services/aiService';
-import { ActivityIndicator } from 'react-native-paper';
 
 type Message = {
   id: string;
@@ -11,12 +11,8 @@ type Message = {
   isUser: boolean;
 };
 
-type ChatMessage = {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-};
-
 export default function AIAssistant() {
+  const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isVisible, setIsVisible] = useState(false);
@@ -30,7 +26,7 @@ export default function AIAssistant() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim() || loading) return;
 
     const userMessage: Message = {
@@ -43,17 +39,38 @@ export default function AIAssistant() {
     setInput('');
     setLoading(true);
 
-    // Always return a simulated response
-    const aiResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      text: "I'm a simulated AI response. In a real implementation, this would connect to an AI service.",
-      isUser: false,
-    };
-    setTimeout(() => {
-      setMessages(prev => [...prev, aiResponse]);
-      setLoading(false);
-    }, 1000);
+    aiService.sendMessage(
+      userMessage.text,
+      {
+        conversationId: 'demo-convo-001', // TODO: Dynamically get or create this
+        aiModel: 'mistral-large-latest',
+        tokenCount: userMessage.text.split(' ').length, // simple token count estimate
+      },
+      (aiMessage) => {
+        const formattedMessage: Message = {
+          id: Date.now().toString(),
+          text: aiMessage.content,
+          isUser: false,
+        };
+        setMessages(prev => [...prev, formattedMessage]);
+        setLoading(false);
+      },
+      (typing) => {
+        setLoading(typing);
+      }
+    );
   };
+
+  useEffect(() => {
+    if (isVisible) {
+      // Only run when modal is opened
+      aiService.createConversation("New Chat").then(convo => {
+        console.log("Started conversation:", convo.id);
+        // Save this ID and pass it to `sendMessage`
+      }).catch(console.error);
+    }
+  }, [isVisible]);
+
 
   const handleKeyPress = (e: any) => {
     if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
@@ -64,13 +81,15 @@ export default function AIAssistant() {
     }
   };
 
+  const styles = createStyles(colors);
+
   return (
     <>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.floatingButton}
         onPress={() => setIsVisible(true)}
       >
-        <MaterialCommunityIcons name="robot" size={24} color="#ffffff" />
+        <MaterialCommunityIcons name="robot" size={24} color={colors.onPrimary} />
       </TouchableOpacity>
 
       <Modal
@@ -83,11 +102,11 @@ export default function AIAssistant() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View style={styles.headerContent}>
-                <MaterialCommunityIcons name="robot" size={24} color="#6366f1" />
-                <ThemedText style={styles.title}>AI Assistant</ThemedText>
+                <MaterialCommunityIcons name="robot" size={24} color={colors.primary} />
+                <Text style={styles.title}>AI Assistant</Text>
               </View>
               <TouchableOpacity onPress={() => setIsVisible(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#ffffff" />
+                <MaterialCommunityIcons name="close" size={24} color={colors.onSurface} />
               </TouchableOpacity>
             </View>
 
@@ -95,7 +114,7 @@ export default function AIAssistant() {
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.chatContainer}
             >
-              <ScrollView 
+              <ScrollView
                 ref={scrollViewRef}
                 style={styles.messagesContainer}
                 contentContainerStyle={styles.messagesContent}
@@ -108,12 +127,12 @@ export default function AIAssistant() {
                       message.isUser ? styles.userMessage : styles.aiMessage,
                     ]}
                   >
-                    <ThemedText style={styles.messageText}>{message.text}</ThemedText>
+                    <Text style={styles.messageText}>{message.text}</Text>
                   </View>
                 ))}
                 {loading && (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator color="#6366f1" />
+                    <ActivityIndicator color={colors.primary} />
                   </View>
                 )}
               </ScrollView>
@@ -123,7 +142,7 @@ export default function AIAssistant() {
                   value={input}
                   onChangeText={setInput}
                   placeholder="Ask me anything..."
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   multiline
                   maxLength={500}
@@ -137,15 +156,15 @@ export default function AIAssistant() {
                     }
                   }}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.sendButton, loading && styles.sendButtonDisabled]}
                   onPress={handleSend}
                   disabled={loading || !input.trim()}
                 >
-                  <MaterialCommunityIcons 
-                    name="send" 
-                    size={24} 
-                    color={loading || !input.trim() ? "#9ca3af" : "#6366f1"} 
+                  <MaterialCommunityIcons
+                    name="send"
+                    size={24}
+                    color={loading || !input.trim() ? colors.textSecondary : colors.primary}
                   />
                 </TouchableOpacity>
               </View>
@@ -157,7 +176,7 @@ export default function AIAssistant() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   floatingButton: {
     position: 'absolute',
     bottom: 106,
@@ -165,22 +184,22 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#6366f1',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.shadow,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1f2937',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     height: '80%',
@@ -191,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: colors.borderColor,
   },
   headerContent: {
     flexDirection: 'row',
@@ -201,7 +220,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: colors.onSurface,
   },
   chatContainer: {
     flex: 1,
@@ -219,15 +238,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   userMessage: {
-    backgroundColor: '#6366f1',
+    backgroundColor: colors.primary,
     alignSelf: 'flex-end',
   },
   aiMessage: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.surfaceVariant,
     alignSelf: 'flex-start',
   },
   messageText: {
-    color: '#ffffff',
+    color: colors.onSurface,
     fontSize: 14,
   },
   inputContainer: {
@@ -235,23 +254,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopColor: colors.borderColor,
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.surfaceVariant,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginRight: 8,
-    color: '#ffffff',
+    color: colors.onSurface,
     maxHeight: 100,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -262,4 +281,4 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-}); 
+});

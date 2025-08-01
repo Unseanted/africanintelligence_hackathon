@@ -1,25 +1,23 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
+import { useTheme } from '../../app/contexts/ThemeContext';
 
 interface LogoutButtonProps {
   onLogout: () => void;
-  colors: {
-    BORDER_COLOR: string;
-    TEXT_PRIMARY: string;
-  };
 }
 
-const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout, colors }) => {
+const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout }) => {
   // If you need token for logout, uncomment below:
   // const { token } = useTourLMS();
+  const { colors } = useTheme();
 
   return (
     <Button
       mode="outlined"
       onPress={onLogout}
-      style={[styles.logoutButton, { borderColor: colors.BORDER_COLOR }]}
-      textColor={colors.TEXT_PRIMARY}
+      style={[styles.logoutButton, { borderColor: colors.borderColor }]}
+      textColor={colors.text}
       icon="logout"
     >
       Log Out
@@ -37,4 +35,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LogoutButton; 
+export default LogoutButton;

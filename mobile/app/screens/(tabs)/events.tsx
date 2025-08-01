@@ -1,15 +1,17 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY } from '../../constants/colors';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, Text } from 'react-native-paper';
+import { useTheme } from '../../contexts/ThemeContext'; // Adjust the import path as needed
 
 export default function Events() {
+  const { colors } = useTheme(); // Get colors from ThemeContext
+
   const upcomingEvents = [
     {
       id: '1',
       title: 'AI Workshop',
-      date: 'March 15, 2024',
+      date: 'August 15, 2025', // Updated to future date
       time: '10:00 AM - 2:00 PM',
       location: 'Virtual',
       description: 'Learn about the latest developments in AI and machine learning.',
@@ -18,7 +20,7 @@ export default function Events() {
     {
       id: '2',
       title: 'Hackathon',
-      date: 'March 20, 2024',
+      date: 'August 20, 2025', // Updated to future date
       time: '9:00 AM - 5:00 PM',
       location: 'Main Campus',
       description: 'Build innovative solutions using AI and emerging technologies.',
@@ -30,7 +32,7 @@ export default function Events() {
     {
       id: '3',
       title: 'Tech Talk: Future of AI',
-      date: 'February 28, 2024',
+      date: 'July 15, 2025', // Updated to recent past date
       time: '2:00 PM - 4:00 PM',
       location: 'Virtual',
       description: 'Discussion about the future of AI and its impact on society.',
@@ -39,46 +41,53 @@ export default function Events() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Events</Text>
-        <Text style={styles.subtitle}>Join our community events</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Events</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Join our community events
+        </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events</Text>
         {upcomingEvents.map((event) => (
-          <Card key={event.id} style={styles.eventCard}>
+          <Card key={event.id} style={[styles.eventCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
             <Card.Content>
               <View style={styles.eventHeader}>
-                <View style={styles.eventIcon}>
-                  <MaterialCommunityIcons name="calendar-star" size={24} color={PRIMARY} />
+                <View style={[styles.eventIcon, { backgroundColor: `${colors.primary}1A` }]}>
+                  <MaterialCommunityIcons name="calendar-star" size={24} color={colors.primary} />
                 </View>
                 <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDate}>{event.date}</Text>
+                  <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>{event.date}</Text>
                 </View>
               </View>
               <View style={styles.eventDetails}>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="clock-outline" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.time}</Text>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>{event.time}</Text>
                 </View>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="map-marker" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.location}</Text>
+                  <MaterialCommunityIcons name="map-marker" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>{event.location}</Text>
                 </View>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="account-group" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.attendees} attendees</Text>
+                  <MaterialCommunityIcons name="account-group" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>
+                    {event.attendees} attendees
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.eventDescription}>{event.description}</Text>
+              <Text style={[styles.eventDescription, { color: colors.textSecondary }]}>
+                {event.description}
+              </Text>
               <Button
                 mode="contained"
                 onPress={() => {}}
                 style={styles.registerButton}
-                buttonColor={PRIMARY}
+                buttonColor={colors.primary}
+                textColor={colors.onPrimary}
               >
                 Register Now
               </Button>
@@ -88,39 +97,43 @@ export default function Events() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Past Events</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Events</Text>
         {pastEvents.map((event) => (
-          <Card key={event.id} style={styles.eventCard}>
+          <Card key={event.id} style={[styles.eventCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
             <Card.Content>
               <View style={styles.eventHeader}>
-                <View style={styles.eventIcon}>
-                  <MaterialCommunityIcons name="calendar-check" size={24} color="#666666" />
+                <View style={[styles.eventIcon, { backgroundColor: `${colors.primary}1A` }]}>
+                  <MaterialCommunityIcons name="calendar-check" size={24} color={colors.textSecondary} />
                 </View>
                 <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDate}>{event.date}</Text>
+                  <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>{event.date}</Text>
                 </View>
               </View>
               <View style={styles.eventDetails}>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="clock-outline" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.time}</Text>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>{event.time}</Text>
                 </View>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="map-marker" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.location}</Text>
+                  <MaterialCommunityIcons name="map-marker" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>{event.location}</Text>
                 </View>
                 <View style={styles.eventDetail}>
-                  <MaterialCommunityIcons name="account-group" size={16} color="#666666" />
-                  <Text style={styles.eventDetailText}>{event.attendees} attendees</Text>
+                  <MaterialCommunityIcons name="account-group" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.eventDetailText, { color: colors.textSecondary }]}>
+                    {event.attendees} attendees
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.eventDescription}>{event.description}</Text>
+              <Text style={[styles.eventDescription, { color: colors.textSecondary }]}>
+                {event.description}
+              </Text>
               <Button
                 mode="outlined"
                 onPress={() => {}}
-                style={styles.viewRecordingButton}
-                textColor={PRIMARY}
+                style={[styles.viewRecordingButton, { borderColor: colors.primary }]}
+                textColor={colors.primary}
               >
                 View Recording
               </Button>
@@ -135,7 +148,6 @@ export default function Events() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     padding: 20,
@@ -144,12 +156,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666666',
   },
   section: {
     padding: 16,
@@ -157,14 +167,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 16,
   },
   eventCard: {
     marginBottom: 16,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   eventHeader: {
     flexDirection: 'row',
@@ -175,7 +182,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 191, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -186,12 +192,10 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 4,
   },
   eventDate: {
     fontSize: 14,
-    color: '#666666',
   },
   eventDetails: {
     flexDirection: 'row',
@@ -206,11 +210,9 @@ const styles = StyleSheet.create({
   },
   eventDetailText: {
     fontSize: 14,
-    color: '#666666',
   },
   eventDescription: {
     fontSize: 14,
-    color: '#666666',
     marginBottom: 16,
   },
   registerButton: {
@@ -218,6 +220,5 @@ const styles = StyleSheet.create({
   },
   viewRecordingButton: {
     borderRadius: 8,
-    borderColor: PRIMARY,
   },
-}); 
+});

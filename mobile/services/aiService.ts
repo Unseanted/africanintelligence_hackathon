@@ -1,19 +1,26 @@
-import { env } from '../config/env';
+import Constants from 'expo-constants';
+import { io, Socket } from 'socket.io-client';
+
+const API_URL = Constants.expoConfig?.extra?.apiUrl || '';
+const JWT_TOKEN = Constants.expoConfig?.extra?.jwtToken || '';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  timestamp?: Date;
 }
 
 export class AIService {
   private static instance: AIService;
-  private apiKey: string;
+  private token: string;
+  private socket: Socket | null = null;
 
   private constructor() {
-    this.apiKey = env.OPENAI_API_KEY;
-    if (!this.apiKey) {
-      console.error('OpenAI API key not found in environment variables');
+    this.token = JWT_TOKEN;
+    if (!this.token) {
+      console.error('JWT token not found');
     }
+    this.initializeSocket();
   }
 
   public static getInstance(): AIService {
@@ -23,35 +30,79 @@ export class AIService {
     return AIService.instance;
   }
 
-  async chat(messages: Message[]): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+  private initializeSocket() {
+    this.socket = io(API_URL, {
+      auth: { token: this.token },
+      transports: ['websocket'],
+    });
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages,
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response from OpenAI');
-      }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
-    } catch (error) {
-      console.error('Error in AI chat:', error);
-      throw error;
-    }
+    this.socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+    });
   }
-} 
+
+  /**
+   * Create a new conversation
+   */
+  async createConversation(title: string, aiModel = 'mistral-large-latest') {
+    const response = await fetch(`${API_URL}/assistant/conversations`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title, aiModel }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create conversation');
+    }
+
+    const data = await response.json();
+    return data.conversation;
+  }
+
+  /**
+   * Send message via socket
+   */
+  sendMessage(
+    content: string,
+    context: {
+      conversationId: string;
+      aiModel: string;
+      tokenCount: number;
+      courseId?: string;
+      lessonId?: string;
+    },
+    onResponse: (message: Message) => void,
+    onTyping?: (typing: boolean) => void
+  ) {
+    if (!this.socket) throw new Error('Socket not initialized');
+
+    // Listen for AI typing indicator
+    if (onTyping) {
+      this.socket.on('ai:typing', onTyping);
+    }
+
+    // Listen for AI response
+    this.socket.once('ai:response', (data: any) => {
+      const aiMessage: Message = {
+        role: 'assistant',
+        content: data.message.content,
+        timestamp: new Date(data.timestamp),
+      };
+      onResponse(aiMessage);
+    });
+
+    // Emit message to AI
+    this.socket.emit('ai:message', {
+      message: content,
+      context: {
+        ...context,
+        role: 'user',
+        timestamp: Date.now(),
+      },
+    });
+  }
+}

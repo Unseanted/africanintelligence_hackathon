@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
+import { useTheme } from '../../app/contexts/ThemeContext';
 
 interface StatsSectionProps {
   stats: {
@@ -8,36 +9,40 @@ interface StatsSectionProps {
     totalXP: number;
     currentStreak: number;
   };
-  colors: {
-    CARD_BACKGROUND: string;
-    BORDER_COLOR: string;
-    TEXT_PRIMARY: string;
-    TEXT_SECONDARY: string;
-  };
 }
 
-const StatsSection: React.FC<StatsSectionProps> = ({ stats, colors }) => (
-  <View style={styles.statsContainer}>
-    <Card style={[styles.statCard, { backgroundColor: colors.CARD_BACKGROUND, borderColor: colors.BORDER_COLOR }]}> 
-      <Card.Content>
-        <Text style={[styles.statValue, { color: colors.TEXT_PRIMARY }]}>{stats.coursesCompleted}</Text>
-        <Text style={[styles.statLabel, { color: colors.TEXT_SECONDARY }]}>Courses</Text>
-      </Card.Content>
-    </Card>
-    <Card style={[styles.statCard, { backgroundColor: colors.CARD_BACKGROUND, borderColor: colors.BORDER_COLOR }]}> 
-      <Card.Content>
-        <Text style={[styles.statValue, { color: colors.TEXT_PRIMARY }]}>{stats.totalXP}</Text>
-        <Text style={[styles.statLabel, { color: colors.TEXT_SECONDARY }]}>Total XP</Text>
-      </Card.Content>
-    </Card>
-    <Card style={[styles.statCard, { backgroundColor: colors.CARD_BACKGROUND, borderColor: colors.BORDER_COLOR }]}> 
-      <Card.Content>
-        <Text style={[styles.statValue, { color: colors.TEXT_PRIMARY }]}>{stats.currentStreak}</Text>
-        <Text style={[styles.statLabel, { color: colors.TEXT_SECONDARY }]}>Day Streak</Text>
-      </Card.Content>
-    </Card>
-  </View>
-);
+const StatsSection: React.FC<StatsSectionProps> = ({ stats }) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.statsContainer}>
+      <Card style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+        <Card.Content>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {stats.coursesCompleted ?? 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Courses</Text>
+        </Card.Content>
+      </Card>
+      <Card style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+        <Card.Content>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {stats.totalXP ?? 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total XP</Text>
+        </Card.Content>
+      </Card>
+      <Card style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+        <Card.Content>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {stats.currentStreak ?? 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Day Streak</Text>
+        </Card.Content>
+      </Card>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   statsContainer: {
@@ -52,14 +57,14 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: 'bold' as 'bold',
+    textAlign: 'center' as 'center',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: 'center' as 'center',
   },
 });
 
-export default StatsSection; 
+export default StatsSection;

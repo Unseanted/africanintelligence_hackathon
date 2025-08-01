@@ -2,16 +2,25 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "types": [
+      "nativewind/types"
+    ],
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@react-native-async-storage/async-storage": [
+        "node_modules/@react-native-async-storage/async-storage"
       ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

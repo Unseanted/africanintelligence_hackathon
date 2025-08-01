@@ -1,35 +1,49 @@
 import { Image } from "expo-image";
-import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
-// If using context-based theming
-// import { ThemeProvider } from '@/contexts/ThemeContext';
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { useRouter } from "expo-router";
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, View } from "react-native";
+import { Text } from "react-native-paper";
+import { useTourLMS } from "./contexts/TourLMSContext";
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user, token, loading } = useTourLMS();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/(auth)/login");
-    }, 5000); // 5000ms = 5 seconds
+    if (loading || hasNavigated.current) return;
 
-    return () => clearTimeout(timer);
-  }, [router]);
+    const timeout = setTimeout(() => {
+      if (!hasNavigated.current) {
+        hasNavigated.current = true;
+        try {
+          if (user && token) {
+            router.replace("/screens/(tabs)/student");
+          } else {
+            router.replace("/(auth)/login");
+          }
+        } catch (error) {
+          console.warn("Navigation error:", error);
+          hasNavigated.current = false;
+        }
+      }
+    }, user && token ? 100 : 3000); // Shorter delay for authenticated users
+
+    return () => clearTimeout(timeout);
+  }, [router, user, token, loading]);
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <Image
-        source={require("@/assets/images/logo1.png")}
+        source={require("@/assets/images/home.png")}
         style={styles.logo}
         contentFit="contain"
         cachePolicy="memory-disk"
       />
-      <ThemedText type="title" style={styles.welcomeText}>
+      <Text style={styles.welcomeText}>
         Welcome to African Intelligence
-      </ThemedText>
-    </ThemedView>
+      </Text>
+    </View>
   );
 }
 

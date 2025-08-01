@@ -1,7 +1,8 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from '../../app/contexts/ThemeContext';
 
 interface AchievementsSectionProps {
   expanded: boolean;
@@ -10,44 +11,42 @@ interface AchievementsSectionProps {
     certificates: number;
     achievements: number;
   };
-  colors: {
-    CARD_BACKGROUND: string;
-    BORDER_COLOR: string;
-    TEXT_PRIMARY: string;
-    TEXT_SECONDARY: string;
-  };
 }
 
-const AchievementsSection: React.FC<AchievementsSectionProps> = ({ expanded, onToggle, stats, colors }) => (
-  <>
-    <TouchableOpacity onPress={onToggle}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.TEXT_PRIMARY }]}>Achievements</Text>
-        <Icon 
-          name={expanded ? 'chevron-up' : 'chevron-down'} 
-          size={24} 
-          color={colors.TEXT_PRIMARY} 
-        />
-      </View>
-    </TouchableOpacity>
-    {expanded && (
-      <View style={styles.statsContainer}>
-        <Card style={[styles.statCard, { backgroundColor: colors.CARD_BACKGROUND, borderColor: colors.BORDER_COLOR }]}> 
-          <Card.Content>
-            <Text style={[styles.statValue, { color: colors.TEXT_PRIMARY }]}>{stats.certificates}</Text>
-            <Text style={[styles.statLabel, { color: colors.TEXT_SECONDARY }]}>Certificates</Text>
-          </Card.Content>
-        </Card>
-        <Card style={[styles.statCard, { backgroundColor: colors.CARD_BACKGROUND, borderColor: colors.BORDER_COLOR }]}> 
-          <Card.Content>
-            <Text style={[styles.statValue, { color: colors.TEXT_PRIMARY }]}>{stats.achievements}</Text>
-            <Text style={[styles.statLabel, { color: colors.TEXT_SECONDARY }]}>Badges</Text>
-          </Card.Content>
-        </Card>
-      </View>
-    )}
-  </>
-);
+const AchievementsSection: React.FC<AchievementsSectionProps> = ({ expanded, onToggle, stats }) => {
+  const { colors } = useTheme();
+
+  return (
+    <>
+      <TouchableOpacity onPress={onToggle}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Achievements</Text>
+          <MaterialCommunityIcons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={24}
+            color={colors.text}
+          />
+        </View>
+      </TouchableOpacity>
+      {expanded && (
+        <View style={styles.statsContainer}>
+          <Card style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+            <Card.Content>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.certificates}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Certificates</Text>
+            </Card.Content>
+          </Card>
+          <Card style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderColor }]}>
+            <Card.Content>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.achievements}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Badges</Text>
+            </Card.Content>
+          </Card>
+        </View>
+      )}
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   sectionHeader: {
@@ -59,7 +58,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as 'bold',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -73,14 +72,14 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: 'bold' as 'bold',
+    textAlign: 'center' as 'center',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: 'center' as 'center',
   },
 });
 
-export default AchievementsSection; 
+export default AchievementsSection;

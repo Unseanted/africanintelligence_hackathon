@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Card, ProgressBar, IconButton, Divider, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PRIMARY, BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY, CARD_BACKGROUND, BORDER_COLOR } from '../constants/colors';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Card, Divider, IconButton, ProgressBar, Text } from 'react-native-paper';
+import { useTheme } from '../app/contexts/ThemeContext';
 
 interface Lesson {
   id: string;
@@ -33,6 +33,7 @@ interface CourseContentProps {
 }
 
 export default function CourseContent({ course, isEnrolled, onLessonPress, onEnroll, onContinue }: CourseContentProps) {
+  const { colors } = useTheme();
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({});
 
   const toggleModule = (moduleId: string) => {
@@ -56,17 +57,17 @@ export default function CourseContent({ course, isEnrolled, onLessonPress, onEnr
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: BACKGROUND }]}>
-      <Card style={[styles.progressCard, { backgroundColor: CARD_BACKGROUND }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Card style={[styles.progressCard, { backgroundColor: colors.cardBackground }]}>
         <Card.Content>
-          <Text style={[styles.progressTitle, { color: TEXT_PRIMARY }]}>Course Progress</Text>
+          <Text style={[styles.progressTitle, { color: colors.text }]}>Course Progress</Text>
           <View style={styles.progressContainer}>
             <ProgressBar
               progress={course.totalProgress / 100}
-              style={[styles.progressBar, { backgroundColor: BORDER_COLOR }]}
-              color={PRIMARY}
+              style={[styles.progressBar, { backgroundColor: colors.borderColor }]}
+              color={colors.primary}
             />
-            <Text style={[styles.progressText, { color: TEXT_SECONDARY }]}>
+            <Text style={[styles.progressText, { color: colors.textSecondary }]}>
               {Math.round(course.totalProgress)}%
             </Text>
           </View>
@@ -76,38 +77,38 @@ export default function CourseContent({ course, isEnrolled, onLessonPress, onEnr
       {course.modules.map((module) => (
         <Card
           key={module.id}
-          style={[styles.moduleCard, { backgroundColor: CARD_BACKGROUND }]}
+          style={[styles.moduleCard, { backgroundColor: colors.cardBackground }]}
         >
           <TouchableOpacity
             onPress={() => toggleModule(module.id)}
             style={styles.moduleHeader}
           >
             <View style={styles.moduleHeaderContent}>
-              <Text style={[styles.moduleTitle, { color: TEXT_PRIMARY }]}>
+              <Text style={[styles.moduleTitle, { color: colors.text }]}>
                 {module.title}
               </Text>
-              <Text style={[styles.moduleDescription, { color: TEXT_SECONDARY }]}>
+              <Text style={[styles.moduleDescription, { color: colors.textSecondary }]}>
                 {module.description}
               </Text>
             </View>
             <IconButton
               icon={expandedModules[module.id] ? 'chevron-up' : 'chevron-down'}
-              iconColor={TEXT_SECONDARY}
+              iconColor={colors.textSecondary}
               size={24}
             />
           </TouchableOpacity>
 
           <ProgressBar
             progress={module.progress / 100}
-            style={[styles.moduleProgress, { backgroundColor: BORDER_COLOR }]}
-            color={PRIMARY}
+            style={[styles.moduleProgress, { backgroundColor: colors.borderColor }]}
+            color={colors.primary}
           />
 
           {expandedModules[module.id] && (
             <View style={styles.lessonsContainer}>
               {module.lessons.map((lesson, index) => (
                 <React.Fragment key={lesson.id}>
-                  {index > 0 && <Divider style={[styles.divider, { backgroundColor: BORDER_COLOR }]} />}
+                  {index > 0 && <Divider style={[styles.divider, { backgroundColor: colors.borderColor }]} />}
                   <TouchableOpacity
                     style={styles.lessonItem}
                     onPress={() => !lesson.locked && onLessonPress(lesson.id)}
@@ -116,22 +117,22 @@ export default function CourseContent({ course, isEnrolled, onLessonPress, onEnr
                     <MaterialCommunityIcons
                       name={getLessonIcon(lesson.type)}
                       size={24}
-                      color={lesson.locked ? TEXT_SECONDARY : PRIMARY}
+                      color={lesson.locked ? colors.textSecondary : colors.primary}
                     />
                     <View style={styles.lessonContent}>
-                      <Text style={[styles.lessonTitle, { color: lesson.locked ? TEXT_SECONDARY : TEXT_PRIMARY }]}>
+                      <Text style={[styles.lessonTitle, { color: lesson.locked ? colors.textSecondary : colors.text }]}>
                         {lesson.title}
                       </Text>
-                      <Text style={[styles.lessonDuration, { color: TEXT_SECONDARY }]}>
+                      <Text style={[styles.lessonDuration, { color: colors.textSecondary }]}>
                         {lesson.duration}
                       </Text>
                     </View>
                     {lesson.completed ? (
-                      <MaterialCommunityIcons name="check-circle" size={24} color={PRIMARY} />
+                      <MaterialCommunityIcons name="check-circle" size={24} color={colors.primary} />
                     ) : lesson.locked ? (
-                      <MaterialCommunityIcons name="lock" size={24} color={TEXT_SECONDARY} />
+                      <MaterialCommunityIcons name="lock" size={24} color={colors.textSecondary} />
                     ) : (
-                      <MaterialCommunityIcons name="chevron-right" size={24} color={TEXT_SECONDARY} />
+                      <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </React.Fragment>
@@ -151,7 +152,7 @@ export default function CourseContent({ course, isEnrolled, onLessonPress, onEnr
           }
         }}
         style={{ marginTop: 12 }}
-        buttonColor={PRIMARY}
+        buttonColor={colors.primary}
       >
         {isEnrolled ? 'Continue Learning' : 'Enroll Now'}
       </Button>
@@ -166,7 +167,6 @@ const styles = StyleSheet.create({
   progressCard: {
     margin: 16,
     borderWidth: 1,
-    borderColor: BORDER_COLOR,
   },
   progressTitle: {
     fontSize: 18,
@@ -191,7 +191,6 @@ const styles = StyleSheet.create({
     margin: 16,
     marginTop: 0,
     borderWidth: 1,
-    borderColor: BORDER_COLOR,
   },
   moduleHeader: {
     flexDirection: 'row',
@@ -212,6 +211,7 @@ const styles = StyleSheet.create({
   moduleProgress: {
     height: 4,
     borderRadius: 2,
+    
   },
   lessonsContainer: {
     padding: 16,
@@ -237,4 +237,4 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: 8,
   },
-}); 
+});

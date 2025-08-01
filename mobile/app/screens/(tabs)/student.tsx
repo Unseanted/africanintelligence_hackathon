@@ -1,84 +1,127 @@
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    View,
 } from "react-native";
 import { Button, Card, Chip, ProgressBar, Text } from "react-native-paper";
-import Colors from "../../constants/colors";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useTourLMS } from "../../contexts/TourLMSContext";
 
-// Hardcoded demo data
-const user = { name: "Demo User" };
-const userXP = {
-  totalXP: 1200,
-  level: 3,
-  currentLevelXP: 200,
-  nextLevelXP: 400,
-  streak: { current: 5 },
+// Hardcoded demo data (would come from context in real app)
+const demoData = {
+  user: { name: "Demo User", email: "demo@tourlms.com" },
+  stats: {
+    totalPoints: 100,
+    rank: 2,
+    completedCourses: 2,
+    activeCourses: 3,
+    currentStreak: 5,
+    totalXp: 1200,
+    totalEnrolled: 5,
+    certificatesEarned: 1,
+    completedLessons: 10,
+    totalLessons: 20,
+    completedQuizzes: 3,
+    totalQuizzes: 5,
+    averageScore: 85,
+    lastActive: new Date().toISOString(),
+  },
+  enrolledCourses: [
+    {
+      _id: "1",
+      title: "Introduction to Artificial Intelligence",
+      category: "ai",
+      progress: 50,
+      nextModule: "Neural Networks Basics",
+      facilitatorName: "Dr. Jane Smith",
+      thumbnail: "https://source.unsplash.com/random/800x400/?ai",
+    },
+    {
+      _id: "2",
+      title: "Advanced Python Programming",
+      category: "programming",
+      progress: 30,
+      nextModule: "Decorators and Generators",
+      facilitatorName: "John Doe",
+      thumbnail: "https://source.unsplash.com/random/800x400/?python",
+    },
+  ],
+  relatedCourses: [
+    {
+      _id: "3",
+      title: "Machine Learning Fundamentals",
+      shortDescription: "Learn the core concepts of ML with practical examples.",
+      facilitatorName: "Dr. Sarah Johnson",
+      thumbnail: "https://source.unsplash.com/random/800x400/?machinelearning",
+    },
+    {
+      _id: "4",
+      title: "Data Visualization with Python",
+      shortDescription: "Create stunning visualizations with Matplotlib and Seaborn.",
+      facilitatorName: "Mike Chen",
+      thumbnail: "https://source.unsplash.com/random/800x400/?datavisualization",
+    },
+  ],
+  recentActivities: [
+    {
+      _id: "a1",
+      courseId: "1",
+      courseTitle: "Intro to AI",
+      contentId: "c1",
+      contentTitle: "Lesson 1: AI History",
+      type: "lesson",
+      action: "completed",
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      _id: "a2",
+      courseId: "2",
+      courseTitle: "Advanced Python",
+      contentId: "c3",
+      contentTitle: "Quiz: OOP Concepts",
+      type: "quiz",
+      action: "completed",
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+  ],
+  achievements: [
+    {
+      id: "1",
+      name: "Fast Learner",
+      description: "Completed 3 lessons in one day",
+      icon: "rocket",
+      unlockedAt: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      name: "Quiz Master",
+      description: "Scored 100% on 5 quizzes",
+      icon: "trophy",
+      unlockedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+  ],
 };
-const userStats = {
-  totalPoints: 100,
-  rank: 2,
-  completedCourses: 2,
-  activeCourses: 3,
-  currentStreak: 5,
-  totalXp: 1200,
-  totalEnrolled: 5,
-  certificatesEarned: 1,
-  completedLessons: 10,
-  totalLessons: 20,
-  completedQuizzes: 3,
-  totalQuizzes: 5,
-  averageScore: 85,
-  lastActive: new Date().toISOString(),
-  streakDays: 5,
-};
-const enrolledCourses = [
-  {
-    _id: "1",
-    title: "Intro to AI",
-    category: "ai",
-    progress: 50,
-    nextModule: "Module 2",
-    facilitatorName: "Jane Doe",
-    thumbnail: "",
-  },
-];
-const relatedCourses = [
-  {
-    _id: "2",
-    title: "Advanced AI",
-    shortDescription: "Take your AI skills to the next level.",
-    facilitatorName: "John Smith",
-    thumbnail: "",
-  },
-];
-const recentActivities = [
-  {
-    _id: "a1",
-    courseId: "1",
-    courseTitle: "Intro to AI",
-    contentId: "c1",
-    contentTitle: "Lesson 1",
-    type: "lesson",
-    action: "completed",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-const categories = ["ai"];
 
 export default function StudentDashboardScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const { user, userXP, refreshDashboard } = useTourLMS();
+  
+  // Use demo data if context data not available
+  const currentUser = user || demoData.user;
+  const currentStats = demoData.stats; // In real app, would come from context
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const theme = useColorScheme() ?? "light";
+  
+  // Categories would normally come from API
+  const categories = ["ai", "programming", "data-science", "web-dev"];
 
   // Format date for display
   const formatDate = (dateString: string): string => {
@@ -94,218 +137,131 @@ export default function StudentDashboardScreen() {
   };
 
   // Filter courses by active category
-  const filteredCourses =
+  const filteredCourses = 
     activeCategory === "all"
-      ? enrolledCourses
-      : enrolledCourses.filter((course) =>
-          (course.category || "")
-            .toLowerCase()
-            .includes(activeCategory.toLowerCase())
+      ? demoData.enrolledCourses
+      : demoData.enrolledCourses.filter(course => 
+          course.category === activeCategory
         );
 
   // Navigation handlers
   const handleCoursePress = (courseId: string) => {
-    router.push(`/course/${courseId}`);
+    router.push(`/screens/course/${courseId}`);
   };
-  const handleEnrollPress = (courseId: string) => {
-    router.push(`/course/${courseId}`);
-  };
+
   const handleBrowseCourses = () => {
-    router.replace("../courses");
+    router.push("/screens/(tabs)/course");  
   };
-  const onRefresh = () => {
+
+  const handleViewAchievements = () => {
+    router.push("/screens/achievements");
+  };
+
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      await refreshDashboard();
+    } catch (err) {
+      setError("Failed to refresh data");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  // Simulate loading state
-  const [loading] = useState(false);
-
-  // --- Stats Grid: 2 cards per row, improved spacing ---
+  // --- Stats Grid Component ---
   const renderStatsGrid = () => (
     <View style={styles.statsGridWrapper}>
       <View style={styles.statsRow}>
-        <Card
-          style={[
-            styles.statCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-        >
-          {" "}
-          {/* XP */}
+        {/* XP Card */}
+        <Card style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
           <Card.Content>
             <View style={styles.statHeader}>
-              <MaterialCommunityIcons
-                name="trophy"
-                size={24}
-                color={Colors[theme].PRIMARY}
-              />
-              <Text
-                style={[
-                  styles.statTitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <MaterialCommunityIcons name="trophy" size={24} color={colors.primary} />
+              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>
                 Total XP
               </Text>
             </View>
-            <Text
-              style={[styles.statValue, { color: Colors[theme].TEXT_PRIMARY }]}
-            >
-              {userXP?.totalXP || 0}
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {userXP?.totalXP || currentStats.totalXp}
             </Text>
             <ProgressBar
               progress={
                 userXP && userXP.nextLevelXP > 0
                   ? userXP.currentLevelXP / userXP.nextLevelXP
-                  : 0
+                  : 0.5
               }
-              color={Colors[theme].PRIMARY}
+              color={colors.primary}
               style={styles.progressBar}
             />
-            <Text
-              style={[
-                styles.statSubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              Level {userXP?.level || 1} • {userXP?.currentLevelXP || 0}/
-              {userXP?.nextLevelXP || 100} XP
+            <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>
+              Level {userXP?.level || 3} • {userXP?.currentLevelXP || 200}/
+              {userXP?.nextLevelXP || 400} XP
             </Text>
           </Card.Content>
         </Card>
-        <Card
-          style={[
-            styles.statCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-        >
-          {" "}
-          {/* Progress */}
+
+        {/* Progress Card */}
+        <Card style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
           <Card.Content>
             <View style={styles.statHeader}>
-              <MaterialCommunityIcons
-                name="book-open"
-                size={24}
-                color={Colors[theme].PRIMARY}
-              />
-              <Text
-                style={[
-                  styles.statTitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <MaterialCommunityIcons name="book-open" size={24} color={colors.primary} />
+              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>
                 Progress
               </Text>
             </View>
-            <Text
-              style={[styles.statValue, { color: Colors[theme].TEXT_PRIMARY }]}
-            >
-              {userStats.totalLessons > 0
-                ? Math.round(
-                    (userStats.completedLessons / userStats.totalLessons) * 100
-                  )
-                : 0}
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {Math.round(
+                (currentStats.completedLessons / currentStats.totalLessons) * 100
+              )}
               %
             </Text>
             <ProgressBar
-              progress={
-                userStats.totalLessons > 0
-                  ? userStats.completedLessons / userStats.totalLessons
-                  : 0
-              }
-              color={Colors[theme].PRIMARY}
+              progress={currentStats.completedLessons / currentStats.totalLessons}
+              color={colors.primary}
               style={styles.progressBar}
             />
-            <Text
-              style={[
-                styles.statSubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              {userStats.completedLessons}/{userStats.totalLessons} lessons
+            <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>
+              {currentStats.completedLessons}/{currentStats.totalLessons} lessons
             </Text>
           </Card.Content>
         </Card>
       </View>
+
       <View style={styles.statsRow}>
-        <Card
-          style={[
-            styles.statCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-        >
-          {" "}
-          {/* Streak */}
+        {/* Streak Card */}
+        <Card style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
           <Card.Content>
             <View style={styles.statHeader}>
-              <MaterialCommunityIcons
-                name="fire"
-                size={24}
-                color={Colors[theme].PRIMARY}
-              />
-              <Text
-                style={[
-                  styles.statTitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <MaterialCommunityIcons name="fire" size={24} color={colors.primary} />
+              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>
                 Current Streak
               </Text>
             </View>
-            <Text
-              style={[styles.statValue, { color: Colors[theme].TEXT_PRIMARY }]}
-            >
-              {userXP?.streak?.current || userStats.currentStreak} days
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {currentStats.currentStreak} days
             </Text>
-            <Text
-              style={[
-                styles.statSubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              {userXP?.streak?.current
-                ? "Keep it up!"
-                : "Start a streak today!"}
+            <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>
+              {currentStats.currentStreak > 0 
+                ? "Keep it up!" 
+                : "Start learning to begin a streak!"}
             </Text>
           </Card.Content>
         </Card>
-        <Card
-          style={[
-            styles.statCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-        >
-          {" "}
-          {/* Courses */}
+
+        {/* Courses Card */}
+        <Card style={[styles.statCard, { backgroundColor: colors.cardBackground }]}>
           <Card.Content>
             <View style={styles.statHeader}>
-              <MaterialCommunityIcons
-                name="target"
-                size={24}
-                color={Colors[theme].PRIMARY}
-              />
-              <Text
-                style={[
-                  styles.statTitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <MaterialCommunityIcons name="target" size={24} color={colors.primary} />
+              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>
                 Courses
               </Text>
             </View>
-            <Text
-              style={[styles.statValue, { color: Colors[theme].TEXT_PRIMARY }]}
-            >
-              {userStats.completedCourses}/{userStats.totalEnrolled}
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {currentStats.completedCourses}/{currentStats.totalEnrolled}
             </Text>
-            <Text
-              style={[
-                styles.statSubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              {userStats.totalEnrolled === 0
+            <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>
+              {currentStats.totalEnrolled === 0
                 ? "Enroll in your first course"
                 : "Completed"}
             </Text>
@@ -315,353 +271,227 @@ export default function StudentDashboardScreen() {
     </View>
   );
 
-  // --- Course Cards: improved margin, image aspect, button placement ---
-  const renderCourseGrid = () => (
-    <View style={styles.courseGridWrapper}>
-      {filteredCourses.map((course) => (
-        <Card
-          key={course._id}
-          style={[
-            styles.courseCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-          onPress={() => handleCoursePress(course._id)}
+  // --- Course Card Component ---
+  const renderCourseCard = (course: typeof demoData.enrolledCourses[0]) => (
+    <Card
+      key={course._id}
+      style={[styles.courseCard, { backgroundColor: colors.cardBackground }]}
+      onPress={() => handleCoursePress(course._id)}
+    >
+      <Card.Cover
+        source={{ uri: course.thumbnail }}
+        style={styles.courseImage}
+        resizeMode="cover"
+      />
+      <Card.Content style={styles.courseContent}>
+        <Text 
+          style={[styles.courseTitle, { color: colors.text }]} 
+          numberOfLines={2}
         >
-          <Card.Cover
-            source={{
-              uri:
-                course.thumbnail ||
-                "https://via.placeholder.com/800x400?text=No+Thumbnail",
-            }}
-            style={styles.courseImage}
-            resizeMode="cover"
-          />
-          <Card.Content style={styles.courseContent}>
-            <Text
-              style={[
-                styles.courseTitle,
-                { color: Colors[theme].TEXT_PRIMARY },
-              ]}
-              numberOfLines={2}
-            >
-              {course.title}
-            </Text>
-            <View style={styles.progressContainer}>
-              <Text
-                style={[
-                  styles.progressText,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
-                Progress
-              </Text>
-              <Text
-                style={[
-                  styles.progressValue,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
-                {course.progress || 0}%
-              </Text>
-            </View>
-            <ProgressBar
-              progress={(course.progress || 0) / 100}
-              color={Colors[theme].PRIMARY}
-              style={styles.progressBar}
-            />
-            <View style={styles.courseMeta}>
-              <View style={styles.metaItem}>
-                <MaterialCommunityIcons
-                  name="clock-outline"
-                  size={16}
-                  color={Colors[theme].TEXT_SECONDARY}
-                />
-                <Text
-                  style={[
-                    styles.metaText,
-                    { color: Colors[theme].TEXT_SECONDARY },
-                  ]}
-                >
-                  Next: {course.nextModule || "Start learning"}
-                </Text>
-              </View>
-              <View style={styles.metaItem}>
-                <MaterialCommunityIcons
-                  name="account"
-                  size={16}
-                  color={Colors[theme].TEXT_SECONDARY}
-                />
-                <Text
-                  style={[
-                    styles.metaText,
-                    { color: Colors[theme].TEXT_SECONDARY },
-                  ]}
-                >
-                  {course.facilitatorName || "Unknown instructor"}
-                </Text>
-              </View>
-            </View>
-            <Button
-              mode="contained"
-              onPress={() => handleCoursePress(course._id)}
-              style={styles.continueButton}
-              labelStyle={styles.continueButtonLabel}
-            >
-              {course.progress ? "Continue" : "Start"} Learning
-            </Button>
-          </Card.Content>
-        </Card>
-      ))}
-    </View>
-  );
-
-  // --- Related Courses: vertical list, clear separation, always visible button ---
-  const renderRelatedCourses = () => (
-    <View style={styles.relatedCoursesWrapper}>
-      {relatedCourses.length === 0 ? (
-        <View style={styles.emptyContent}>
-          <MaterialCommunityIcons
-            name="book-open"
-            size={32}
-            color={Colors[theme].TEXT_SECONDARY}
-          />
-          <Text
-            style={[
-              styles.emptySubtitle,
-              { color: Colors[theme].TEXT_SECONDARY },
-            ]}
-          >
-            No recommendations yet
+          {course.title}
+        </Text>
+        <View style={styles.progressContainer}>
+          <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+            Progress
+          </Text>
+          <Text style={[styles.progressValue, { color: colors.textSecondary }]}>
+            {course.progress}%
           </Text>
         </View>
-      ) : (
-        relatedCourses.map((course) => (
-          <Card
-            key={course._id}
-            style={[
-              styles.relatedCourseCard,
-              { backgroundColor: Colors[theme].CARD_BACKGROUND },
-            ]}
-            onPress={() => handleEnrollPress(course._id)}
-          >
-            <View style={styles.relatedCourseRow}>
-              <Card.Cover
-                source={{
-                  uri:
-                    course.thumbnail ||
-                    "https://via.placeholder.com/150x150?text=No+Thumbnail",
-                }}
-                style={styles.relatedCourseImage}
-                resizeMode="cover"
-              />
-              <View style={styles.relatedCourseInfo}>
-                <Text
-                  style={[
-                    styles.relatedCourseTitle,
-                    { color: Colors[theme].TEXT_PRIMARY },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {course.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.relatedCourseDescription,
-                    { color: Colors[theme].TEXT_SECONDARY },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {course.shortDescription || "No description available."}
-                </Text>
-                <View style={styles.relatedCourseMeta}>
-                  <MaterialCommunityIcons
-                    name="account"
-                    size={16}
-                    color={Colors[theme].TEXT_SECONDARY}
-                  />
-                  <Text
-                    style={[
-                      styles.relatedCourseInstructor,
-                      { color: Colors[theme].TEXT_SECONDARY },
-                    ]}
-                  >
-                    {course.facilitatorName || "Unknown"}
-                  </Text>
-                </View>
-                <Button
-                  mode="outlined"
-                  onPress={() => handleEnrollPress(course._id)}
-                  style={styles.enrollButton}
-                  labelStyle={[
-                    styles.enrollButtonLabel,
-                    { color: Colors[theme].PRIMARY },
-                  ]}
-                >
-                  View
-                </Button>
-              </View>
-            </View>
-          </Card>
-        ))
-      )}
-    </View>
-  );
-
-  // --- Recent Activities: padded card, spacing between items ---
-  const renderRecentActivities = () => (
-    <Card
-      style={[
-        styles.halfSectionCard,
-        { backgroundColor: Colors[theme].CARD_BACKGROUND },
-      ]}
-    >
-      <Card.Content>
-        <Text
-          style={[styles.sectionTitle, { color: Colors[theme].TEXT_PRIMARY }]}
-        >
-          Recent Activities
-        </Text>
-        {recentActivities.length === 0 ? (
-          <View style={styles.emptyContent}>
+        <ProgressBar
+          progress={course.progress / 100}
+          color={colors.primary}
+          style={styles.progressBar}
+        />
+        <View style={styles.courseMeta}>
+          <View style={styles.metaItem}>
             <MaterialCommunityIcons
               name="clock-outline"
-              size={32}
-              color={Colors[theme].TEXT_SECONDARY}
+              size={16}
+              color={colors.textSecondary}
             />
-            <Text
-              style={[
-                styles.emptySubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              No recent activities
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              Next: {course.nextModule}
             </Text>
           </View>
-        ) : (
-          recentActivities.map((activity) => (
-            <View key={activity._id} style={styles.activityItemWrapper}>
-              <View
-                style={[
-                  styles.activityIcon,
-                  { backgroundColor: `${Colors[theme].PRIMARY}20` },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name={
-                    activity.type === "quiz" ? "file-question" : "book-open"
-                  }
-                  size={20}
-                  color={Colors[theme].PRIMARY}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <Text
-                  style={[
-                    styles.activityText,
-                    { color: Colors[theme].TEXT_PRIMARY },
-                  ]}
-                >
-                  {activity.action === "completed" ? "Completed" : "Started"}{" "}
-                  <Text style={styles.activityHighlight}>
-                    {activity.contentTitle}
-                  </Text>{" "}
-                  in{" "}
-                  <Text style={styles.activityHighlight}>
-                    {activity.courseTitle}
-                  </Text>
-                </Text>
-                <Text
-                  style={[
-                    styles.activityDate,
-                    { color: Colors[theme].TEXT_SECONDARY },
-                  ]}
-                >
-                  {formatDate(activity.createdAt)}
-                </Text>
-              </View>
-            </View>
-          ))
-        )}
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons
+              name="account"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {course.facilitatorName}
+            </Text>
+          </View>
+        </View>
+        <Button
+          mode="contained"
+          onPress={() => handleCoursePress(course._id)}
+          style={[styles.continueButton, { backgroundColor: colors.primary }]}
+          labelStyle={styles.continueButtonLabel}
+        >
+          {course.progress > 0 ? "Continue" : "Start"} Learning
+        </Button>
       </Card.Content>
     </Card>
   );
 
-  // --- Main render ---
+  // --- Related Course Card Component ---
+  const renderRelatedCourseCard = (course: typeof demoData.relatedCourses[0]) => (
+    <Card
+      key={course._id}
+      style={[styles.relatedCourseCard, { backgroundColor: colors.cardBackground }]}
+      onPress={() => handleCoursePress(course._id)}
+    >
+      <View style={styles.relatedCourseRow}>
+        <Card.Cover
+          source={{ uri: course.thumbnail }}
+          style={styles.relatedCourseImage}
+          resizeMode="cover"
+        />
+        <View style={styles.relatedCourseInfo}>
+          <Text 
+            style={[styles.relatedCourseTitle, { color: colors.text }]} 
+            numberOfLines={2}
+          >
+            {course.title}
+          </Text>
+          <Text 
+            style={[styles.relatedCourseDescription, { color: colors.textSecondary }]}
+            numberOfLines={2}
+          >
+            {course.shortDescription}
+          </Text>
+          <View style={styles.relatedCourseMeta}>
+            <MaterialCommunityIcons
+              name="account"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.relatedCourseInstructor, { color: colors.textSecondary }]}>
+              {course.facilitatorName}
+            </Text>
+          </View>
+          <Button
+            mode="outlined"
+            onPress={() => handleCoursePress(course._id)}
+            style={[styles.enrollButton, { borderColor: colors.primary }]}
+            labelStyle={[styles.enrollButtonLabel, { color: colors.primary }]}
+          >
+            View Details
+          </Button>
+        </View>
+      </View>
+    </Card>
+  );
+
+  // --- Activity Item Component ---
+  const renderActivityItem = (activity: typeof demoData.recentActivities[0]) => (
+    <View key={activity._id} style={styles.activityItemWrapper}>
+      <View style={[styles.activityIcon, { backgroundColor: `${colors.primary}20` }]}>
+        <MaterialCommunityIcons
+          name={activity.type === "quiz" ? "file-question" : "book-open"}
+          size={20}
+          color={colors.primary}
+        />
+      </View>
+      <View style={styles.activityContent}>
+        <Text style={[styles.activityText, { color: colors.text }]}>
+          {activity.action === "completed" ? "Completed" : "Started"}{" "}
+          <Text style={[styles.activityHighlight, { color: colors.primary }]}>
+            {activity.contentTitle}
+          </Text>{" "}
+          in{" "}
+          <Text style={[styles.activityHighlight, { color: colors.primary }]}>
+            {activity.courseTitle}
+          </Text>
+        </Text>
+        <Text style={[styles.activityDate, { color: colors.textSecondary }]}>
+          {formatDate(activity.createdAt)}
+        </Text>
+      </View>
+    </View>
+  );
+
+  // --- Achievement Badge Component ---
+  const renderAchievementBadge = (achievement: typeof demoData.achievements[0]) => (
+    <View key={achievement.id} style={styles.achievementBadge}>
+      <View style={[styles.achievementIcon, { backgroundColor: `${colors.primary}20` }]}>
+        <MaterialCommunityIcons
+          name={achievement.icon as any}
+          size={24}
+          color={colors.primary}
+        />
+      </View>
+      <View style={styles.achievementInfo}>
+        <Text style={[styles.achievementTitle, { color: colors.text }]}>
+          {achievement.name}
+        </Text>
+        <Text style={[styles.achievementDesc, { color: colors.textSecondary }]}>
+          {achievement.description}
+        </Text>
+        <Text style={[styles.achievementDate, { color: colors.textSecondary }]}>
+          Earned {formatDate(achievement.unlockedAt)}
+        </Text>
+      </View>
+    </View>
+  );
+
+  // --- Main Loading State ---
   if (loading && !refreshing) {
     return (
-      <View
-        style={[
-          styles.container,
-          styles.loadingContainer,
-          { backgroundColor: Colors[theme].BACKGROUND },
-        ]}
-      >
-        <ActivityIndicator size="large" color={Colors[theme].PRIMARY} />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: Colors[theme].BACKGROUND }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+        />
       }
     >
       {/* Welcome Section */}
-      <View
-        style={[
-          styles.welcomeSection,
-          { backgroundColor: Colors[theme].PRIMARY },
-        ]}
-      >
-        <Text
-          style={[styles.welcomeTitle, { color: Colors[theme].TEXT_PRIMARY }]}
-        >
-          Welcome back, {user?.name || "Learner"}!
+      <View style={[styles.welcomeSection, { backgroundColor: colors.primary }]}>
+        <Text style={[styles.welcomeTitle, { color: colors.surface }]}>
+          Welcome back, {currentUser.name}!
         </Text>
-        <Text
-          style={[
-            styles.welcomeSubtitle,
-            { color: Colors[theme].TEXT_SECONDARY },
-          ]}
-        >
-          Your journey into advanced AI education continues. Track your
-          progress, join events, and connect with fellow learners.
+        <Text style={[styles.welcomeSubtitle, { color: `${colors.surface}CC` }]}>
+          {currentStats.completedCourses > 0
+            ? "Keep up the great work on your learning journey!"
+            : "Ready to start your first course?"}
         </Text>
         <Button
           mode="contained"
           onPress={handleBrowseCourses}
-          style={styles.browseButton}
-          labelStyle={[
-            styles.browseButtonLabel,
-            { color: Colors[theme].PRIMARY },
-          ]}
+          style={[styles.browseButton, { backgroundColor: colors.surface }]}
+          labelStyle={[styles.browseButtonLabel, { color: colors.primary }]}
         >
-          Browse More Courses
+          Browse Courses
         </Button>
       </View>
+
       {/* Stats Overview */}
       {renderStatsGrid()}
-      {/* Course Progress Section */}
+
+      {/* Learning Progress Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: Colors[theme].TEXT_PRIMARY },
-              ]}
-            >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Your Learning Journey
             </Text>
-            <Text
-              style={[
-                styles.sectionSubtitle,
-                { color: Colors[theme].TEXT_SECONDARY },
-              ]}
-            >
-              Continue where you left off
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              {filteredCourses.length > 0 
+                ? "Continue where you left off" 
+                : "Discover new courses"}
             </Text>
           </View>
           {categories.length > 0 && (
@@ -674,8 +504,23 @@ export default function StudentDashboardScreen() {
               <Chip
                 selected={activeCategory === "all"}
                 onPress={() => setActiveCategory("all")}
-                style={styles.categoryChip}
-                textStyle={styles.categoryChipText}
+                style={[
+                  styles.categoryChip,
+                  { 
+                    backgroundColor: activeCategory === "all" 
+                      ? colors.primary 
+                      : 'transparent',
+                    borderColor: colors.borderColor
+                  }
+                ]}
+                textStyle={[
+                  styles.categoryChipText,
+                  { 
+                    color: activeCategory === "all" 
+                      ? colors.surface 
+                      : colors.textSecondary
+                  }
+                ]}
               >
                 All
               </Chip>
@@ -684,8 +529,23 @@ export default function StudentDashboardScreen() {
                   key={category}
                   selected={activeCategory === category}
                   onPress={() => setActiveCategory(category)}
-                  style={styles.categoryChip}
-                  textStyle={styles.categoryChipText}
+                  style={[
+                    styles.categoryChip,
+                    { 
+                      backgroundColor: activeCategory === category 
+                        ? colors.primary 
+                        : 'transparent',
+                      borderColor: colors.borderColor
+                    }
+                  ]}
+                  textStyle={[
+                    styles.categoryChipText,
+                    { 
+                      color: activeCategory === category 
+                        ? colors.surface 
+                        : colors.textSecondary
+                    }
+                  ]}
                 >
                   {category.charAt(0).toUpperCase() + category.slice(1)}
                 </Chip>
@@ -693,109 +553,155 @@ export default function StudentDashboardScreen() {
             </ScrollView>
           )}
         </View>
+
         {error ? (
-          <Card
-            style={[
-              styles.errorCard,
-              { backgroundColor: Colors[theme].CARD_BACKGROUND },
-            ]}
-          >
+          <Card style={[styles.errorCard, { backgroundColor: colors.cardBackground }]}>
             <Card.Content style={styles.emptyContent}>
               <MaterialCommunityIcons
                 name="alert-circle"
                 size={48}
-                color={Colors[theme].TEXT_SECONDARY}
+                color={colors.error}
               />
-              <Text
-                style={[
-                  styles.emptyTitle,
-                  { color: Colors[theme].TEXT_PRIMARY },
-                ]}
-              >
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
                 Error loading courses
               </Text>
-              <Text
-                style={[
-                  styles.emptySubtitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 {error}
               </Text>
               <Button
                 mode="contained"
                 onPress={() => setError(null)}
-                style={styles.emptyButton}
+                style={[styles.emptyButton, { backgroundColor: colors.primary }]}
               >
                 Try Again
               </Button>
             </Card.Content>
           </Card>
         ) : filteredCourses.length === 0 ? (
-          <Card
-            style={[
-              styles.emptyCard,
-              { backgroundColor: Colors[theme].CARD_BACKGROUND },
-            ]}
-          >
+          <Card style={[styles.emptyCard, { backgroundColor: colors.cardBackground }]}>
             <Card.Content style={styles.emptyContent}>
               <MaterialCommunityIcons
                 name="book-open"
                 size={48}
-                color={Colors[theme].TEXT_SECONDARY}
+                color={colors.textSecondary}
               />
-              <Text
-                style={[
-                  styles.emptyTitle,
-                  { color: Colors[theme].TEXT_PRIMARY },
-                ]}
-              >
-                No courses found
-              </Text>
-              <Text
-                style={[
-                  styles.emptySubtitle,
-                  { color: Colors[theme].TEXT_SECONDARY },
-                ]}
-              >
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
                 {activeCategory === "all"
-                  ? "You haven't enrolled in any courses yet."
-                  : `You don't have any ${activeCategory} courses yet.`}
+                  ? "No courses enrolled yet"
+                  : `No ${activeCategory} courses`}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                {activeCategory === "all"
+                  ? "Browse our catalog to find your first course"
+                  : "Try another category or browse all courses"}
               </Text>
               <Button
                 mode="contained"
                 onPress={handleBrowseCourses}
-                style={styles.emptyButton}
+                style={[styles.emptyButton, { backgroundColor: colors.primary }]}
               >
                 Browse Courses
               </Button>
             </Card.Content>
           </Card>
         ) : (
-          renderCourseGrid()
+          <View style={styles.courseGridWrapper}>
+            {filteredCourses.map(renderCourseCard)}
+          </View>
         )}
       </View>
-      {/* Related Courses and Recent Activities */}
+
+      {/* Achievements Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Recent Achievements
+          </Text>
+          <Button 
+            mode="text" 
+            onPress={handleViewAchievements}
+            textColor={colors.primary}
+            style={styles.viewAllButton}
+          >
+            View All
+          </Button>
+        </View>
+        {demoData.achievements.length > 0 ? (
+          <Card style={[styles.achievementsCard, { backgroundColor: colors.cardBackground }]}>
+            <Card.Content style={styles.achievementsContent}>
+              {demoData.achievements.slice(0, 2).map(renderAchievementBadge)}
+            </Card.Content>
+          </Card>
+        ) : (
+          <Card style={[styles.emptyCard, { backgroundColor: colors.cardBackground }]}>
+            <Card.Content style={styles.emptyContent}>
+              <MaterialCommunityIcons
+                name="trophy"
+                size={48}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                No achievements yet
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                Complete courses and activities to earn achievements
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+      </View>
+
+      {/* Bottom Section - Recommendations and Activities */}
       <View style={styles.bottomSectionWrapper}>
-        <Card
-          style={[
-            styles.halfSectionCard,
-            { backgroundColor: Colors[theme].CARD_BACKGROUND },
-          ]}
-        >
+        {/* Recommended Courses */}
+        <Card style={[styles.halfSectionCard, { backgroundColor: colors.cardBackground }]}>
           <Card.Content>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: Colors[theme].TEXT_PRIMARY },
-              ]}
-            >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recommended For You
             </Text>
-            {renderRelatedCourses()}
+            <View style={styles.relatedCoursesWrapper}>
+              {demoData.relatedCourses.length > 0 ? (
+                demoData.relatedCourses.slice(0, 2).map(renderRelatedCourseCard)
+              ) : (
+                <View style={styles.emptyContent}>
+                  <MaterialCommunityIcons
+                    name="book-open"
+                    size={32}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                    No recommendations yet
+                  </Text>
+                </View>
+              )}
+            </View>
           </Card.Content>
         </Card>
-        {renderRecentActivities()}
+
+        {/* Recent Activities */}
+        <Card style={[styles.halfSectionCard, { backgroundColor: colors.cardBackground }]}>
+          <Card.Content>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Recent Activities
+            </Text>
+            {demoData.recentActivities.length > 0 ? (
+              <View style={styles.activitiesList}>
+                {demoData.recentActivities.map(renderActivityItem)}
+              </View>
+            ) : (
+              <View style={styles.emptyContent}>
+                <MaterialCommunityIcons
+                  name="clock-outline"
+                  size={32}
+                  color={colors.textSecondary}
+                />
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  No recent activities
+                </Text>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
       </View>
     </ScrollView>
   );
@@ -806,11 +712,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   welcomeSection: {
-    padding: 20,
+    padding: 24,
     margin: 16,
     borderRadius: 12,
     elevation: 2,
@@ -826,21 +733,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   browseButton: {
-    backgroundColor: "white",
+    alignSelf: 'flex-start',
+    borderRadius: 8,
   },
   browseButtonLabel: {
     fontWeight: "bold",
   },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 12,
+  statsGridWrapper: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
+    gap: 12,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
   },
   statCard: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: '48%',
     borderRadius: 12,
     elevation: 1,
   },
@@ -866,7 +777,6 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
     marginVertical: 8,
   },
   section: {
@@ -874,7 +784,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  viewAllButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -893,18 +810,15 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     marginRight: 8,
-    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: Colors.light.BORDER_COLOR,
   },
   categoryChipText: {
     fontSize: 12,
   },
-  courseGrid: {
+  courseGridWrapper: {
     gap: 16,
   },
   courseCard: {
-    marginBottom: 16,
     borderRadius: 12,
     overflow: "hidden",
     elevation: 1,
@@ -955,7 +869,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   emptyCard: {
-    marginTop: 16,
+    borderRadius: 12,
+  },
+  errorCard: {
     borderRadius: 12,
   },
   emptyContent: {
@@ -979,32 +895,26 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 8,
   },
-  errorCard: {
-    marginTop: 16,
-    borderRadius: 12,
-  },
-  bottomSection: {
+  bottomSectionWrapper: {
     paddingHorizontal: 16,
     paddingBottom: 24,
     gap: 16,
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
   halfSectionCard: {
-    flex: 1,
-    minWidth: "100%",
     borderRadius: 12,
     elevation: 1,
   },
+  relatedCoursesWrapper: {
+    gap: 12,
+    marginTop: 8,
+  },
   relatedCourseCard: {
-    marginBottom: 12,
-    backgroundColor: "transparent",
     elevation: 0,
   },
-  relatedCourseContent: {
+  relatedCourseRow: {
     flexDirection: "row",
-    padding: 8,
     alignItems: "center",
+    padding: 8,
   },
   relatedCourseImage: {
     width: 80,
@@ -1030,31 +940,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    marginBottom: 8,
   },
   relatedCourseInstructor: {
     fontSize: 12,
   },
   enrollButton: {
-    alignSelf: "center",
+    alignSelf: "flex-start",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.light.PRIMARY,
   },
   enrollButtonLabel: {
     fontWeight: "bold",
   },
-  activityItem: {
+  activitiesList: {
+    marginTop: 8,
+  },
+  activityItemWrapper: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.BORDER_COLOR,
   },
   activityIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.light.PRIMARY,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -1073,40 +984,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  // --- Added styles for improved layout ---
-  statsGridWrapper: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 12,
+  achievementsCard: {
+    borderRadius: 12,
   },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
+  achievementsContent: {
+    paddingVertical: 12,
   },
-  courseGridWrapper: {
-    gap: 16,
-  },
-  relatedCoursesWrapper: {
-    gap: 12,
-  },
-  relatedCourseRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-  },
-  activityItemWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
+  achievementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.BORDER_COLOR,
   },
-  bottomSectionWrapper: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 16,
-    flexDirection: "column",
-    flexWrap: "nowrap",
+  achievementIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  achievementInfo: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  achievementDesc: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  achievementDate: {
+    fontSize: 10,
+    fontStyle: 'italic',
   },
 });

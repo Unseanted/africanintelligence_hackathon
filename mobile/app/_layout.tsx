@@ -1,16 +1,15 @@
-// _layout.tsx
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Platform, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import "../global.css";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { TourLMSProvider, useTourLMS } from "./contexts/TourLMSContext";
 
-// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 function useProtectedRoute() {
@@ -19,44 +18,50 @@ function useProtectedRoute() {
   const { user, token, loading } = useTourLMS();
   const isNavigating = useRef(false);
 
-  useEffect(() => {
-    // Don't run the auth check while still loading
-    if (loading) return;
+  const navigateToAuth = useCallback(() => {
+    if (isNavigating.current || loading) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const isLandingPage = segments[0] === undefined;
-
-    if (isNavigating.current) return;
+    const currentSegment = segments[0] as string | undefined;
+    const inAuthGroup = currentSegment === "(auth)";
+    const isLandingPage = !segments.length || currentSegment === "index";
 
     if (!user && !token && !inAuthGroup && !isLandingPage) {
       isNavigating.current = true;
-      router.replace("/(auth)/login");
-    } else if (user && token && (inAuthGroup || isLandingPage)) {
-      isNavigating.current = true;
-      router.replace("./student");
+      try {
+        router.replace("/(auth)/login");
+      } catch (error) {
+        console.warn("Navigation error:", error);
+      } finally {
+        isNavigating.current = false;
+      }
     }
+  }, [router, user, token, segments, loading]);
 
-    return () => {
-      isNavigating.current = false;
-    };
-  }, [user, token, segments, router, loading]);
+  useEffect(() => {
+    navigateToAuth();
+  }, [navigateToAuth]);
 }
 
 function AppContent() {
   const { loading } = useTourLMS();
-  const { colors } = useTheme(); // Use theme colors
+  const splashHidden = useRef(false);
+
   useProtectedRoute();
 
   useEffect(() => {
-    if (!loading) {
-      // Hide splash screen once we're done loading
-      SplashScreen.hideAsync().catch(console.warn);
+    if (!loading && !splashHidden.current) {
+      splashHidden.current = true;
+      setTimeout(() => {
+        SplashScreen.hideAsync().catch((error) => {
+          console.warn("Error hiding splash screen:", error);
+        });
+      }, 500);
     }
   }, [loading]);
 
   return (
     <SafeAreaProvider>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={{ flex: 1, backgroundColor: '#1f2937' }}>
         <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
         <Slot />
         <Toast />
@@ -82,10 +87,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // backgroundColor moved to dynamic styling in AppContent
-  },
-});
