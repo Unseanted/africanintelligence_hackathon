@@ -14,6 +14,10 @@ const swaggerOptions = {
         url: `http://localhost:${port}/api`,
         description: "Development server",
       },
+      {
+      	url: `https://africanintelligence-hackathon-backend.onrender.com/api`,
+      	description: "Swagger in prod"
+      }
       // You can add more server URLs for production, staging, etc.
     ],
     components: {
