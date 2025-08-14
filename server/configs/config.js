@@ -1,5 +1,5 @@
 const dotenv = require("dotenv");
-dotenv.config({path: process.env.NODE_ENV === "production" ? ".env.production" : ".env" });
+dotenv.config({path: ".env" });
 
 const mongo_user = process.env.MONGO_USER;
 const mongo_pass = process.env.MONGO_PASS;
@@ -14,6 +14,7 @@ const port = process.env.PORT;
 const mistral_api_key = process.env.MISTRAL_API_KEY;
 const groq_api_key = process.env.GROQ_API_KEY;
 const jwt_secret = process.env.JWT_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
 
 module.exports = {
   mongo_uri2,
@@ -31,5 +32,5 @@ module.exports = {
   jwt_secret,
   email_user,
   email_pass,
-  isProduction: process.env.NODE_ENV === "production",
+  isProduction,
 };
